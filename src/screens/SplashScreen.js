@@ -31,7 +31,6 @@ export default function SplashScreen({ onFinish }) {
       ])
     ).start();
 
-    // Progress bar animation: Increased duration for smooth premium loading
     Animated.timing(progressAnim, {
       toValue: 1,
       duration: 4500,

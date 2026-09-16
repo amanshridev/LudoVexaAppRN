@@ -2,12 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, BackHandler } from 'react-native';
 
 // Storage & Utils
-import { loadSettings } from '../utils/storage';
+import { loadSettings, saveSettings } from '../utils/storage';
 
 // Screens
 import SplashScreen from '../screens/SplashScreen';
 import WelcomeLoginScreen from '../screens/WelcomeLoginScreen';
 import GameScreen from '../screens/GameScreen';
+
+import ThemeScreen from '../screens/ThemeScreen';
 
 export default function AppNavigator() {
   const [screenStack, setScreenStack] = useState(['splash']);
@@ -50,6 +52,11 @@ export default function AppNavigator() {
       if (saved) setSettings((prev) => ({ ...prev, ...saved }));
     });
   }, []);
+
+  const handleUpdateSettings = (newSettings) => {
+    setSettings(newSettings);
+    saveSettings(newSettings);
+  };
 
   // Stack Navigation Methods
   const navigate = useCallback((screenName, params = {}) => {
@@ -158,7 +165,17 @@ export default function AppNavigator() {
 
 
 
-      default:
+      case 'settings':
+      case 'theme':
+        return (
+          <ThemeScreen
+            activeTheme={settings.theme || 'classic'}
+            onSelectTheme={(themeId) => {
+              handleUpdateSettings({ ...settings, theme: themeId });
+            }}
+            onBack={goBack}
+          />
+        );
 
     }
   };

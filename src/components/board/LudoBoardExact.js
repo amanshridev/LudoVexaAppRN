@@ -7,59 +7,65 @@ import {
 } from 'react-native';
 import Svg, {
   Polygon,
-  Circle,
   Path,
-  G,
-  Defs,
-  LinearGradient,
-  Stop,
 } from 'react-native-svg';
 import {
   GRID_SIZE,
   TRACK_COORDS,
   SAFE_INDICES,
-  PLAYER_CONFIG,
 } from '../../ludo/LudoConstants.js';
 import { getTokenCoordinates } from '../../ludo/LudoEngine.js';
 
-// Exact colors from reference screenshot
-export const EXACT_COLORS = {
-  red: {
-    base: '#D92525',
-    dark: '#991B1B',
-    path: '#D92525',
-    token: '#D92525',
-    goldRing: '#EAB308',
+export const THEME_PALETTES = {
+  classic: {
+    boardBg: '#FFFFFF',
+    red: { base: '#D92525', dark: '#991B1B', path: '#D92525', token: '#D92525', goldRing: '#EAB308' },
+    green: { base: '#238838', dark: '#166534', path: '#238838', token: '#238838', goldRing: '#EAB308' },
+    yellow: { base: '#DDA715', dark: '#A16207', path: '#DDA715', token: '#DDA715', goldRing: '#EAB308' },
+    blue: { base: '#2255A4', dark: '#1E3A8A', path: '#2255A4', token: '#2255A4', goldRing: '#EAB308' },
   },
-  green: {
-    base: '#238838',
-    dark: '#166534',
-    path: '#238838',
-    token: '#238838',
-    goldRing: '#EAB308',
+  neon: {
+    boardBg: '#090D1A',
+    red: { base: '#FF007F', dark: '#99004C', path: '#FF007F', token: '#FF007F', goldRing: '#00FFCC' },
+    green: { base: '#00FFCC', dark: '#00997A', path: '#00FFCC', token: '#00FFCC', goldRing: '#FFD700' },
+    yellow: { base: '#FFD700', dark: '#B39700', path: '#FFD700', token: '#FFD700', goldRing: '#00FFCC' },
+    blue: { base: '#0099FF', dark: '#0066CC', path: '#0099FF', token: '#0099FF', goldRing: '#FFD700' },
   },
-  yellow: {
-    base: '#DDA715',
-    dark: '#A16207',
-    path: '#DDA715',
-    token: '#DDA715',
-    goldRing: '#EAB308',
+  wood: {
+    boardBg: '#EFEBE9',
+    red: { base: '#C62828', dark: '#8E0000', path: '#C62828', token: '#C62828', goldRing: '#F57F17' },
+    green: { base: '#2E7D32', dark: '#005005', path: '#2E7D32', token: '#2E7D32', goldRing: '#F57F17' },
+    yellow: { base: '#F57F17', dark: '#BC5100', path: '#F57F17', token: '#F57F17', goldRing: '#8E0000' },
+    blue: { base: '#1565C0', dark: '#003C8F', path: '#1565C0', token: '#1565C0', goldRing: '#F57F17' },
   },
-  blue: {
-    base: '#2255A4',
-    dark: '#1E3A8A',
-    path: '#2255A4',
-    token: '#2255A4',
-    goldRing: '#EAB308',
+  galaxy: {
+    boardBg: '#020617',
+    red: { base: '#EC4899', dark: '#9D174D', path: '#EC4899', token: '#EC4899', goldRing: '#6366F1' },
+    green: { base: '#10B981', dark: '#047857', path: '#10B981', token: '#10B981', goldRing: '#F59E0B' },
+    yellow: { base: '#F59E0B', dark: '#B45309', path: '#F59E0B', token: '#F59E0B', goldRing: '#6366F1' },
+    blue: { base: '#6366F1', dark: '#4338CA', path: '#6366F1', token: '#6366F1', goldRing: '#EC4899' },
+  },
+  pastel: {
+    boardBg: '#FAF5FF',
+    red: { base: '#FCA5A5', dark: '#EF4444', path: '#FCA5A5', token: '#FCA5A5', goldRing: '#FDE047' },
+    green: { base: '#86EFAC', dark: '#22C55E', path: '#86EFAC', token: '#86EFAC', goldRing: '#93C5FD' },
+    yellow: { base: '#FDE047', dark: '#EAB308', path: '#FDE047', token: '#FDE047', goldRing: '#86EFAC' },
+    blue: { base: '#93C5FD', dark: '#3B82F6', path: '#93C5FD', token: '#93C5FD', goldRing: '#FCA5A5' },
+  },
+  dark: {
+    boardBg: '#050B14',
+    red: { base: '#EF4444', dark: '#991B1B', path: '#EF4444', token: '#EF4444', goldRing: '#F59E0B' },
+    green: { base: '#10B981', dark: '#047857', path: '#10B981', token: '#10B981', goldRing: '#F59E0B' },
+    yellow: { base: '#F59E0B', dark: '#B45309', path: '#F59E0B', token: '#F59E0B', goldRing: '#3B82F6' },
+    blue: { base: '#3B82F6', dark: '#1D4ED8', path: '#3B82F6', token: '#3B82F6', goldRing: '#F59E0B' },
   },
 };
 
-/**
- * Exact Ludo Token:
- * Gold/Yellow metallic outer ring + player color inner disc + white star in center
- */
-export function ExactLudoToken({ player = 'red', size = 26, isMovable = false, onPress }) {
-  const col = EXACT_COLORS[player] || EXACT_COLORS.red;
+export const EXACT_COLORS = THEME_PALETTES.classic;
+
+export function ExactLudoToken({ player = 'red', size = 26, isMovable = false, onPress, palette }) {
+  const themeColors = palette || THEME_PALETTES.classic;
+  const col = themeColors[player] || themeColors.red;
 
   return (
     <TouchableOpacity
@@ -76,7 +82,6 @@ export function ExactLudoToken({ player = 'red', size = 26, isMovable = false, o
         isMovable && styles.movablePulse,
       ]}
     >
-      {/* 3D Drop Shadow */}
       <View
         style={[
           styles.tokenShadow,
@@ -84,7 +89,6 @@ export function ExactLudoToken({ player = 'red', size = 26, isMovable = false, o
         ]}
       />
 
-      {/* Gold Outer Ring */}
       <View
         style={[
           styles.tokenGoldRing,
@@ -96,7 +100,6 @@ export function ExactLudoToken({ player = 'red', size = 26, isMovable = false, o
           },
         ]}
       >
-        {/* Inner Colored Core */}
         <View
           style={[
             styles.tokenInnerCore,
@@ -108,7 +111,6 @@ export function ExactLudoToken({ player = 'red', size = 26, isMovable = false, o
             },
           ]}
         >
-          {/* White Star */}
           <Text style={[styles.tokenStar, { fontSize: size * 0.44 }]}>★</Text>
         </View>
       </View>
@@ -116,17 +118,15 @@ export function ExactLudoToken({ player = 'red', size = 26, isMovable = false, o
   );
 }
 
-/**
- * Exact Ludo Board matching reference screenshot
- */
 export default function LudoBoardExact({
   state,
   onSelectToken,
   boardSize = 350,
+  theme = 'classic',
 }) {
   const cellSize = boardSize / GRID_SIZE;
+  const palette = THEME_PALETTES[theme] || THEME_PALETTES.classic;
 
-  // Group tokens by cell coordinate string "r_c"
   const tokensByCell = {};
   state.activePlayers.forEach((player) => {
     (state.tokens[player] || []).forEach((token) => {
@@ -137,60 +137,41 @@ export default function LudoBoardExact({
     });
   });
 
-  // Render individual track cell
   const renderCell = (r, c) => {
-    // Skip bases and center
-    if (r < 6 && c < 6) return null; // Top-Left Green
-    if (r < 6 && c > 8) return null; // Top-Right Yellow
-    if (r > 8 && c > 8) return null; // Bottom-Right Blue
-    if (r > 8 && c < 6) return null; // Bottom-Left Red
-    if (r >= 6 && r <= 8 && c >= 6 && c <= 8) return null; // Center Home
+    if (r < 6 && c < 6) return null;
+    if (r < 6 && c > 8) return null;
+    if (r > 8 && c > 8) return null;
+    if (r > 8 && c < 6) return null;
+    if (r >= 6 && r <= 8 && c >= 6 && c <= 8) return null;
 
-    let bgColor = '#FFFFFF';
+    let bgColor = palette.boardBg || '#FFFFFF';
     let borderColor = '#64748B';
     let content = null;
 
-    // 1. Home Columns
-    // Red home column (bottom arm center: rows 9..13, col 7)
     if (c === 7 && r >= 9 && r <= 13) {
-      bgColor = EXACT_COLORS.red.path;
-    }
-    // Green home column (left arm center: row 7, cols 1..5)
-    else if (r === 7 && c >= 1 && c <= 5) {
-      bgColor = EXACT_COLORS.green.path;
-    }
-    // Yellow home column (top arm center: rows 1..5, col 7)
-    else if (c === 7 && r >= 1 && r <= 5) {
-      bgColor = EXACT_COLORS.yellow.path;
-    }
-    // Blue home column (right arm center: row 7, cols 9..13)
-    else if (r === 7 && c >= 9 && c <= 13) {
-      bgColor = EXACT_COLORS.blue.path;
+      bgColor = palette.red.path;
+    } else if (r === 7 && c >= 1 && c <= 5) {
+      bgColor = palette.green.path;
+    } else if (c === 7 && r >= 1 && r <= 5) {
+      bgColor = palette.yellow.path;
+    } else if (r === 7 && c >= 9 && c <= 13) {
+      bgColor = palette.blue.path;
     }
 
-    // 2. Start Squares
-    // Green Start: [6, 1]
     if (r === 6 && c === 1) {
-      bgColor = '#FFFFFF';
-      borderColor = EXACT_COLORS.green.path;
-    }
-    // Yellow Start: [1, 8]
-    else if (r === 1 && c === 8) {
-      bgColor = '#FFFFFF';
-      borderColor = EXACT_COLORS.yellow.path;
-    }
-    // Blue Start: [8, 13]
-    else if (r === 8 && c === 13) {
-      bgColor = '#FFFFFF';
-      borderColor = EXACT_COLORS.blue.path;
-    }
-    // Red Start: [13, 6]
-    else if (r === 13 && c === 6) {
-      bgColor = '#FFFFFF';
-      borderColor = EXACT_COLORS.red.path;
+      bgColor = palette.boardBg || '#FFFFFF';
+      borderColor = palette.green.path;
+    } else if (r === 1 && c === 8) {
+      bgColor = palette.boardBg || '#FFFFFF';
+      borderColor = palette.yellow.path;
+    } else if (r === 8 && c === 13) {
+      bgColor = palette.boardBg || '#FFFFFF';
+      borderColor = palette.blue.path;
+    } else if (r === 13 && c === 6) {
+      bgColor = palette.boardBg || '#FFFFFF';
+      borderColor = palette.red.path;
     }
 
-    // 3. Safe Star Squares (Grey/Silver Octagon Star Shield as in screenshot)
     const trackIndex = TRACK_COORDS.findIndex((coord) => coord.r === r && coord.c === c);
     if (trackIndex !== -1 && SAFE_INDICES.includes(trackIndex)) {
       content = (
@@ -200,35 +181,27 @@ export default function LudoBoardExact({
       );
     }
 
-    // 4. Curved U-turn arrows at track entrance into home columns (matches screenshot)
-    // Red entrance curve at [14, 5] -> [14, 6]
     if (r === 14 && c === 5) {
       content = (
-        <Text style={[styles.curvedArrow, { color: EXACT_COLORS.red.path, transform: [{ rotate: '90deg' }] }]}>
+        <Text style={[styles.curvedArrow, { color: palette.red.path, transform: [{ rotate: '90deg' }] }]}>
           ↶
         </Text>
       );
-    }
-    // Green entrance curve at [5, 0] -> [6, 0]
-    else if (r === 5 && c === 0) {
+    } else if (r === 5 && c === 0) {
       content = (
-        <Text style={[styles.curvedArrow, { color: EXACT_COLORS.green.path, transform: [{ rotate: '0deg' }] }]}>
+        <Text style={[styles.curvedArrow, { color: palette.green.path, transform: [{ rotate: '0deg' }] }]}>
           ↶
         </Text>
       );
-    }
-    // Yellow entrance curve at [0, 9] -> [0, 8]
-    else if (r === 0 && c === 9) {
+    } else if (r === 0 && c === 9) {
       content = (
-        <Text style={[styles.curvedArrow, { color: EXACT_COLORS.yellow.path, transform: [{ rotate: '270deg' }] }]}>
+        <Text style={[styles.curvedArrow, { color: palette.yellow.path, transform: [{ rotate: '270deg' }] }]}>
           ↶
         </Text>
       );
-    }
-    // Blue entrance curve at [9, 14] -> [8, 14]
-    else if (r === 9 && c === 14) {
+    } else if (r === 9 && c === 14) {
       content = (
-        <Text style={[styles.curvedArrow, { color: EXACT_COLORS.blue.path, transform: [{ rotate: '180deg' }] }]}>
+        <Text style={[styles.curvedArrow, { color: palette.blue.path, transform: [{ rotate: '180deg' }] }]}>
           ↶
         </Text>
       );
@@ -254,10 +227,8 @@ export default function LudoBoardExact({
     );
   };
 
-  // Render Corner Base Box exactly as in screenshot:
-  // Solid colored base with huge white circle courtyard and 4 colored circle slots!
   const renderBaseBox = (player, top, left, label, labelPosition) => {
-    const col = EXACT_COLORS[player];
+    const col = palette[player] || palette.red;
     const boxSize = cellSize * 6;
     const whiteCircleSize = boxSize * 0.82;
 
@@ -277,7 +248,6 @@ export default function LudoBoardExact({
           },
         ]}
       >
-        {/* Player Name Label in Corner */}
         {label && (
           <Text
             style={[
@@ -290,7 +260,6 @@ export default function LudoBoardExact({
           </Text>
         )}
 
-        {/* Huge White Circular Courtyard */}
         <View
           style={[
             styles.whiteCourtyard,
@@ -298,10 +267,10 @@ export default function LudoBoardExact({
               width: whiteCircleSize,
               height: whiteCircleSize,
               borderRadius: whiteCircleSize / 2,
+              backgroundColor: palette.boardBg || '#FFFFFF',
             },
           ]}
         >
-          {/* 4 Colored Circle Slots in 2x2 Grid */}
           <View style={styles.pedestals2x2}>
             {[0, 1, 2, 3].map((idx) => {
               const tokenAtBase = tokensInBase.find((t) => t.index === idx);
@@ -323,6 +292,7 @@ export default function LudoBoardExact({
                   {tokenAtBase && (
                     <ExactLudoToken
                       player={player}
+                      palette={palette}
                       size={cellSize * 1.05}
                       isMovable={isMovable}
                       onPress={() => onSelectToken(tokenAtBase.id)}
@@ -337,7 +307,6 @@ export default function LudoBoardExact({
     );
   };
 
-  // Render tokens currently on the track or in home corridors
   const renderActiveTokens = () => {
     const rendered = [];
 
@@ -346,7 +315,6 @@ export default function LudoBoardExact({
       const r = parseInt(rStr, 10);
       const c = parseInt(cStr, 10);
 
-      // Skip base cells (already rendered in base courtyards)
       const isBaseCell =
         (r < 6 && c < 6) ||
         (r < 6 && c > 8) ||
@@ -381,6 +349,7 @@ export default function LudoBoardExact({
           >
             <ExactLudoToken
               player={token.player}
+              palette={palette}
               size={cellSize * 1.05}
               isMovable={isMovable}
               onPress={() => onSelectToken(token.id)}
@@ -393,7 +362,6 @@ export default function LudoBoardExact({
     return rendered;
   };
 
-  // Generate grid cells
   const gridCells = [];
   for (let r = 0; r < GRID_SIZE; r++) {
     for (let c = 0; c < GRID_SIZE; c++) {
@@ -411,23 +379,17 @@ export default function LudoBoardExact({
         {
           width: boardSize,
           height: boardSize,
+          backgroundColor: palette.boardBg || '#FFFFFF',
         },
       ]}
     >
-      {/* 1. Track Cells */}
       {gridCells}
 
-      {/* 2. Four Corner Bases matching screenshot */}
-      {/* Top-Left: Green */}
       {renderBaseBox('green', 0, 0)}
-      {/* Top-Right: Yellow (with upside down Player2 label) */}
       {renderBaseBox('yellow', 0, cellSize * 9, 'Player2', 'top-right')}
-      {/* Bottom-Right: Blue */}
       {renderBaseBox('blue', cellSize * 9, cellSize * 9)}
-      {/* Bottom-Left: Red (with Player1 label) */}
       {renderBaseBox('red', cellSize * 9, 0, 'Player1', 'bottom-left')}
 
-      {/* 3. Center Victory Triangles (exact matching screenshot) */}
       <View
         style={[
           styles.centerArea,
@@ -440,27 +402,19 @@ export default function LudoBoardExact({
         ]}
       >
         <Svg width={centerSize} height={centerSize} viewBox="0 0 100 100">
-          {/* Top: Yellow Triangle */}
-          <Polygon points="0,0 100,0 50,50" fill={EXACT_COLORS.yellow.path} />
-          {/* Right: Blue Triangle */}
-          <Polygon points="100,0 100,100 50,50" fill={EXACT_COLORS.blue.path} />
-          {/* Bottom: Red Triangle */}
-          <Polygon points="0,100 100,100 50,50" fill={EXACT_COLORS.red.path} />
-          {/* Left: Green Triangle */}
-          <Polygon points="0,0 0,100 50,50" fill={EXACT_COLORS.green.path} />
-
-          {/* Center Dividing Lines */}
+          <Polygon points="0,0 100,0 50,50" fill={palette.yellow.path} />
+          <Polygon points="100,0 100,100 50,50" fill={palette.blue.path} />
+          <Polygon points="0,100 100,100 50,50" fill={palette.red.path} />
+          <Polygon points="0,0 0,100 50,50" fill={palette.green.path} />
           <Path d="M0 0 L100 100 M100 0 L0 100" stroke="#FFFFFF" strokeWidth="1.5" />
         </Svg>
 
-        {/* 4 Diagonal Feathered Arrows pointing out from center corners */}
         <Text style={[styles.centerArrow, { top: -2, left: -2, transform: [{ rotate: '225deg' }] }]}>➔</Text>
         <Text style={[styles.centerArrow, { top: -2, right: -2, transform: [{ rotate: '315deg' }] }]}>➔</Text>
         <Text style={[styles.centerArrow, { bottom: -2, left: -2, transform: [{ rotate: '135deg' }] }]}>➔</Text>
         <Text style={[styles.centerArrow, { bottom: -2, right: -2, transform: [{ rotate: '45deg' }] }]}>➔</Text>
       </View>
 
-      {/* 4. Active Tokens on Board */}
       {renderActiveTokens()}
     </View>
   );
