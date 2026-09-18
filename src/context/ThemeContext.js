@@ -1,67 +1,102 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { THEME_LIST, buildSemanticTheme } from '../theme/colorThemes';
-
-const THEME_STORAGE_KEY = '@VexaLudo_AppTheme_v1';
-const DEFAULT_THEME_ID = 'emerald';
+import { LUDO_THEMES_LIST } from '../theme/colors';
+import { loadSettings, saveSettings, DEFAULT_SETTINGS } from '../utils/storage';
 
 const ThemeContext = createContext({
-  theme: buildSemanticTheme(DEFAULT_THEME_ID),
-  themeId: DEFAULT_THEME_ID,
-  setAppTheme: () => {},
+  appTheme: buildSemanticTheme('emerald'),
+  appColor: 'emerald',
+  ludoTheme: LUDO_THEMES_LIST[3], // galaxy
+  ludoThemeId: 'galaxy',
+  settings: DEFAULT_SETTINGS,
+  setAppColor: () => {},
+  setLudoTheme: () => {},
+  updateSettings: () => {},
   themesList: THEME_LIST,
+  ludoThemesList: LUDO_THEMES_LIST,
   isLoading: true,
 });
 
 export function ThemeProvider({ children }) {
-  const [themeId, setThemeId] = useState(DEFAULT_THEME_ID);
+  const [settings, setSettingsState] = useState(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load stored theme on initial app launch
+  // Load stored settings on mount
   useEffect(() => {
     let isMounted = true;
-    async function loadStoredTheme() {
+    async function initSettings() {
       try {
-        const storedId = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-        if (storedId && isMounted && THEME_LIST.some((t) => t.id === storedId)) {
-          setThemeId(storedId);
+        const stored = await loadSettings();
+        if (stored && isMounted) {
+          setSettingsState(stored);
         }
       } catch (err) {
-        console.warn('Failed to load stored app theme:', err);
+        console.warn('Failed to load settings in ThemeProvider:', err);
       } finally {
         if (isMounted) {
           setIsLoading(false);
         }
       }
     }
-    loadStoredTheme();
+    initSettings();
     return () => {
       isMounted = false;
     };
   }, []);
 
-  // Change theme & persist to local storage immediately
-  const setAppTheme = useCallback(async (newThemeId) => {
-    if (!THEME_LIST.some((t) => t.id === newThemeId)) return;
-    setThemeId(newThemeId);
-    try {
-      await AsyncStorage.setItem(THEME_STORAGE_KEY, newThemeId);
-    } catch (err) {
-      console.warn('Failed to persist app theme:', err);
-    }
+  const updateSettings = useCallback(async (newPartial) => {
+    setSettingsState((prev) => {
+      const updated = { ...prev, ...newPartial };
+      saveSettings(updated);
+      return updated;
+    });
   }, []);
 
-  const semanticTheme = useMemo(() => buildSemanticTheme(themeId), [themeId]);
+  const setAppColor = useCallback(async (colorId) => {
+    if (!THEME_LIST.some((t) => t.id === colorId)) return;
+    updateSettings({ appColor: colorId });
+  }, [updateSettings]);
+
+  const setLudoTheme = useCallback(async (themeId) => {
+    if (!LUDO_THEMES_LIST.some((t) => t.id === themeId)) return;
+    updateSettings({ ludoTheme: themeId });
+  }, [updateSettings]);
+
+  const appTheme = useMemo(
+    () => buildSemanticTheme(settings.appColor || 'emerald'),
+    [settings.appColor]
+  );
+
+  const ludoThemeObj = useMemo(
+    () =>
+      LUDO_THEMES_LIST.find((t) => t.id === settings.ludoTheme) ||
+      LUDO_THEMES_LIST[0],
+    [settings.ludoTheme]
+  );
 
   const contextValue = useMemo(
     () => ({
-      theme: semanticTheme,
-      themeId,
-      setAppTheme,
+      appTheme,
+      appColor: settings.appColor || 'emerald',
+      ludoTheme: ludoThemeObj,
+      ludoThemeId: settings.ludoTheme || 'galaxy',
+      settings,
+      setAppColor,
+      setLudoTheme,
+      updateSettings,
       themesList: THEME_LIST,
+      ludoThemesList: LUDO_THEMES_LIST,
       isLoading,
     }),
-    [semanticTheme, themeId, setAppTheme, isLoading]
+    [
+      appTheme,
+      settings,
+      ludoThemeObj,
+      setAppColor,
+      setLudoTheme,
+      updateSettings,
+      isLoading,
+    ]
   );
 
   return (

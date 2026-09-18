@@ -15,14 +15,47 @@ const DEFAULT_STATS = {
   powerUpsUsed: 0,
 };
 
-const DEFAULT_SETTINGS = {
-  theme: 'rajwada',
+export const DEFAULT_SETTINGS = {
+  // Appearance
+  ludoTheme: 'galaxy',
+  appColor: 'emerald',
+  
+  // Audio & Haptics
   sound: true,
+  soundVolume: 0.8,
   music: true,
+  musicVolume: 0.6,
+  diceRollSound: true,
+  victorySound: true,
+  haptics: true,
+  hapticIntensity: 'medium', // 'off' | 'soft' | 'medium' | 'strong'
+  
+  // Game & Rules
   playerCount: 4,
   gameMode: 'power', // 'power' | 'classic' | 'rush'
   aiDifficulty: 'medium', // 'easy' | 'medium' | 'hard'
   autoRoll: false,
+  turboMode: false,
+  showSafeSpots: true,
+  showMovementHints: true,
+
+  // App & Localization
+  language: 'en',
+  
+  // Notifications
+  notifications: true,
+  dailyBonusAlert: true,
+  friendAlert: true,
+  tournamentAlert: true,
+  turnAlert: true,
+  quietHours: false,
+
+  // Privacy & Account
+  profileVisibility: 'public', // 'public' | 'friends' | 'private'
+  showOnlineStatus: true,
+  showStatsOnLeaderboard: true,
+  allowDirectInvites: true,
+  analytics: true,
 };
 
 export async function loadPlayerStats() {

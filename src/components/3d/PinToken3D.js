@@ -32,6 +32,28 @@ export default function PinToken3D({
   const liftAnim = useRef(new Animated.Value(0)).current;
   const shadowScale = useRef(new Animated.Value(1)).current;
 
+  // Hop/jump animation when token step changes
+  const prevStepRef = useRef(token.step);
+  useEffect(() => {
+    if (prevStepRef.current !== undefined && prevStepRef.current !== token.step && token.step >= 0) {
+      prevStepRef.current = token.step;
+      Animated.sequence([
+        Animated.timing(liftAnim, {
+          toValue: -16,
+          duration: 90,
+          useNativeDriver: true,
+        }),
+        Animated.timing(liftAnim, {
+          toValue: 0,
+          duration: 90,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      prevStepRef.current = token.step;
+    }
+  }, [token.step, liftAnim]);
+
   // Pulsing animation when movable
   useEffect(() => {
     if (isMovable) {
@@ -87,16 +109,6 @@ export default function PinToken3D({
     ]).start();
   };
 
-  // Multiple token layout offset on same cell
-  let offsetX = 0;
-  let offsetY = 0;
-  if (totalOnTile > 1) {
-    const angle = (offsetIndex * (2 * Math.PI)) / totalOnTile;
-    const radius = size * 0.22;
-    offsetX = Math.cos(angle) * radius;
-    offsetY = Math.sin(angle) * radius;
-  }
-
   const gradId = `pin_grad_${token.id}`;
   const baseGradId = `base_grad_${token.id}`;
   const highlightGradId = `hl_grad_${token.id}`;
@@ -113,7 +125,6 @@ export default function PinToken3D({
         {
           width: size,
           height: size * 1.35,
-          transform: [{ translateX: offsetX }, { translateY: offsetY }],
         },
       ]}
     >

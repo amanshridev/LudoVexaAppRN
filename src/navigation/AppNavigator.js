@@ -2,35 +2,38 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, BackHandler } from 'react-native';
 
 // Storage & Utils
-import { loadSettings, saveSettings } from '../utils/storage';
+import { loadSettings } from '../utils/storage';
 
-// Screens
+// Active Screens
 import SplashScreen from '../screens/SplashScreen';
 import WelcomeLoginScreen from '../screens/WelcomeLoginScreen';
 import GameScreen from '../screens/GameScreen';
-
+import SettingsScreen from '../screens/SettingsScreen';
 import ThemeScreen from '../screens/ThemeScreen';
+import AppColorScreen from '../screens/AppColorScreen';
+import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
+
+// Commented Out Screens (as requested)
+// import LanguageScreen from '../screens/LanguageScreen';
+// import SoundSettingsScreen from '../screens/SoundSettingsScreen';
+// import GameplaySettingsScreen from '../screens/GameplaySettingsScreen';
+// import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
+// import AboutScreen from '../screens/AboutScreen';
+
+import { useTheme } from '../context/ThemeContext';
 
 export default function AppNavigator() {
+  const { appTheme, settings, ludoThemeId } = useTheme();
   const [screenStack, setScreenStack] = useState(['splash']);
   const currentScreen = screenStack[screenStack.length - 1];
 
-  // User Global State matching screenshot mockup
+  // User Global State
   const [user, setUser] = useState({
     name: 'Aman',
     id: '123456',
     coins: 9230,
     avatar: '👨‍💼',
     stats: { played: 48, won: 28, winRate: 58 },
-  });
-
-  // Settings State
-  const [settings, setSettings] = useState({
-    theme: 'classic',
-    sound: true,
-    notifications: true,
-    graphics: 'High',
-    language: 'English',
   });
 
   // Game configuration & results
@@ -45,18 +48,6 @@ export default function AppNavigator() {
     coinsWon: 200,
     opponent: 'Player 3',
   });
-
-  // Load saved settings
-  useEffect(() => {
-    loadSettings().then((saved) => {
-      if (saved) setSettings((prev) => ({ ...prev, ...saved }));
-    });
-  }, []);
-
-  const handleUpdateSettings = (newSettings) => {
-    setSettings(newSettings);
-    saveSettings(newSettings);
-  };
 
   // Stack Navigation Methods
   const navigate = useCallback((screenName, params = {}) => {
@@ -93,11 +84,6 @@ export default function AppNavigator() {
     );
     return () => subscription.remove();
   }, [screenStack, goBack]);
-
-  // Tab navigation from BottomNavBar
-
-
-
 
   const handleGameOver = ({ winner, coinsWon, opponent }) => {
     setGameResult({ winner, coinsWon, opponent });
@@ -146,13 +132,14 @@ export default function AppNavigator() {
               if (options) setGameOptions(options);
               reset('home');
             }}
+            onOpenSettings={() => navigate('settings')}
           />
         );
 
       case 'home':
         return (
           <GameScreen
-            key={`${gameOptions.playerCount}_${gameOptions.isVsAi}_${gameOptions.userColor}_${gameOptions.gameMode}`}
+            key={`${gameOptions.playerCount}_${gameOptions.isVsAi}_${gameOptions.userColor}_${gameOptions.gameMode}_${ludoThemeId}`}
             gameOptions={gameOptions}
             settings={settings}
             isDarkMode={settings.theme === 'dark' || settings.theme === 'neon'}
@@ -162,30 +149,32 @@ export default function AppNavigator() {
           />
         );
 
-
-
-
       case 'settings':
-      case 'theme':
-        return (
-          <ThemeScreen
-            activeTheme={settings.theme || 'classic'}
-            onSelectTheme={(themeId) => {
-              handleUpdateSettings({ ...settings, theme: themeId });
-            }}
-            onBack={goBack}
-          />
-        );
+        return <SettingsScreen onNavigate={(route) => navigate(route)} onBack={goBack} />;
 
+      case 'theme':
+        return <ThemeScreen onBack={goBack} />;
+
+      case 'appColor':
+        return <AppColorScreen onBack={goBack} />;
+
+      case 'privacySettings':
+        return <PrivacySettingsScreen onBack={goBack} />;
+
+      default:
+        return <SettingsScreen onNavigate={(route) => navigate(route)} onBack={goBack} />;
     }
   };
 
-  return <View style={styles.container}>{renderScreen()}</View>;
+  return (
+    <View style={[styles.container, { backgroundColor: appTheme.colors.background }]}>
+      {renderScreen()}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#071126',
   },
 });

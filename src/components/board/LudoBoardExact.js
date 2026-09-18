@@ -16,6 +16,9 @@ import {
 } from '../../ludo/LudoConstants.js';
 import { getTokenCoordinates } from '../../ludo/LudoEngine.js';
 
+import CenterHome3D from './CenterHome3D.js';
+import PinToken3D from '../3d/PinToken3D.js';
+
 export const THEME_PALETTES = {
   classic: {
     boardBg: '#FFFFFF',
@@ -63,7 +66,18 @@ export const THEME_PALETTES = {
 
 export const EXACT_COLORS = THEME_PALETTES.classic;
 
-export function ExactLudoToken({ player = 'red', size = 26, isMovable = false, onPress, palette }) {
+export function ExactLudoToken({ player = 'red', size = 26, isMovable = false, onPress, palette, token }) {
+  if (token) {
+    return (
+      <PinToken3D
+        token={token}
+        size={size}
+        isMovable={isMovable}
+        onPress={onPress}
+      />
+    );
+  }
+
   const themeColors = palette || THEME_PALETTES.classic;
   const col = themeColors[player] || themeColors.red;
 
@@ -175,35 +189,64 @@ export default function LudoBoardExact({
     const trackIndex = TRACK_COORDS.findIndex((coord) => coord.r === r && coord.c === c);
     if (trackIndex !== -1 && SAFE_INDICES.includes(trackIndex)) {
       content = (
-        <View style={styles.silverStarBadge}>
-          <Text style={styles.silverStarText}>★</Text>
+        <View style={styles.starBadgeContainer}>
+          <Text style={styles.starOutlineIcon}>☆</Text>
         </View>
       );
     }
 
-    if (r === 14 && c === 5) {
+    if (r === 14 && c === 7) {
       content = (
-        <Text style={[styles.curvedArrow, { color: palette.red.path, transform: [{ rotate: '90deg' }] }]}>
-          ↶
+        <Text style={[styles.entryArrowText, { color: palette.red.path }]}>
+          ↑
         </Text>
       );
-    } else if (r === 5 && c === 0) {
+    } else if (r === 7 && c === 0) {
       content = (
-        <Text style={[styles.curvedArrow, { color: palette.green.path, transform: [{ rotate: '0deg' }] }]}>
-          ↶
+        <Text style={[styles.entryArrowText, { color: palette.green.path }]}>
+          →
         </Text>
       );
-    } else if (r === 0 && c === 9) {
+    } else if (r === 0 && c === 7) {
       content = (
-        <Text style={[styles.curvedArrow, { color: palette.yellow.path, transform: [{ rotate: '270deg' }] }]}>
-          ↶
+        <Text style={[styles.entryArrowText, { color: palette.yellow.path }]}>
+          ↓
         </Text>
       );
-    } else if (r === 9 && c === 14) {
+    } else if (r === 7 && c === 14) {
       content = (
-        <Text style={[styles.curvedArrow, { color: palette.blue.path, transform: [{ rotate: '180deg' }] }]}>
-          ↶
+        <Text style={[styles.entryArrowText, { color: palette.blue.path }]}>
+          ←
         </Text>
+      );
+    }
+
+    const cellKey = `${r}_${c}`;
+    const tokensOnCell = tokensByCell[cellKey] || [];
+    const movableTokenOnCell = tokensOnCell.find((t) => state.movableTokenIds.includes(t.id));
+
+    if (movableTokenOnCell) {
+      return (
+        <TouchableOpacity
+          key={`cell_${r}_${c}`}
+          activeOpacity={0.7}
+          onPress={() => onSelectToken(movableTokenOnCell.id)}
+          style={[
+            styles.cell,
+            {
+              width: cellSize,
+              height: cellSize,
+              top: r * cellSize,
+              left: c * cellSize,
+              backgroundColor: bgColor,
+              borderColor: '#FACC15',
+              borderWidth: 2,
+              zIndex: 35,
+            },
+          ]}
+        >
+          {content}
+        </TouchableOpacity>
       );
     }
 
@@ -227,16 +270,36 @@ export default function LudoBoardExact({
     );
   };
 
-  const renderBaseBox = (player, top, left, label, labelPosition) => {
+  const getBaseLabel = (player) => {
+    const isHuman = state.playerTypes?.[player] === 'human';
+    if (player === state.userColor && state.isVsAi) return 'You';
+    const playerNum = state.activePlayers.indexOf(player) + 1;
+    if (state.isVsAi) {
+      return `Computer ${playerNum}`;
+    }
+    return `Player ${playerNum}`;
+  };
+
+  const renderBaseBox = (player, top, left, label) => {
     const col = palette[player] || palette.red;
     const boxSize = cellSize * 6;
-    const whiteCircleSize = boxSize * 0.82;
+    const whiteBoxSize = boxSize * 0.78;
 
     const tokensInBase = (state.tokens[player] || []).filter((t) => t.step === -1);
+    const hasMovableInBase = tokensInBase.some((t) => state.movableTokenIds.includes(t.id));
+
+    const handleBasePress = () => {
+      if (!hasMovableInBase) return;
+      const movableToken = tokensInBase.find((t) => state.movableTokenIds.includes(t.id));
+      if (movableToken) onSelectToken(movableToken.id);
+    };
 
     return (
-      <View
+      <TouchableOpacity
         key={`base_${player}`}
+        activeOpacity={hasMovableInBase ? 0.85 : 1}
+        disabled={!hasMovableInBase}
+        onPress={handleBasePress}
         style={[
           styles.baseBox,
           {
@@ -245,28 +308,26 @@ export default function LudoBoardExact({
             width: boxSize,
             height: boxSize,
             backgroundColor: col.base,
+            borderWidth: hasMovableInBase ? 2.5 : 0,
+            borderColor: hasMovableInBase ? '#FACC15' : 'transparent',
+            zIndex: hasMovableInBase ? 40 : 10,
           },
         ]}
       >
-        {label && (
-          <Text
-            style={[
-              styles.baseLabel,
-              labelPosition === 'bottom-left' && styles.labelBottomLeft,
-              labelPosition === 'top-right' && styles.labelTopRight,
-            ]}
-          >
-            {label}
-          </Text>
-        )}
+        <Text style={styles.baseLabelText}>{label || getBaseLabel(player)}</Text>
 
-        <View
+        <TouchableOpacity
+          activeOpacity={hasMovableInBase ? 0.85 : 1}
+          disabled={!hasMovableInBase}
+          onPress={() => {
+            const movableToken = tokensInBase.find((t) => state.movableTokenIds.includes(t.id));
+            if (movableToken) onSelectToken(movableToken.id);
+          }}
           style={[
-            styles.whiteCourtyard,
+            styles.whiteCourtyardSquare,
             {
-              width: whiteCircleSize,
-              height: whiteCircleSize,
-              borderRadius: whiteCircleSize / 2,
+              width: whiteBoxSize,
+              height: whiteBoxSize,
               backgroundColor: palette.boardBg || '#FFFFFF',
             },
           ]}
@@ -282,18 +343,17 @@ export default function LudoBoardExact({
                   style={[
                     styles.baseSlotCircle,
                     {
-                      width: cellSize * 1.25,
-                      height: cellSize * 1.25,
-                      borderRadius: (cellSize * 1.25) / 2,
+                      width: cellSize * 1.3,
+                      height: cellSize * 1.3,
+                      borderRadius: (cellSize * 1.3) / 2,
                       backgroundColor: col.base,
                     },
                   ]}
                 >
                   {tokenAtBase && (
-                    <ExactLudoToken
-                      player={player}
-                      palette={palette}
-                      size={cellSize * 1.05}
+                    <PinToken3D
+                      token={tokenAtBase}
+                      size={cellSize * 0.95}
                       isMovable={isMovable}
                       onPress={() => onSelectToken(tokenAtBase.id)}
                     />
@@ -302,8 +362,8 @@ export default function LudoBoardExact({
               );
             })}
           </View>
-        </View>
-      </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
     );
   };
 
@@ -331,9 +391,11 @@ export default function LudoBoardExact({
         let offsetY = 0;
         if (tokensHere.length > 1) {
           const angle = (offsetIdx * 2 * Math.PI) / tokensHere.length;
-          offsetX = Math.cos(angle) * (cellSize * 0.22);
-          offsetY = Math.sin(angle) * (cellSize * 0.22);
+          offsetX = Math.cos(angle) * (cellSize * 0.18);
+          offsetY = Math.sin(angle) * (cellSize * 0.18);
         }
+
+        const tokenSize = cellSize * 0.85;
 
         rendered.push(
           <View
@@ -341,16 +403,17 @@ export default function LudoBoardExact({
             style={[
               styles.trackTokenWrap,
               {
-                top: r * cellSize + (cellSize - cellSize * 1.05) / 2 + offsetY,
-                left: c * cellSize + (cellSize - cellSize * 1.05) / 2 + offsetX,
+                top: r * cellSize + 0.5 * cellSize - 1.16 * tokenSize + offsetY,
+                left: c * cellSize + 0.5 * (cellSize - tokenSize) + offsetX,
+                width: tokenSize,
+                height: tokenSize * 1.35,
                 zIndex: isMovable ? 50 : 20 + r,
               },
             ]}
           >
-            <ExactLudoToken
-              player={token.player}
-              palette={palette}
-              size={cellSize * 1.05}
+            <PinToken3D
+              token={token}
+              size={tokenSize}
               isMovable={isMovable}
               onPress={() => onSelectToken(token.id)}
             />
@@ -386,9 +449,9 @@ export default function LudoBoardExact({
       {gridCells}
 
       {renderBaseBox('green', 0, 0)}
-      {renderBaseBox('yellow', 0, cellSize * 9, 'Player2', 'top-right')}
+      {renderBaseBox('yellow', 0, cellSize * 9)}
       {renderBaseBox('blue', cellSize * 9, cellSize * 9)}
-      {renderBaseBox('red', cellSize * 9, 0, 'Player1', 'bottom-left')}
+      {renderBaseBox('red', cellSize * 9, 0)}
 
       <View
         style={[
@@ -401,24 +464,14 @@ export default function LudoBoardExact({
           },
         ]}
       >
-        <Svg width={centerSize} height={centerSize} viewBox="0 0 100 100">
-          <Polygon points="0,0 100,0 50,50" fill={palette.yellow.path} />
-          <Polygon points="100,0 100,100 50,50" fill={palette.blue.path} />
-          <Polygon points="0,100 100,100 50,50" fill={palette.red.path} />
-          <Polygon points="0,0 0,100 50,50" fill={palette.green.path} />
-          <Path d="M0 0 L100 100 M100 0 L0 100" stroke="#FFFFFF" strokeWidth="1.5" />
-        </Svg>
-
-        <Text style={[styles.centerArrow, { top: -2, left: -2, transform: [{ rotate: '225deg' }] }]}>➔</Text>
-        <Text style={[styles.centerArrow, { top: -2, right: -2, transform: [{ rotate: '315deg' }] }]}>➔</Text>
-        <Text style={[styles.centerArrow, { bottom: -2, left: -2, transform: [{ rotate: '135deg' }] }]}>➔</Text>
-        <Text style={[styles.centerArrow, { bottom: -2, right: -2, transform: [{ rotate: '45deg' }] }]}>➔</Text>
+        <CenterHome3D size={centerSize} theme={theme} />
       </View>
 
       {renderActiveTokens()}
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   boardWrapper: {
@@ -463,8 +516,19 @@ const styles = StyleSheet.create({
     right: 8,
     transform: [{ rotate: '180deg' }],
   },
-  whiteCourtyard: {
+  baseLabelText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.4)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  whiteCourtyardSquare: {
     backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000000',
@@ -474,8 +538,8 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   pedestals2x2: {
-    width: '74%',
-    height: '74%',
+    width: '80%',
+    height: '80%',
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
@@ -499,23 +563,17 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '900',
   },
-  silverStarBadge: {
-    width: '80%',
-    height: '80%',
-    borderRadius: 4,
-    backgroundColor: '#E2E8F0',
-    borderWidth: 1,
-    borderColor: '#94A3B8',
+  starBadgeContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  silverStarText: {
-    fontSize: 12,
-    color: '#D97706',
+  starOutlineIcon: {
+    fontSize: 18,
+    color: '#334155',
     fontWeight: '900',
   },
-  curvedArrow: {
-    fontSize: 16,
+  entryArrowText: {
+    fontSize: 18,
     fontWeight: '900',
   },
   tokenContainer: {

@@ -5,8 +5,10 @@ import {
   Text,
   TouchableOpacity,
   Animated,
+  useWindowDimensions,
 } from 'react-native';
 import { EXACT_COLORS } from '../board/LudoBoardExact.js';
+import PinToken3D from '../3d/PinToken3D.js';
 
 /**
  * Exact Corner Player Dock with Player Name Tag, Active Turn Glow & Pulsing Indicator
@@ -22,6 +24,12 @@ export default function CornerPlayerDock({
   isBot = false,
   layout = 'left-badge', // 'left-badge' or 'right-badge'
 }) {
+  const { width: screenWidth } = useWindowDimensions();
+  const isSmall = screenWidth < 380;
+  const diceSize = isSmall ? 38 : 44;
+  const badgeSize = isSmall ? 32 : 36;
+  const pinSize = isSmall ? 22 : 26;
+
   const col = EXACT_COLORS[player] || EXACT_COLORS.red;
   const arrowAnim = useRef(new Animated.Value(0)).current;
 
@@ -50,10 +58,18 @@ export default function CornerPlayerDock({
   }, [isTurn, isRolling, arrowAnim]);
 
   const renderTokenBadge = () => (
-    <View style={[styles.badgeCircle, { borderColor: col.goldRing }]}>
-      <View style={[styles.badgeInner, { backgroundColor: col.token }]}>
-        <Text style={styles.badgeStar}>{isBot ? '🤖' : '👤'}</Text>
-      </View>
+    <View
+      style={[
+        styles.badgeCircle,
+        {
+          width: badgeSize,
+          height: badgeSize,
+          borderRadius: badgeSize / 2,
+          borderColor: col.goldRing,
+        },
+      ]}
+    >
+      <PinToken3D token={{ player }} size={pinSize} />
     </View>
   );
 
@@ -64,13 +80,15 @@ export default function CornerPlayerDock({
       style={[
         styles.diceCube,
         {
+          width: diceSize,
+          height: diceSize,
           backgroundColor: col.base,
           borderColor: isTurn ? '#FACC15' : '#FFFFFF',
         },
         isTurn && styles.activeDiceShadow,
       ]}
     >
-      <DiceWhitePips val={diceValue} />
+      <DiceWhitePips val={diceValue} isSmall={isSmall} />
     </TouchableOpacity>
   );
 
@@ -124,8 +142,20 @@ export default function CornerPlayerDock({
   );
 }
 
-function DiceWhitePips({ val = 6 }) {
-  const Pip = () => <View style={styles.whitePip} />;
+function DiceWhitePips({ val = 6, isSmall = false }) {
+  const pipSize = isSmall ? 6 : 7.5;
+  const Pip = () => (
+    <View
+      style={[
+        styles.whitePip,
+        {
+          width: pipSize,
+          height: pipSize,
+          borderRadius: pipSize / 2,
+        },
+      ]}
+    />
+  );
 
   switch (val) {
     case 1:
