@@ -19,6 +19,7 @@ import { SoundFX } from '../utils/soundFX.js';
 import { recordGameResult } from '../utils/storage.js';
 import LudoBoardExact from '../components/board/LudoBoardExact.js';
 import CornerPlayerDock from '../components/hud/CornerPlayerDock.js';
+import Cube3DFlippingDice from '../components/3d/Cube3DFlippingDice.js';
 import { useTheme } from '../context/ThemeContext.js';
 import { BackArrowIcon, SettingsGearIcon } from '../components/ui/AppIcons.js';
 
@@ -129,7 +130,7 @@ export default function GameScreen({
             };
           });
 
-          setTimeout(runStepAnimation, 190);
+          setTimeout(runStepAnimation, 110);
         } else {
           // Finish stepping animation -> apply final calculated state
           setGameState(finalState);
@@ -148,7 +149,7 @@ export default function GameScreen({
                 coinsWon: 200,
                 opponent: 'Player 3',
               });
-            }, 1000);
+            }, 800);
           } else if (finalState.lastEvent && finalState.lastEvent.includes('Captured')) {
             SoundFX.capture();
           } else {
@@ -158,7 +159,7 @@ export default function GameScreen({
       };
 
       // Trigger first step after a short tick
-      setTimeout(runStepAnimation, 40);
+      setTimeout(runStepAnimation, 20);
 
       return {
         ...prevState,
@@ -179,7 +180,7 @@ export default function GameScreen({
 
     const nextState = rollDice(gameState);
 
-    // Roll animation delay
+    // Fast Roll animation delay (320ms)
     setTimeout(() => {
       setGameState(nextState);
       setIsRolling(false);
@@ -193,14 +194,14 @@ export default function GameScreen({
           setRollNotice(null);
           setGameState((prev) => passTurn(prev));
           SoundFX.turnSwitch();
-        }, 1400);
+        }, 1000);
       } else if (nextState.movableTokenIds.length === 1) {
         // Auto-move single valid token for smooth gameplay
         const singleTokenId = nextState.movableTokenIds[0];
         setRollNotice(`🎲 Rolled ${rolledVal}! Moving token...`);
         setTimeout(() => {
           handleSelectToken(singleTokenId);
-        }, 350);
+        }, 180);
       } else {
         if (isSix) {
           setRollNotice('🎉 Rolled a 6! Tap a token to move!');
@@ -208,7 +209,7 @@ export default function GameScreen({
           setRollNotice(`🎲 Rolled ${rolledVal}! Tap a token to move`);
         }
       }
-    }, 500);
+    }, 320);
   }, [isRolling, isAnimatingMove, gameState, handleSelectToken]);
 
   // AI automation loop
@@ -219,7 +220,7 @@ export default function GameScreen({
       if (gameState.status === 'ROLLING' && !isRolling && !rollNotice) {
         timer = setTimeout(() => {
           triggerRoll();
-        }, 800);
+        }, 450);
       } else if (gameState.status === 'WAITING_SELECT' && !isRolling) {
         timer = setTimeout(() => {
           const bestTokenId = chooseBestTokenToMove(
@@ -229,7 +230,7 @@ export default function GameScreen({
           if (bestTokenId) {
             handleSelectToken(bestTokenId);
           }
-        }, 900);
+        }, 450);
       }
     }
 
@@ -380,25 +381,20 @@ export default function GameScreen({
         ) : <View />}
       </View>
 
-      {/* Bottom Center Active Rolling Station */}
+      {/* Bottom Center Active Rolling Station with 3D Flipping Cube */}
       <View style={styles.bottomRollStation}>
-        <TouchableOpacity
-          activeOpacity={canRoll ? 0.8 : 1}
-          disabled={!canRoll}
-          onPress={canRoll ? triggerRoll : undefined}
-          style={[
-            styles.diceRollControl,
-            canRoll && styles.diceRollControlActive,
-          ]}
-        >
+        <View style={[styles.diceRollControl, canRoll && styles.diceRollControlActive]}>
           <Text style={styles.arrowIcon}>‹</Text>
-          <View style={[styles.diceRedBox, { backgroundColor: activeTurnColor }, canRoll && styles.diceRedBoxActive]}>
-            <Text style={styles.diceDiceEmoji}>
-              {isRolling ? '🎲' : gameState.diceValue || '🎲'}
-            </Text>
-          </View>
+          <Cube3DFlippingDice
+            targetValue={gameState.diceValue || 6}
+            isRolling={isRolling}
+            onPress={canRoll ? triggerRoll : undefined}
+            disabled={!canRoll}
+            size={50}
+            themeColor={activeTurnColor}
+          />
           <Text style={styles.arrowIcon}>›</Text>
-        </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );

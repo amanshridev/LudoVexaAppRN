@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { EXACT_COLORS } from '../board/LudoBoardExact.js';
 import PinToken3D from '../3d/PinToken3D.js';
+import Cube3DFlippingDice from '../3d/Cube3DFlippingDice.js';
 
 /**
  * Exact Corner Player Dock with Player Name Tag, Active Turn Glow & Pulsing Indicator
@@ -28,7 +29,7 @@ export default function CornerPlayerDock({
   const isSmall = screenWidth < 380;
   const diceSize = isSmall ? 38 : 44;
   const badgeSize = isSmall ? 32 : 36;
-  const pinSize = isSmall ? 22 : 26;
+  const pinSize = isSmall ? 18 : 22;
 
   const col = EXACT_COLORS[player] || EXACT_COLORS.red;
   const arrowAnim = useRef(new Animated.Value(0)).current;
@@ -74,22 +75,14 @@ export default function CornerPlayerDock({
   );
 
   const renderDiceBox = () => (
-    <TouchableOpacity
-      activeOpacity={canRoll ? 0.75 : 1}
-      onPress={canRoll ? onRoll : undefined}
-      style={[
-        styles.diceCube,
-        {
-          width: diceSize,
-          height: diceSize,
-          backgroundColor: col.base,
-          borderColor: isTurn ? '#FACC15' : '#FFFFFF',
-        },
-        isTurn && styles.activeDiceShadow,
-      ]}
-    >
-      <DiceWhitePips val={diceValue} isSmall={isSmall} />
-    </TouchableOpacity>
+    <Cube3DFlippingDice
+      targetValue={diceValue || 6}
+      isRolling={isRolling}
+      onPress={onRoll}
+      disabled={!canRoll}
+      size={isSmall ? 32 : 38}
+      themeColor={col.base}
+    />
   );
 
   return (

@@ -353,7 +353,7 @@ export default function LudoBoardExact({
                   {tokenAtBase && (
                     <PinToken3D
                       token={tokenAtBase}
-                      size={cellSize * 0.95}
+                      size={cellSize * 0.72}
                       isMovable={isMovable}
                       onPress={() => onSelectToken(tokenAtBase.id)}
                     />
@@ -391,11 +391,11 @@ export default function LudoBoardExact({
         let offsetY = 0;
         if (tokensHere.length > 1) {
           const angle = (offsetIdx * 2 * Math.PI) / tokensHere.length;
-          offsetX = Math.cos(angle) * (cellSize * 0.18);
-          offsetY = Math.sin(angle) * (cellSize * 0.18);
+          offsetX = Math.cos(angle) * (cellSize * 0.16);
+          offsetY = Math.sin(angle) * (cellSize * 0.16);
         }
 
-        const tokenSize = cellSize * 0.85;
+        const tokenSize = cellSize * 0.65;
 
         rendered.push(
           <View
@@ -403,7 +403,7 @@ export default function LudoBoardExact({
             style={[
               styles.trackTokenWrap,
               {
-                top: r * cellSize + 0.5 * cellSize - 1.16 * tokenSize + offsetY,
+                top: r * cellSize + 0.5 * cellSize - 0.675 * tokenSize + offsetY,
                 left: c * cellSize + 0.5 * (cellSize - tokenSize) + offsetX,
                 width: tokenSize,
                 height: tokenSize * 1.35,
@@ -442,31 +442,43 @@ export default function LudoBoardExact({
         {
           width: boardSize,
           height: boardSize,
-          backgroundColor: palette.boardBg || '#FFFFFF',
         },
       ]}
     >
-      {gridCells}
-
-      {renderBaseBox('green', 0, 0)}
-      {renderBaseBox('yellow', 0, cellSize * 9)}
-      {renderBaseBox('blue', cellSize * 9, cellSize * 9)}
-      {renderBaseBox('red', cellSize * 9, 0)}
-
+      {/* Inner Board Background Surface */}
       <View
         style={[
-          styles.centerArea,
+          styles.innerBoardSurface,
           {
-            top: cellSize * 6,
-            left: cellSize * 6,
-            width: centerSize,
-            height: centerSize,
+            width: boardSize,
+            height: boardSize,
+            backgroundColor: palette.boardBg || '#FFFFFF',
           },
         ]}
       >
-        <CenterHome3D size={centerSize} theme={theme} />
+        {gridCells}
+
+        {renderBaseBox('green', 0, 0)}
+        {renderBaseBox('yellow', 0, cellSize * 9)}
+        {renderBaseBox('blue', cellSize * 9, cellSize * 9)}
+        {renderBaseBox('red', cellSize * 9, 0)}
+
+        <View
+          style={[
+            styles.centerArea,
+            {
+              top: cellSize * 6,
+              left: cellSize * 6,
+              width: centerSize,
+              height: centerSize,
+            },
+          ]}
+        >
+          <CenterHome3D size={centerSize} theme={theme} />
+        </View>
       </View>
 
+      {/* Active Pawns rendered with overflow visible so 3D heads are never cut off at top */}
       {renderActiveTokens()}
     </View>
   );
@@ -476,7 +488,12 @@ export default function LudoBoardExact({
 const styles = StyleSheet.create({
   boardWrapper: {
     position: 'relative',
-    backgroundColor: '#FFFFFF',
+    overflow: 'visible',
+    alignSelf: 'center',
+    zIndex: 20,
+  },
+  innerBoardSurface: {
+    position: 'absolute',
     borderRadius: 14,
     borderWidth: 2.5,
     borderColor: '#FFFFFF',
@@ -486,7 +503,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 10,
-    alignSelf: 'center',
   },
   cell: {
     position: 'absolute',

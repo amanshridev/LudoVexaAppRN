@@ -208,7 +208,7 @@ export default function LudoBoard3D({
                       token={tokenAtBase}
                       isMovable={isMovable}
                       onPress={onSelectToken}
-                      size={cellSize * 0.88}
+                      size={cellSize * 0.72}
                     />
                   )}
                 </View>
@@ -246,11 +246,11 @@ export default function LudoBoard3D({
         let offsetY = 0;
         if (tokensHere.length > 1) {
           const angle = (offsetIdx * 2 * Math.PI) / tokensHere.length;
-          offsetX = Math.cos(angle) * (cellSize * 0.18);
-          offsetY = Math.sin(angle) * (cellSize * 0.18);
+          offsetX = Math.cos(angle) * (cellSize * 0.16);
+          offsetY = Math.sin(angle) * (cellSize * 0.16);
         }
 
-        const tokenSize = cellSize * 0.85;
+        const tokenSize = cellSize * 0.65;
 
         rendered.push(
           <View
@@ -258,7 +258,7 @@ export default function LudoBoard3D({
             style={[
               styles.tokenAbsolute,
               {
-                top: r * cellSize + 0.5 * cellSize - 1.16 * tokenSize + offsetY,
+                top: r * cellSize + 0.5 * cellSize - 0.675 * tokenSize + offsetY,
                 left: c * cellSize + 0.5 * (cellSize - tokenSize) + offsetX,
                 width: tokenSize,
                 height: tokenSize * 1.35,
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 16,
     elevation: 14,
-    overflow: 'hidden',
+    overflow: 'visible',
     alignSelf: 'center',
   },
   cell: {
