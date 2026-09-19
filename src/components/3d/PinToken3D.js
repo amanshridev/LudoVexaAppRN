@@ -3,7 +3,6 @@ import {
   Animated,
   TouchableOpacity,
   StyleSheet,
-  View,
 } from 'react-native';
 import Svg, {
   Defs,
@@ -13,62 +12,57 @@ import Svg, {
   Circle,
   Path,
   Ellipse,
-  G,
 } from 'react-native-svg';
 import { PLAYER_COLORS } from '../../theme/colors';
 
+/**
+ * PinToken3D — renders a map-pin style token.
+ *
+ * SVG viewBox: "0 0 100 150"
+ *   Head circle  : cx=50 cy=44 r=38
+ *   White ring   : cx=50 cy=44 r=27
+ *   Pupil dot    : cx=50 cy=44 r=14
+ *   Needle       : tapered triangle pointing down to cy=150
+ *
+ * The SVG is rendered inside a square (size × size) container.
+ * preserveAspectRatio="xMidYMid meet" keeps the pin centred within that square.
+ */
 export default function PinToken3D({
   token,
   isMovable = false,
   onPress,
   size = 28,
-  offsetIndex = 0,
-  totalOnTile = 1,
 }) {
   const colorConfig = PLAYER_COLORS[token.player] || PLAYER_COLORS.red;
 
-  // Animation values
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const liftAnim = useRef(new Animated.Value(0)).current;
-  const shadowScale = useRef(new Animated.Value(1)).current;
+  const liftAnim  = useRef(new Animated.Value(0)).current;
 
-  // Hop/jump animation when token step changes
+  // Hop animation when token moves
   const prevStepRef = useRef(token.step);
   useEffect(() => {
-    if (prevStepRef.current !== undefined && prevStepRef.current !== token.step && token.step >= 0) {
+    if (
+      prevStepRef.current !== undefined &&
+      prevStepRef.current !== token.step &&
+      token.step >= 0
+    ) {
       prevStepRef.current = token.step;
       Animated.sequence([
-        Animated.timing(liftAnim, {
-          toValue: -16,
-          duration: 90,
-          useNativeDriver: true,
-        }),
-        Animated.timing(liftAnim, {
-          toValue: 0,
-          duration: 90,
-          useNativeDriver: true,
-        }),
+        Animated.timing(liftAnim, { toValue: -14, duration: 80, useNativeDriver: true }),
+        Animated.timing(liftAnim, { toValue: 0,   duration: 80, useNativeDriver: true }),
       ]).start();
     } else {
       prevStepRef.current = token.step;
     }
   }, [token.step, liftAnim]);
 
-  // Pulsing animation when movable
+  // Pulse glow when movable
   useEffect(() => {
     if (isMovable) {
       const pulse = Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.18,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1.0,
-            duration: 500,
-            useNativeDriver: true,
-          }),
+          Animated.timing(pulseAnim, { toValue: 1.15, duration: 480, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1.0,  duration: 480, useNativeDriver: true }),
         ])
       );
       pulse.start();
@@ -78,40 +72,14 @@ export default function PinToken3D({
     }
   }, [isMovable, pulseAnim]);
 
-  const handlePressIn = () => {
-    if (!isMovable) return;
-    Animated.parallel([
-      Animated.spring(liftAnim, {
-        toValue: -8,
-        friction: 5,
-        useNativeDriver: true,
-      }),
-      Animated.spring(shadowScale, {
-        toValue: 1.3,
-        friction: 5,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
+  const handlePressIn  = () => { if (!isMovable) return; Animated.spring(liftAnim, { toValue: -8, friction: 5, useNativeDriver: true }).start(); };
+  const handlePressOut = () => { Animated.spring(liftAnim, { toValue: 0,  friction: 5, useNativeDriver: true }).start(); };
 
-  const handlePressOut = () => {
-    Animated.parallel([
-      Animated.spring(liftAnim, {
-        toValue: 0,
-        friction: 5,
-        useNativeDriver: true,
-      }),
-      Animated.spring(shadowScale, {
-        toValue: 1.0,
-        friction: 5,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  const gradId = `pin_grad_${token.id}`;
-  const baseGradId = `base_grad_${token.id}`;
-  const highlightGradId = `hl_grad_${token.id}`;
+  // Unique gradient IDs (per token to avoid SVG id clashes)
+  const gid  = `hg_${token.id}`;
+  const nid  = `ng_${token.id}`;
+  const hlid = `hl_${token.id}`;
+  const wid  = `wr_${token.id}`;
 
   return (
     <TouchableOpacity
@@ -120,35 +88,17 @@ export default function PinToken3D({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={!isMovable}
-      style={[
-        styles.container,
-        {
-          width: size,
-          height: size * 1.35,
-        },
-      ]}
+      style={[styles.container, { width: size, height: size }]}
     >
-      {/* 3D Drop Shadow on board */}
-      <Animated.View
-        style={[
-          styles.shadow,
-          {
-            width: size * 0.9,
-            height: size * 0.4,
-            bottom: 0,
-            transform: [{ scale: shadowScale }],
-          },
-        ]}
-      />
-
-      {/* Pulsing Active Ring */}
+      {/* Glow halo ring when movable */}
       {isMovable && (
         <Animated.View
           style={[
             styles.halo,
             {
-              width: size * 1.25,
-              height: size * 1.25,
+              width: size * 1.3,
+              height: size * 1.3,
+              borderRadius: size * 0.65,
               borderColor: colorConfig.glow,
               transform: [{ scale: pulseAnim }],
             },
@@ -156,134 +106,106 @@ export default function PinToken3D({
         />
       )}
 
-      {/* 3D Pin Body */}
+      {/* Pin SVG — square, perfectly centred */}
       <Animated.View
         style={[
-          styles.pinWrapper,
+          styles.svgWrapper,
           {
             width: size,
-            height: size * 1.3,
-            transform: [{ translateY: liftAnim }, { scale: isMovable ? pulseAnim : 1 }],
+            height: size,
+            transform: [
+              { translateY: liftAnim },
+              { scale: isMovable ? pulseAnim : 1 },
+            ],
           },
         ]}
       >
-        <Svg width={size} height={size * 1.3} viewBox="0 0 100 130">
+        <Svg
+          width={size}
+          height={size}
+          viewBox="0 0 100 150"
+          preserveAspectRatio="xMidYMid meet"
+        >
           <Defs>
-            {/* Radial Gradient for Pin Head */}
-            <RadialGradient
-              id={gradId}
-              cx="35%"
-              cy="30%"
-              r="60%"
-              fx="30%"
-              fy="25%"
-            >
-              <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
-              <Stop offset="25%" stopColor={colorConfig.accent} />
-              <Stop offset="70%" stopColor={colorConfig.primary} />
+            {/* Radial gradient — main pin head */}
+            <RadialGradient id={gid} cx="38%" cy="30%" r="65%" fx="32%" fy="25%">
+              <Stop offset="0%"   stopColor="#FFFFFF"             stopOpacity="0.95" />
+              <Stop offset="20%"  stopColor={colorConfig.accent} />
+              <Stop offset="65%"  stopColor={colorConfig.primary} />
               <Stop offset="100%" stopColor={colorConfig.dark} />
             </RadialGradient>
 
-            {/* Base Bevel Gradient */}
-            <LinearGradient id={baseGradId} x1="0%" y1="0%" x2="100%" y2="100%">
-              <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.6" />
-              <Stop offset="30%" stopColor={colorConfig.primary} />
-              <Stop offset="85%" stopColor={colorConfig.dark} />
-              <Stop offset="100%" stopColor="#000000" stopOpacity="0.8" />
+            {/* Linear gradient — needle */}
+            <LinearGradient id={nid} x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%"   stopColor={colorConfig.primary} />
+              <Stop offset="100%" stopColor={colorConfig.dark} stopOpacity="0.9" />
             </LinearGradient>
 
-            {/* Specular Highlight */}
-            <LinearGradient id={highlightGradId} x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.85" />
-              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.0" />
+            {/* Specular highlight on head */}
+            <LinearGradient id={hlid} x1="0%" y1="0%" x2="30%" y2="100%">
+              <Stop offset="0%"   stopColor="#FFFFFF" stopOpacity="0.85" />
+              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.0"  />
             </LinearGradient>
+
+            {/* White ring inner gradient */}
+            <RadialGradient id={wid} cx="40%" cy="35%" r="60%">
+              <Stop offset="0%"   stopColor="#FFFFFF" stopOpacity="0.95" />
+              <Stop offset="100%" stopColor="#E2E8F0" stopOpacity="0.5" />
+            </RadialGradient>
           </Defs>
 
-          <G>
-            {/* 1. Base Bevel / Pedestal */}
-            <Ellipse
-              cx="50"
-              cy="112"
-              rx="40"
-              ry="16"
-              fill="#000000"
-              opacity="0.35"
-            />
-            <Path
-              d="M12 108 C12 118, 88 118, 88 108 L84 100 C84 94, 16 94, 16 100 Z"
-              fill={`url(#${baseGradId})`}
-            />
-            {/* Base rim highlight */}
-            <Ellipse
-              cx="50"
-              cy="100"
-              rx="34"
-              ry="11"
-              fill={colorConfig.secondary}
-            />
-            <Ellipse
-              cx="50"
-              cy="98"
-              rx="31"
-              ry="9"
-              fill={`url(#${gradId})`}
-            />
+          {/* ── Needle drop shadow ── */}
+          <Path
+            d="M30 76 L50 150 L70 76 Q60 86 50 86 Q40 86 30 76 Z"
+            fill="rgba(0,0,0,0.2)"
+            x={1}
+            y={3}
+          />
 
-            {/* 2. Sculpted Pin Stem (Slender Waist) */}
-            <Path
-              d="M32 96 C36 75, 40 60, 36 50 C38 46, 62 46, 64 50 C60 60, 64 75, 68 96 Z"
-              fill={`url(#${baseGradId})`}
-            />
+          {/* ── Needle body ── */}
+          <Path
+            d="M30 76 L50 150 L70 76 Q60 86 50 86 Q40 86 30 76 Z"
+            fill={`url(#${nid})`}
+          />
 
-            {/* Collar Ring */}
-            <Ellipse
-              cx="50"
-              cy="52"
-              rx="17"
-              ry="6"
-              fill="#FBBF24"
-              opacity="0.9"
-            />
-            <Ellipse
-              cx="50"
-              cy="51"
-              rx="15"
-              ry="4"
-              fill="#FFFBEB"
-            />
+          {/* ── Head outer shadow ring ── */}
+          <Circle cx="50" cy="44" r="40" fill="rgba(0,0,0,0.22)" />
 
-            {/* 3. Spherical 3D Pin Head */}
+          {/* ── Head — main coloured circle ── */}
+          <Circle cx="50" cy="44" r="38" fill={`url(#${gid})`} />
+
+          {/* ── White inner ring ── */}
+          <Circle cx="50" cy="44" r="27" fill={`url(#${wid})`} />
+
+          {/* ── Coloured pupil ── */}
+          <Circle cx="50" cy="44" r="14" fill={colorConfig.primary} opacity={0.92} />
+
+          {/* ── Glint on pupil ── */}
+          <Circle cx="44" cy="38" r="5" fill="#FFFFFF" opacity={0.65} />
+
+          {/* ── Specular highlight on head ── */}
+          <Ellipse
+            cx="38"
+            cy="28"
+            rx="12"
+            ry="7"
+            transform="rotate(-25 38 28)"
+            fill={`url(#${hlid})`}
+          />
+
+          {/* ── Shield aura (power-up) ── */}
+          {token.shield && (
             <Circle
               cx="50"
-              cy="34"
-              r="24"
-              fill={`url(#${gradId})`}
+              cy="44"
+              r="43"
+              fill="none"
+              stroke="#10B981"
+              strokeWidth="4"
+              strokeDasharray="6,4"
+              opacity="0.95"
             />
-
-            {/* Glossy Specular Reflection on head */}
-            <Ellipse
-              cx="43"
-              cy="24"
-              rx="10"
-              ry="6"
-              transform="rotate(-25 43 24)"
-              fill={`url(#${highlightGradId})`}
-            />
-
-            {/* Shield Aura if active */}
-            {token.shield && (
-              <Circle
-                cx="50"
-                cy="34"
-                r="28"
-                fill="none"
-                stroke="#10B981"
-                strokeWidth="4"
-                strokeDasharray="6, 4"
-                opacity="0.95"
-              />
-            )}
-          </G>
+          )}
         </Svg>
       </Animated.View>
     </TouchableOpacity>
@@ -296,19 +218,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
-  shadow: {
-    position: 'absolute',
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    borderRadius: 20,
-  },
   halo: {
     position: 'absolute',
-    borderRadius: 999,
     borderWidth: 2.5,
-    top: -2,
+    opacity: 0.85,
   },
-  pinWrapper: {
+  svgWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
   },
 });
+

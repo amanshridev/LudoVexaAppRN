@@ -403,10 +403,10 @@ export default function LudoBoardExact({
             style={[
               styles.trackTokenWrap,
               {
-                top: r * cellSize + 0.5 * cellSize - 0.675 * tokenSize + offsetY,
+                top: r * cellSize + 0.5 * (cellSize - tokenSize) + offsetY,
                 left: c * cellSize + 0.5 * (cellSize - tokenSize) + offsetX,
                 width: tokenSize,
-                height: tokenSize * 1.35,
+                height: tokenSize,
                 zIndex: isMovable ? 50 : 20 + r,
               },
             ]}
