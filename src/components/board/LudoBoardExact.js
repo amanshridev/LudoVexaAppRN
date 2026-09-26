@@ -284,6 +284,17 @@ export default function LudoBoardExact({
     const col = palette[player] || palette.red;
     const boxSize = cellSize * 6;
     const whiteBoxSize = boxSize * 0.78;
+    const isBottomPlayer = player === 'red' || player === 'blue';
+    const baseLabel = (
+      <Text
+        style={[
+          styles.baseLabelText,
+          isBottomPlayer && styles.baseLabelBelow,
+        ]}
+      >
+        {label || getBaseLabel(player)}
+      </Text>
+    );
 
     const tokensInBase = (state.tokens[player] || []).filter((t) => t.step === -1);
     const hasMovableInBase = tokensInBase.some((t) => state.movableTokenIds.includes(t.id));
@@ -314,7 +325,7 @@ export default function LudoBoardExact({
           },
         ]}
       >
-        <Text style={styles.baseLabelText}>{label || getBaseLabel(player)}</Text>
+        {!isBottomPlayer && baseLabel}
 
         <TouchableOpacity
           activeOpacity={hasMovableInBase ? 0.85 : 1}
@@ -363,6 +374,7 @@ export default function LudoBoardExact({
             })}
           </View>
         </TouchableOpacity>
+        {isBottomPlayer && baseLabel}
       </TouchableOpacity>
     );
   };
@@ -542,6 +554,10 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.4)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+  },
+  baseLabelBelow: {
+    marginTop: 2,
+    marginBottom: 0,
   },
   whiteCourtyardSquare: {
     backgroundColor: '#FFFFFF',

@@ -276,7 +276,7 @@ export default function GameScreen({
       <StatusBar barStyle="light-content" backgroundColor={bgColor} />
 
       {/* Top Header Row with Back Button, Room Mode Badge & Settings */}
-      <View style={styles.topHeader}>
+      <View style={[styles.topHeader, {marginBottom: 15}]}>
         
         <TouchableOpacity
           activeOpacity={0.7}

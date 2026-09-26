@@ -38,18 +38,31 @@ export default function SettingsScreen({ onNavigate, onBack }) {
         },
       ],
     },
-    {
+
+
+     {
       title: 'PRIVACY & ACCOUNT',
       items: [
         {
           id: 'privacySettings',
           icon: '🔒',
           title: 'Privacy & Safety',
-          subtitle: `${settings.profileVisibility ? settings.profileVisibility.toUpperCase() : 'PUBLIC'} Profile`,
-          route: 'privacySettings',
+        openline:'https://amanshridev.github.io/ludo-offline/'
         },
       ],
     },
+    // {
+    //   title: 'PRIVACY & ACCOUNT',
+    //   items: [
+    //     {
+    //       id: 'privacySettings',
+    //       icon: '🔒',
+    //       title: 'Privacy & Safety',
+    //       subtitle: `${settings.profileVisibility ? settings.profileVisibility.toUpperCase() : 'PUBLIC'} Profile`,
+    //       route: 'privacySettings',
+    //     },
+    //   ],
+    // },
   ];
 
   return (
