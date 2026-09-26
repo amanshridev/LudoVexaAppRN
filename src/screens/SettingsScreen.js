@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StatusBar,
   ScrollView,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../components/ui/ScreenHeader';
@@ -47,7 +48,7 @@ export default function SettingsScreen({ onNavigate, onBack }) {
           id: 'privacySettings',
           icon: '🔒',
           title: 'Privacy & Safety',
-        openline:'https://amanshridev.github.io/ludo-offline/'
+          openline: 'https://amanshridev.github.io/ludo-offline/',
         },
       ],
     },
@@ -89,7 +90,11 @@ export default function SettingsScreen({ onNavigate, onBack }) {
                     <TouchableOpacity
                       activeOpacity={0.7}
                       style={styles.rowItem}
-                      onPress={() => onNavigate?.(item.route)}
+                      onPress={() => (
+                        item.openline
+                          ? Linking.openURL(item.openline)
+                          : onNavigate?.(item.route)
+                      )}
                     >
                       <View style={styles.rowLeft}>
                         <View style={[styles.iconContainer, { backgroundColor: 'rgba(255,255,255,0.06)' }]}>
