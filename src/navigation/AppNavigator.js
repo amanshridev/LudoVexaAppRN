@@ -23,9 +23,11 @@ import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
 import { useTheme } from '../context/ThemeContext';
 
 export default function AppNavigator() {
-  const { appTheme, settings, ludoThemeId } = useTheme();
+  const { appTheme, settings } = useTheme();
   const [screenStack, setScreenStack] = useState(['splash']);
   const currentScreen = screenStack[screenStack.length - 1];
+  const isGameMounted = screenStack.includes('home');
+  const isGameVisible = currentScreen === 'home';
 
   // User Global State
   const [user, setUser] = useState({
@@ -137,17 +139,7 @@ export default function AppNavigator() {
         );
 
       case 'home':
-        return (
-          <GameScreen
-            key={`${gameOptions.playerCount}_${gameOptions.isVsAi}_${gameOptions.userColor}_${gameOptions.gameMode}_${ludoThemeId}`}
-            gameOptions={gameOptions}
-            settings={settings}
-            isDarkMode={settings.theme === 'dark' || settings.theme === 'neon'}
-            onExitHome={() => reset('welcome')}
-            onOpenSettings={() => navigate('settings')}
-            onGameOver={handleGameOver}
-          />
-        );
+        return null;
 
       case 'settings':
         return <SettingsScreen onNavigate={(route) => navigate(route)} onBack={goBack} />;
@@ -168,7 +160,23 @@ export default function AppNavigator() {
 
   return (
     <View style={[styles.container, { backgroundColor: appTheme.colors.background }]}>
-      {renderScreen()}
+      {isGameMounted && (
+        <View
+          pointerEvents={isGameVisible ? 'auto' : 'none'}
+          style={isGameVisible ? styles.screen : styles.hiddenScreen}
+        >
+          <GameScreen
+            key={`${gameOptions.playerCount}_${gameOptions.isVsAi}_${gameOptions.userColor}_${gameOptions.gameMode}`}
+            gameOptions={gameOptions}
+            settings={settings}
+            isDarkMode={settings.theme === 'dark' || settings.theme === 'neon'}
+            onExitHome={() => reset('welcome')}
+            onOpenSettings={() => navigate('settings')}
+            onGameOver={handleGameOver}
+          />
+        </View>
+      )}
+      {!isGameVisible && renderScreen()}
     </View>
   );
 }
@@ -176,5 +184,11 @@ export default function AppNavigator() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  screen: {
+    flex: 1,
+  },
+  hiddenScreen: {
+    display: 'none',
   },
 });
