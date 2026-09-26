@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function ThemeScreen({ onBack, onSelectTheme }) {
   const { appTheme, ludoThemeId, setLudoTheme, ludoThemesList } = useTheme();
 
-  const [selectedThemeId, setSelectedThemeId] = useState(ludoThemeId || 'galaxy');
+  const [selectedThemeId, setSelectedThemeId] = useState(ludoThemeId || 'classic');
   const [activeCategory, setActiveCategory] = useState('all');
   const [saveToast, setSaveToast] = useState(null);
 
@@ -44,7 +44,8 @@ export default function ThemeScreen({ onBack, onSelectTheme }) {
     setSaveToast('✓ Ludo Board Theme Applied & Saved!');
     setTimeout(() => {
       setSaveToast(null);
-    }, 2500);
+      onBack?.();
+    }, 800);
   };
 
   const activeThemeObj = ludoThemesList.find((t) => t.id === selectedThemeId) || ludoThemesList[0];

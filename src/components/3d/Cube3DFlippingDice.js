@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Easing,
 } from 'react-native';
-import { SoundFX } from '../../utils/soundFX.js';
+
 
 /**
  * 3D Flipping Cube Dice
@@ -69,9 +69,6 @@ export default function Cube3DFlippingDice({
   // 3D Multi-Axis Flip & Tumble Roll Physics
   useEffect(() => {
     if (isRolling) {
-      // Play 3D dice flipping sound!
-      SoundFX.diceFlip();
-
       // Cycle rapidly through faces 1..6 during the roll so every side is shown flipping
       let stepCount = 0;
       const shuffleInterval = setInterval(() => {

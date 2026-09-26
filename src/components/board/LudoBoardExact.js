@@ -17,15 +17,15 @@ import {
 import { getTokenCoordinates } from '../../ludo/LudoEngine.js';
 
 import CenterHome3D from './CenterHome3D.js';
-import PinToken3D from '../3d/PinToken3D.js';
+import BallToken3D from '../3d/BallToken3D.js';
 
 export const THEME_PALETTES = {
   classic: {
-    boardBg: '#FFFFFF',
-    red: { base: '#D92525', dark: '#991B1B', path: '#D92525', token: '#D92525', goldRing: '#EAB308' },
-    green: { base: '#238838', dark: '#166534', path: '#238838', token: '#238838', goldRing: '#EAB308' },
-    yellow: { base: '#DDA715', dark: '#A16207', path: '#DDA715', token: '#DDA715', goldRing: '#EAB308' },
-    blue: { base: '#2255A4', dark: '#1E3A8A', path: '#2255A4', token: '#2255A4', goldRing: '#EAB308' },
+    boardBg: '#F5E6C8',
+    red: { base: '#C8372D', dark: '#8B1A1A', path: '#C8372D', token: '#C8372D', goldRing: '#C8A96E' },
+    green: { base: '#2D8B47', dark: '#1A6B30', path: '#2D8B47', token: '#2D8B47', goldRing: '#C8A96E' },
+    yellow: { base: '#D4A017', dark: '#A07D12', path: '#D4A017', token: '#D4A017', goldRing: '#C8A96E' },
+    blue: { base: '#2B5EA7', dark: '#1B3D6F', path: '#2B5EA7', token: '#2B5EA7', goldRing: '#C8A96E' },
   },
   neon: {
     boardBg: '#090D1A',
@@ -351,7 +351,7 @@ export default function LudoBoardExact({
                   ]}
                 >
                   {tokenAtBase && (
-                    <PinToken3D
+                    <BallToken3D
                       token={tokenAtBase}
                       size={cellSize * 0.72}
                       isMovable={isMovable}
@@ -411,7 +411,7 @@ export default function LudoBoardExact({
               },
             ]}
           >
-            <PinToken3D
+            <BallToken3D
               token={token}
               size={tokenSize}
               isMovable={isMovable}
@@ -495,8 +495,8 @@ const styles = StyleSheet.create({
   innerBoardSurface: {
     position: 'absolute',
     borderRadius: 14,
-    borderWidth: 2.5,
-    borderColor: '#FFFFFF',
+    borderWidth: 4,
+    borderColor: '#C8A96E',
     overflow: 'hidden',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
@@ -507,6 +507,7 @@ const styles = StyleSheet.create({
   cell: {
     position: 'absolute',
     borderWidth: 0.6,
+    borderColor: '#D4C4A8',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -565,7 +566,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    borderColor: 'rgba(0, 0, 0, 0.15)',
+    borderStyle: 'dashed',
   },
   centerArea: {
     position: 'absolute',

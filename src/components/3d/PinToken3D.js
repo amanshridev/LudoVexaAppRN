@@ -16,16 +16,15 @@ import Svg, {
 import { PLAYER_COLORS } from '../../theme/colors';
 
 /**
- * PinToken3D — renders a map-pin style token.
+ * PinToken3D — Classic Ludo pawn/cone token.
  *
- * SVG viewBox: "0 0 100 150"
- *   Head circle  : cx=50 cy=44 r=38
- *   White ring   : cx=50 cy=44 r=27
- *   Pupil dot    : cx=50 cy=44 r=14
- *   Needle       : tapered triangle pointing down to cy=150
+ * SVG viewBox: "0 0 100 130"
+ *   Base ellipse  : cx=50 cy=118 rx=32 ry=8
+ *   Cone body     : curved trapezoid from base to neck
+ *   Neck ring     : white collar at y≈52
+ *   Spherical head: cx=50 cy=34 r=22
  *
- * The SVG is rendered inside a square (size × size) container.
- * preserveAspectRatio="xMidYMid meet" keeps the pin centred within that square.
+ * Resembles a real physical Ludo game piece with 3D shading.
  */
 export default function PinToken3D({
   token,
@@ -76,10 +75,12 @@ export default function PinToken3D({
   const handlePressOut = () => { Animated.spring(liftAnim, { toValue: 0,  friction: 5, useNativeDriver: true }).start(); };
 
   // Unique gradient IDs (per token to avoid SVG id clashes)
-  const gid  = `hg_${token.id}`;
-  const nid  = `ng_${token.id}`;
-  const hlid = `hl_${token.id}`;
-  const wid  = `wr_${token.id}`;
+  const bodyGrad  = `bd_${token.id}`;
+  const headGrad  = `hd_${token.id}`;
+  const headHl    = `hhl_${token.id}`;
+  const neckGrad  = `nk_${token.id}`;
+  const baseGrad  = `bs_${token.id}`;
+  const shadowGrad = `sh_${token.id}`;
 
   return (
     <TouchableOpacity
@@ -106,7 +107,7 @@ export default function PinToken3D({
         />
       )}
 
-      {/* Pin SVG — square, perfectly centred */}
+      {/* Pawn SVG — square, perfectly centred */}
       <Animated.View
         style={[
           styles.svgWrapper,
@@ -123,87 +124,106 @@ export default function PinToken3D({
         <Svg
           width={size}
           height={size}
-          viewBox="0 0 100 150"
+          viewBox="0 0 100 130"
           preserveAspectRatio="xMidYMid meet"
         >
           <Defs>
-            {/* Radial gradient — main pin head */}
-            <RadialGradient id={gid} cx="38%" cy="30%" r="65%" fx="32%" fy="25%">
-              <Stop offset="0%"   stopColor="#FFFFFF"             stopOpacity="0.95" />
-              <Stop offset="20%"  stopColor={colorConfig.accent} />
-              <Stop offset="65%"  stopColor={colorConfig.primary} />
-              <Stop offset="100%" stopColor={colorConfig.dark} />
+            {/* Cone body gradient — 3D lit from upper-left */}
+            <LinearGradient id={bodyGrad} x1="20%" y1="0%" x2="85%" y2="100%">
+              <Stop offset="0%"   stopColor={colorConfig.accent}  />
+              <Stop offset="40%"  stopColor={colorConfig.primary} />
+              <Stop offset="100%" stopColor={colorConfig.dark}    />
+            </LinearGradient>
+
+            {/* Spherical head gradient — radial 3D ball */}
+            <RadialGradient id={headGrad} cx="38%" cy="32%" r="62%" fx="35%" fy="28%">
+              <Stop offset="0%"   stopColor="#FFFFFF"             stopOpacity="0.9" />
+              <Stop offset="25%"  stopColor={colorConfig.accent}  />
+              <Stop offset="70%"  stopColor={colorConfig.primary} />
+              <Stop offset="100%" stopColor={colorConfig.dark}    />
             </RadialGradient>
 
-            {/* Linear gradient — needle */}
-            <LinearGradient id={nid} x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%"   stopColor={colorConfig.primary} />
-              <Stop offset="100%" stopColor={colorConfig.dark} stopOpacity="0.9" />
-            </LinearGradient>
-
             {/* Specular highlight on head */}
-            <LinearGradient id={hlid} x1="0%" y1="0%" x2="30%" y2="100%">
+            <RadialGradient id={headHl} cx="35%" cy="30%" r="40%">
               <Stop offset="0%"   stopColor="#FFFFFF" stopOpacity="0.85" />
               <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.0"  />
+            </RadialGradient>
+
+            {/* Neck collar gradient */}
+            <LinearGradient id={neckGrad} x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%"   stopColor="#FFFFFF" stopOpacity="0.95" />
+              <Stop offset="100%" stopColor="#CBD5E1" stopOpacity="0.7"  />
             </LinearGradient>
 
-            {/* White ring inner gradient */}
-            <RadialGradient id={wid} cx="40%" cy="35%" r="60%">
-              <Stop offset="0%"   stopColor="#FFFFFF" stopOpacity="0.95" />
-              <Stop offset="100%" stopColor="#E2E8F0" stopOpacity="0.5" />
+            {/* Base rim gradient */}
+            <LinearGradient id={baseGrad} x1="20%" y1="0%" x2="80%" y2="100%">
+              <Stop offset="0%"   stopColor={colorConfig.accent}  />
+              <Stop offset="50%"  stopColor={colorConfig.primary} />
+              <Stop offset="100%" stopColor={colorConfig.dark}    />
+            </LinearGradient>
+
+            {/* Ground shadow */}
+            <RadialGradient id={shadowGrad} cx="50%" cy="50%" r="50%">
+              <Stop offset="0%"   stopColor="#000000" stopOpacity="0.3" />
+              <Stop offset="100%" stopColor="#000000" stopOpacity="0.0" />
             </RadialGradient>
           </Defs>
 
-          {/* ── Needle drop shadow ── */}
+          {/* ── Ground shadow ellipse ── */}
+          <Ellipse cx="50" cy="122" rx="34" ry="7" fill={`url(#${shadowGrad})`} />
+
+          {/* ── Base rim — thick elliptical disc ── */}
+          <Ellipse cx="50" cy="112" rx="30" ry="8" fill={colorConfig.dark} />
+          <Ellipse cx="50" cy="110" rx="30" ry="8" fill={`url(#${baseGrad})`} />
+          {/* Base top face */}
+          <Ellipse cx="50" cy="108" rx="28" ry="6" fill={colorConfig.primary} opacity={0.7} />
+
+          {/* ── Cone body — curved trapezoid ── */}
           <Path
-            d="M30 76 L50 150 L70 76 Q60 86 50 86 Q40 86 30 76 Z"
-            fill="rgba(0,0,0,0.2)"
-            x={1}
-            y={3}
+            d="M22 108 C22 108 30 60 38 55 L62 55 C70 60 78 108 78 108 Q65 116 50 116 Q35 116 22 108 Z"
+            fill={`url(#${bodyGrad})`}
+          />
+          {/* Cone body right-side shadow for depth */}
+          <Path
+            d="M62 55 C70 60 78 108 78 108 Q65 116 50 116 L50 55 Z"
+            fill="rgba(0,0,0,0.12)"
           />
 
-          {/* ── Needle body ── */}
-          <Path
-            d="M30 76 L50 150 L70 76 Q60 86 50 86 Q40 86 30 76 Z"
-            fill={`url(#${nid})`}
-          />
+          {/* ── Neck collar — white ring between head and cone ── */}
+          <Ellipse cx="50" cy="54" rx="18" ry="5" fill={`url(#${neckGrad})`} />
+          <Ellipse cx="50" cy="52" rx="16" ry="4" fill={colorConfig.primary} opacity={0.5} />
 
-          {/* ── Head outer shadow ring ── */}
-          <Circle cx="50" cy="44" r="40" fill="rgba(0,0,0,0.22)" />
-
-          {/* ── Head — main coloured circle ── */}
-          <Circle cx="50" cy="44" r="38" fill={`url(#${gid})`} />
-
-          {/* ── White inner ring ── */}
-          <Circle cx="50" cy="44" r="27" fill={`url(#${wid})`} />
-
-          {/* ── Coloured pupil ── */}
-          <Circle cx="50" cy="44" r="14" fill={colorConfig.primary} opacity={0.92} />
-
-          {/* ── Glint on pupil ── */}
-          <Circle cx="44" cy="38" r="5" fill="#FFFFFF" opacity={0.65} />
+          {/* ── Spherical head ── */}
+          {/* Head shadow underneath */}
+          <Circle cx="50" cy="36" r="23" fill="rgba(0,0,0,0.15)" />
+          {/* Head main sphere */}
+          <Circle cx="50" cy="34" r="22" fill={`url(#${headGrad})`} />
 
           {/* ── Specular highlight on head ── */}
           <Ellipse
-            cx="38"
-            cy="28"
-            rx="12"
+            cx="42"
+            cy="26"
+            rx="10"
             ry="7"
-            transform="rotate(-25 38 28)"
-            fill={`url(#${hlid})`}
+            transform="rotate(-20 42 26)"
+            fill={`url(#${headHl})`}
           />
+
+          {/* ── Glint dot ── */}
+          <Circle cx="40" cy="24" r="3.5" fill="#FFFFFF" opacity={0.75} />
 
           {/* ── Shield aura (power-up) ── */}
           {token.shield && (
-            <Circle
+            <Ellipse
               cx="50"
-              cy="44"
-              r="43"
+              cy="70"
+              rx="38"
+              ry="55"
               fill="none"
               stroke="#10B981"
-              strokeWidth="4"
+              strokeWidth="3"
               strokeDasharray="6,4"
-              opacity="0.95"
+              opacity="0.9"
             />
           )}
         </Svg>
@@ -228,4 +248,3 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
-

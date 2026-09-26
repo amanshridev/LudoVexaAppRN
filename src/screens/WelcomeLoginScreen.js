@@ -85,15 +85,15 @@ export default function WelcomeLoginScreen({
         </View>
 
         {/* Ludo Logo Hero Banner */}
-        <View style={styles.logoWrapper}>
+        {/* <View style={styles.logoWrapper}>
           <LudoVexaLogo size={210} />
           <Text style={[styles.taglineText, { color: appTheme.colors.secondaryText }]}>
             Next-Gen Multiplayer & Offline Ludo
           </Text>
-        </View>
+        </View> */}
 
         {/* Section 1: Game Mode Selection */}
-        <View style={styles.sectionContainer}>
+        <View style={[styles.sectionContainer, { marginTop: "35%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 20 }]}>
           <Text style={[styles.sectionTitle, { color: appTheme.colors.secondaryText }]}>
             GAME MODE
           </Text>

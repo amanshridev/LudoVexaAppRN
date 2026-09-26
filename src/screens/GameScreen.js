@@ -21,7 +21,12 @@ import LudoBoardExact from '../components/board/LudoBoardExact.js';
 import CornerPlayerDock from '../components/hud/CornerPlayerDock.js';
 import Cube3DFlippingDice from '../components/3d/Cube3DFlippingDice.js';
 import { useTheme } from '../context/ThemeContext.js';
-import { BackArrowIcon, SettingsGearIcon } from '../components/ui/AppIcons.js';
+import {
+  BackArrowIcon,
+  FriendsIcon,
+  RobotIcon,
+  SettingsGearIcon,
+} from '../components/ui/AppIcons.js';
 
 export default function GameScreen({
   gameOptions = {},
@@ -275,18 +280,23 @@ export default function GameScreen({
 
       {/* Top Header Row with Back Button, Room Mode Badge & Settings */}
       <View style={styles.topHeader}>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           activeOpacity={0.7}
           onPress={onExitHome}
           style={styles.circleIconBtn}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <BackArrowIcon size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <View style={styles.headerTitleContainer}>
+          {gameOptions.isVsAi ? (
+            <RobotIcon size={15} color="#38BDF8" />
+          ) : (
+            <FriendsIcon size={15} color="#38BDF8" />
+          )}
           <Text style={styles.matchModeText}>
-            {gameOptions.isVsAi ? '🤖 VS AI' : '👥 PASS & PLAY'} • {gameState.activePlayers?.length || gameOptions.playerCount || 4} PLAYERS
+            {gameOptions.isVsAi ? 'VS AI' : 'PASS & PLAY'} • {gameState.activePlayers?.length || gameOptions.playerCount || 4} PLAYERS
           </Text>
         </View>
 
@@ -300,10 +310,7 @@ export default function GameScreen({
         </TouchableOpacity>
       </View>
 
-      {/* Top Player Docks Row:
-          - Left: Green (Player 2 / Computer 2)
-          - Right: Yellow (Player 3 / Computer 3)
-      */}
+   
       <View style={styles.topDocksRow}>
         {gameState.activePlayers.includes('green') ? (
           <CornerPlayerDock
@@ -340,17 +347,10 @@ export default function GameScreen({
           state={gameState}
           onSelectToken={handleSelectToken}
           boardSize={boardSize}
-          theme={settings?.ludoTheme || settings?.theme || 'galaxy'}
+          theme={settings?.ludoTheme || settings?.theme || 'classic'}
         />
       </View>
-
-      {/* Roll Notice & Turn Status Banner */}
-
-
-      {/* Bottom Player Docks Row:
-          - Left: Red (Player 1)
-          - Right: Blue (Player 4)
-      */}
+ 
       <View style={styles.bottomDocksRow}>
         {gameState.activePlayers.includes('red') ? (
           <CornerPlayerDock
@@ -384,7 +384,7 @@ export default function GameScreen({
       {/* Bottom Center Active Rolling Station with 3D Flipping Cube */}
       <View style={styles.bottomRollStation}>
         <View style={[styles.diceRollControl, canRoll && styles.diceRollControlActive]}>
-          <Text style={styles.arrowIcon}>‹</Text>
+          {/* <Text style={styles.arrowIcon}>‹</Text> */}
           <Cube3DFlippingDice
             targetValue={gameState.diceValue || 6}
             isRolling={isRolling}
@@ -393,7 +393,7 @@ export default function GameScreen({
             size={50}
             themeColor={activeTurnColor}
           />
-          <Text style={styles.arrowIcon}>›</Text>
+          {/* <Text style={styles.arrowIcon}>›</Text> */}
         </View>
       </View>
     </SafeAreaView>
@@ -424,6 +424,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitleContainer: {
+    flexDirection: 'row',
+    gap: 6,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(15, 23, 42, 0.6)',
@@ -497,22 +499,15 @@ const styles = StyleSheet.create({
   diceRollControl: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F1D38',
-    borderRadius: 24,
+     borderRadius: 24,
     borderWidth: 2,
-    borderColor: '#38BDF8',
-    paddingHorizontal: 16,
+     paddingHorizontal: 16,
     paddingVertical: 6,
     gap: 12,
-    shadowColor: '#38BDF8',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 4,
+ 
   },
   diceRollControlActive: {
-    borderColor: '#FACC15',
-    shadowColor: '#FACC15',
+ 
     shadowOpacity: 0.8,
   },
   arrowIcon: {

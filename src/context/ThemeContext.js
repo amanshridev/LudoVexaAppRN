@@ -6,8 +6,8 @@ import { loadSettings, saveSettings, DEFAULT_SETTINGS } from '../utils/storage';
 const ThemeContext = createContext({
   appTheme: buildSemanticTheme('emerald'),
   appColor: 'emerald',
-  ludoTheme: LUDO_THEMES_LIST[3], // galaxy
-  ludoThemeId: 'galaxy',
+  ludoTheme: LUDO_THEMES_LIST[0], // classic
+  ludoThemeId: 'classic',
   settings: DEFAULT_SETTINGS,
   setAppColor: () => {},
   setLudoTheme: () => {},
@@ -79,7 +79,7 @@ export function ThemeProvider({ children }) {
       appTheme,
       appColor: settings.appColor || 'emerald',
       ludoTheme: ludoThemeObj,
-      ludoThemeId: settings.ludoTheme || 'galaxy',
+      ludoThemeId: settings.ludoTheme || 'classic',
       settings,
       setAppColor,
       setLudoTheme,

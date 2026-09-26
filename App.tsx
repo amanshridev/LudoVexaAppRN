@@ -5,6 +5,9 @@ import { ThemeProvider } from './src/context/ThemeContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import GlobalSoundBridge from './src/components/audio/GlobalSoundBridge';
 
+
+
+
 export default function App() {
   return (
     <SafeAreaProvider>

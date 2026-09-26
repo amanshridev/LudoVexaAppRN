@@ -46,9 +46,7 @@ export default function CenterHome3D({ size = 70, theme }) {
         <Circle cx="50" cy="50" r="11" fill="#D4AF37" opacity="0.85" />
       </Svg>
 
-      <View style={styles.crownOverlay}>
-        <Text style={styles.crownText}>👑</Text>
-      </View>
+      {/* Crown overlay removed to match classic board style */}
     </View>
   );
 }

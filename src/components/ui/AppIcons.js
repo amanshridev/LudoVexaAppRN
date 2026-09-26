@@ -486,6 +486,18 @@ export const FriendsIcon = ({ size = 28, color = '#38BDF8' }) => (
   </Svg>
 );
 
+export const RobotIcon = ({ size = 16, color = '#38BDF8' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 3v3" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    <Circle cx="12" cy="2.5" r="1" fill={color} />
+    <Rect x="4" y="7" width="16" height="13" rx="3" stroke={color} strokeWidth="2" />
+    <Circle cx="9" cy="12" r="1.5" fill={color} />
+    <Circle cx="15" cy="12" r="1.5" fill={color} />
+    <Path d="M9 16h6" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    <Path d="M2 11v5m20-5v5" stroke={color} strokeWidth="2" strokeLinecap="round" />
+  </Svg>
+);
+
 export const TrophyIcon = ({ size = 26, color = '#F59E0B' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Defs>

@@ -51,42 +51,98 @@ export default function GlobalSoundBridge() {
       var now = ctx.currentTime;
 
       if (type === 'move' || type === 'hop') {
-        // Piece moving sound: Crisp wooden pop hop (440Hz -> 880Hz pitch bend)
-        var osc = ctx.createOscillator();
-        var gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(440, now);
-        osc.frequency.exponentialRampToValueAtTime(880, now + 0.05);
+        // Chess piece tap: Solid wood-on-wood thud with brief resonance
+        // Low-frequency knock
+        var knock = ctx.createOscillator();
+        var knockGain = ctx.createGain();
+        knock.type = 'sine';
+        knock.frequency.setValueAtTime(180, now);
+        knock.frequency.exponentialRampToValueAtTime(80, now + 0.06);
+        knockGain.gain.setValueAtTime(0.5, now);
+        knockGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        knock.connect(knockGain);
+        knockGain.connect(ctx.destination);
+        knock.start(now);
+        knock.stop(now + 0.08);
 
-        gain.gain.setValueAtTime(0.4, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        // Wood body resonance
+        var body = ctx.createOscillator();
+        var bodyGain = ctx.createGain();
+        body.type = 'triangle';
+        body.frequency.setValueAtTime(320, now);
+        body.frequency.exponentialRampToValueAtTime(150, now + 0.05);
+        bodyGain.gain.setValueAtTime(0.22, now);
+        bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+        body.connect(bodyGain);
+        bodyGain.connect(ctx.destination);
+        body.start(now);
+        body.stop(now + 0.07);
 
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc.start(now);
-        osc.stop(now + 0.06);
+        // High-frequency surface click
+        var click = ctx.createOscillator();
+        var clickGain = ctx.createGain();
+        click.type = 'square';
+        click.frequency.setValueAtTime(2400, now);
+        click.frequency.exponentialRampToValueAtTime(800, now + 0.015);
+        clickGain.gain.setValueAtTime(0.1, now);
+        clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+        click.connect(clickGain);
+        clickGain.connect(ctx.destination);
+        click.start(now);
+        click.stop(now + 0.02);
       } else if (type === 'dice' || type === 'diceFlip') {
-        // Dice flipping sound: 5 rapid tumbling clacks
-        for (var i = 0; i < 5; i++) {
+        // Classic board game dice: Shaking in cup then rolling out
+        // Phase 1: Rapid rattling in cup (8 fast noise bursts)
+        for (var i = 0; i < 8; i++) {
           (function(idx) {
-            var delay = idx * 0.045;
-            var osc = ctx.createOscillator();
-            var gain = ctx.createGain();
-            osc.type = 'sine';
-            var freq = 220 + Math.random() * 260;
-            osc.frequency.setValueAtTime(freq, now + delay);
-            osc.frequency.exponentialRampToValueAtTime(70, now + delay + 0.035);
-
-            gain.gain.setValueAtTime(0.35 - idx * 0.04, now + delay);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.04);
-
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-
-            osc.start(now + delay);
-            osc.stop(now + delay + 0.04);
+            var delay = idx * 0.035;
+            var rattle = ctx.createOscillator();
+            var rattleGain = ctx.createGain();
+            rattle.type = 'square';
+            var freq = 600 + Math.random() * 800;
+            rattle.frequency.setValueAtTime(freq, now + delay);
+            rattle.frequency.exponentialRampToValueAtTime(200 + Math.random() * 200, now + delay + 0.02);
+            var vol = 0.15 + Math.random() * 0.08;
+            rattleGain.gain.setValueAtTime(vol, now + delay);
+            rattleGain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.025);
+            rattle.connect(rattleGain);
+            rattleGain.connect(ctx.destination);
+            rattle.start(now + delay);
+            rattle.stop(now + delay + 0.025);
           })(i);
+        }
+
+        // Phase 2: Dice landing thuds (2-3 heavier impacts)
+        var landStart = 0.32;
+        for (var j = 0; j < 3; j++) {
+          (function(jj) {
+            var lDelay = landStart + jj * 0.08;
+            var thud = ctx.createOscillator();
+            var thudGain = ctx.createGain();
+            thud.type = 'sine';
+            thud.frequency.setValueAtTime(160 - jj * 30, now + lDelay);
+            thud.frequency.exponentialRampToValueAtTime(50, now + lDelay + 0.06);
+            var thudVol = 0.35 - jj * 0.1;
+            thudGain.gain.setValueAtTime(thudVol, now + lDelay);
+            thudGain.gain.exponentialRampToValueAtTime(0.001, now + lDelay + 0.07);
+            thud.connect(thudGain);
+            thudGain.connect(ctx.destination);
+            thud.start(now + lDelay);
+            thud.stop(now + lDelay + 0.07);
+
+            // Surface click on each landing
+            var tap = ctx.createOscillator();
+            var tapGain = ctx.createGain();
+            tap.type = 'triangle';
+            tap.frequency.setValueAtTime(1200 - jj * 200, now + lDelay);
+            tap.frequency.exponentialRampToValueAtTime(300, now + lDelay + 0.02);
+            tapGain.gain.setValueAtTime(0.18 - jj * 0.05, now + lDelay);
+            tapGain.gain.exponentialRampToValueAtTime(0.001, now + lDelay + 0.03);
+            tap.connect(tapGain);
+            tapGain.connect(ctx.destination);
+            tap.start(now + lDelay);
+            tap.stop(now + lDelay + 0.03);
+          })(j);
         }
       } else if (type === 'capture') {
         // Capture explosion impact

@@ -5,7 +5,7 @@ export const THEME_LIST = [
     id: 'emerald',
     name: 'Emerald Green',
     primary: '#10B981',
-    primaryLight: '#34D399',
+    primaryLight: 'red',
     primaryDark: '#047857',
     onPrimary: '#FFFFFF',
     background: '#071126',

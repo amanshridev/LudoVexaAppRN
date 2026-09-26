@@ -29,7 +29,8 @@ export default function AppColorScreen({ onBack }) {
     setSaveToast('✓ App Accent Color Saved & Applied!');
     setTimeout(() => {
       setSaveToast(null);
-    }, 2500);
+      onBack?.();
+    }, 800);
   };
 
   const activeColorObj = themesList.find((t) => t.id === selectedColorId) || themesList[0];
