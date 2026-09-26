@@ -8,7 +8,12 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LudoVexaLogo, SettingsGearIcon } from '../components/ui/AppIcons';
+import {
+  CrownIcon,
+  FriendsIcon,
+  RobotIcon,
+  SettingsGearIcon,
+} from '../components/ui/AppIcons';
 import { useTheme } from '../context/ThemeContext';
 
 export default function WelcomeLoginScreen({
@@ -20,20 +25,20 @@ export default function WelcomeLoginScreen({
 
   // Mode: 'ai' | 'local'
   const [selectedMode, setSelectedMode] = useState('ai');
-  // Player Count: 2 | 3 | 4 | 5
+  // Player Count: 2 | 3 | 4
   const [playerCount, setPlayerCount] = useState(4);
   // User Pawn Color: 'red' | 'green' | 'yellow' | 'blue'
   const [userColor, setUserColor] = useState('red');
 
   const modes = [
-    { id: 'ai', title: 'VS AI', icon: '🤖', sub: 'Offline Bot' },
-    { id: 'local', title: 'Pass & Play', icon: '👥', sub: 'With Friends' },
+    { id: 'ai', title: 'VS AI', sub: 'Offline bot' },
+    { id: 'local', title: 'Pass & Play', sub: 'With friends' },
   ];
 
   const playerCounts = [
-    { count: 2, label: '2 Players', icon: '👥' },
-    { count: 3, label: '3 Players', icon: '👥' },
-    { count: 4, label: '4 Players', icon: '👥👥' },
+    { count: 2, label: '2 Players' },
+    { count: 3, label: '3 Players' },
+    { count: 4, label: '4 Players' },
   ];
 
   const colors = [
@@ -59,8 +64,7 @@ export default function WelcomeLoginScreen({
 
       {/* Decorative stars */}
       <View style={[styles.starDot, styles.star1, { backgroundColor: appTheme.colors.primaryLight }]} />
-      <View style={[styles.starDot, styles.star2, { backgroundColor: appTheme.colors.primary }]} />
-
+ 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -69,36 +73,38 @@ export default function WelcomeLoginScreen({
         {/* Top Header Row with Title & Settings Gear Shortcut */}
         <View style={styles.headerRow}>
           <View style={styles.headerBadge}>
-            <Text style={styles.headerBadgeIcon}>👑</Text>
+            <CrownIcon size={25} />
             <Text style={[styles.appHeaderTitle, { color: appTheme.colors.text }]}>
-              LUDO VEXA
+             Ludo Game
             </Text>
           </View>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             activeOpacity={0.7}
             onPress={onOpenSettings}
             style={[styles.settingsBtn, { backgroundColor: appTheme.colors.surface, borderColor: appTheme.colors.border }]}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <SettingsGearIcon size={20} color={appTheme.colors.text} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
-        {/* Ludo Logo Hero Banner */}
-        {/* <View style={styles.logoWrapper}>
-          <LudoVexaLogo size={210} />
-          <Text style={[styles.taglineText, { color: appTheme.colors.secondaryText }]}>
-            Next-Gen Multiplayer & Offline Ludo
-          </Text>
-        </View> */}
+        <View style={styles.intro}>
+          <Text style={[styles.introTitle, { color: appTheme.colors.text }]}>Ready to roll?</Text>
+          <Text style={[styles.introSubtitle, { color: appTheme.colors.secondaryText }]}>Set up your next Ludo match.</Text>
+        </View>
 
         {/* Section 1: Game Mode Selection */}
-        <View style={[styles.sectionContainer, { marginTop: "35%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 20 }]}>
+        <View style={styles.sectionContainer}>
           <Text style={[styles.sectionTitle, { color: appTheme.colors.secondaryText }]}>
             GAME MODE
           </Text>
-          <View style={styles.modeRow}>
-            {modes.map((m) => {
+          <View style={[styles.modeRow ,
+          {
+  marginBottom: 11,
+  marginTop: 5,
+ 
+           } ]}>
+            {modes.map((m) =>   {
               const active = selectedMode === m.id;
               return (
                 <TouchableOpacity
@@ -110,9 +116,15 @@ export default function WelcomeLoginScreen({
                     { backgroundColor: appTheme.colors.surface, borderColor: 'rgba(255,255,255,0.08)' },
                     active && [styles.modeCardActive, { borderColor: appTheme.colors.primary, backgroundColor: appTheme.colors.primary + '22' }],
                   ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
                 >
                   <View style={[styles.modeIconBg, { backgroundColor: active ? appTheme.colors.primary : 'rgba(255,255,255,0.06)' }]}>
-                    <Text style={styles.modeIcon}>{m.icon}</Text>
+                    {m.id === 'ai' ? (
+                      <RobotIcon size={23} color={active ? '#FFFFFF' : appTheme.colors.secondaryText} />
+                    ) : (
+                      <FriendsIcon size={23} color={active ? '#FFFFFF' : appTheme.colors.secondaryText} />
+                    )}
                   </View>
                   <Text style={[styles.modeTitle, { color: appTheme.colors.text }]}>
                     {m.title}
@@ -128,10 +140,10 @@ export default function WelcomeLoginScreen({
 
         {/* Section 2: Player Count Selection (2, 3, 4, 5) */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: appTheme.colors.secondaryText }]}>
+          <Text style={[styles.sectionTitle, { color: appTheme.colors.secondaryText, marginBottom: 11 }]}>
             PLAYERS COUNT
           </Text>
-          <View style={styles.pillsRow}>
+          <View style={[styles.pillsRow, { marginBottom: 10 }]}>
             {playerCounts.map((item) => {
               const active = playerCount === item.count;
               return (
@@ -144,6 +156,8 @@ export default function WelcomeLoginScreen({
                     { backgroundColor: appTheme.colors.surface, borderColor: 'rgba(255,255,255,0.08)' },
                     active && [styles.pillBtnActive, { backgroundColor: appTheme.colors.primary }],
                   ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
                 >
                   <Text style={[styles.pillText, active && styles.pillTextActive]}>
                     {item.count}P
@@ -175,11 +189,14 @@ export default function WelcomeLoginScreen({
                     { backgroundColor: appTheme.colors.surface },
                     active && [styles.colorBtnActive, { borderColor: c.hex, backgroundColor: c.hex + '18' }],
                   ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={`${c.name} pawn color`}
                 >
+                  <View style={[styles.colorDot, { backgroundColor: c.hex }]} />
                   <Text style={[styles.colorName, { color: appTheme.colors.text }]}>
                     {c.name}
                   </Text>
-                  {active && <Text style={[styles.checkIcon, { color: c.hex }]}>✓</Text>}
                 </TouchableOpacity>
               );
             })}
@@ -187,19 +204,24 @@ export default function WelcomeLoginScreen({
         </View>
 
         {/* Main Action Button */}
+       
+      
+      </ScrollView>
         <View style={styles.actionContainer}>
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={handleStartGame}
             style={[
               styles.playBtn,
-              { backgroundColor: appTheme.colors.primary, shadowColor: appTheme.colors.primary },
+              { backgroundColor: appTheme.colors.primary, shadowColor: appTheme.colors.primary,
+                marginBottom:15,
+                marginHorizontal:15
+              },
             ]}
           >
             <Text style={styles.playBtnText}>PLAY NOW</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -230,16 +252,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 12,
   },
   headerBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-  },
-  headerBadgeIcon: {
-    fontSize: 16,
-  },
+   },
   appHeaderTitle: {
     fontSize: 14,
     fontWeight: '900',
@@ -253,36 +272,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoWrapper: {
-    alignItems: 'center',
-    marginVertical: 4,
+  intro: {
+    marginTop: 18,
+    marginBottom: 8,
   },
-  taglineText: {
-    fontSize: 13,
-    fontWeight: '700',
+  introTitle: {
+    fontSize: 28,
+    fontWeight: '900',
+  },
+  introSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
     marginTop: 4,
-    letterSpacing: 0.5,
   },
   sectionContainer: {
-    marginTop: 16,
+    marginTop: 20,
   },
   sectionTitle: {
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1,
-    marginBottom: 8,
+    marginBottom:15,
     marginLeft: 2,
-  },
+   },
   modeRow: {
     flexDirection: 'row',
     gap: 10,
-  },
+   },
   modeCard: {
     flex: 1,
-    borderRadius: 18,
+    borderRadius: 14,
     borderWidth: 1.5,
-    paddingVertical: 14,
-    paddingHorizontal: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 10,
     alignItems: 'center',
     gap: 6,
   },
@@ -296,12 +318,9 @@ const styles = StyleSheet.create({
   modeIconBg: {
     width: 42,
     height: 42,
-    borderRadius: 21,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  modeIcon: {
-    fontSize: 22,
   },
   modeTitle: {
     fontSize: 14,
@@ -342,7 +361,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   colorsRow: {
-    flexDirection: 'row', gap: 10
+    flexDirection: 'row',
+    gap: 10,
   },
   colorBtn: {
     flex: 1,
@@ -352,8 +372,14 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1.5,
     borderColor: 'transparent',
-    gap: 6,
-    padding: 10,
+    gap: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 5,
+  },
+  colorDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
   },
   colorBtnActive: {
     shadowColor: '#000',
@@ -361,18 +387,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 3,
   },
-  colorDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-  },
   colorName: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
-  },
-  checkIcon: {
-    fontSize: 12,
-    fontWeight: '900',
   },
   actionContainer: {
     marginTop: 22,

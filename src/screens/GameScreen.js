@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   StatusBar,
-  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -37,19 +36,17 @@ export default function GameScreen({
   isDarkMode = false,
 }) {
   const { appTheme } = useTheme();
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const [gameState, setGameState] = useState(() => createInitialState(gameOptions));
   const [isRolling, setIsRolling] = useState(false);
   const [rollNotice, setRollNotice] = useState(null);
+  const [boardArea, setBoardArea] = useState({ width: 0, height: 0 });
 
   const bgColor = appTheme?.colors?.background || (isDarkMode ? '#050B14' : '#0B1A30');
 
-  // Fully responsive board sizing based on available height and screen width
-  const isSmallHeight = screenHeight < 680;
-  const reservedHudHeight = isSmallHeight ? 230 : 260;
-  const maxAvailableHeight = Math.max(200, screenHeight - reservedHudHeight);
-  const maxAvailableWidth = Math.max(200, screenWidth - 16);
-  const boardSize = Math.min(maxAvailableWidth, maxAvailableHeight, 370);
+  const boardSize = Math.max(
+    0,
+    Math.min(boardArea.width - 32, boardArea.height - 20, 360)
+  );
 
   const [isAnimatingMove, setIsAnimatingMove] = useState(false);
 
@@ -280,14 +277,17 @@ export default function GameScreen({
 
       {/* Top Header Row with Back Button, Room Mode Badge & Settings */}
       <View style={styles.topHeader}>
-        {/* <TouchableOpacity
+        
+        <TouchableOpacity
           activeOpacity={0.7}
           onPress={onExitHome}
           style={styles.circleIconBtn}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
         >
           <BackArrowIcon size={20} color="#FFFFFF" />
-        </TouchableOpacity> */}
+        </TouchableOpacity>
 
         <View style={styles.headerTitleContainer}>
           {gameOptions.isVsAi ? (
@@ -342,7 +342,17 @@ export default function GameScreen({
       </View>
 
       {/* Center Ludo Board */}
-      <View style={styles.boardContainer}>
+      <View
+        style={styles.boardContainer}
+        onLayout={({ nativeEvent }) => {
+          const { width, height } = nativeEvent.layout;
+          setBoardArea((current) => (
+            current.width === width && current.height === height
+              ? current
+              : { width, height }
+          ));
+        }}
+      >
         <LudoBoardExact
           state={gameState}
           onSelectToken={handleSelectToken}
@@ -384,8 +394,7 @@ export default function GameScreen({
       {/* Bottom Center Active Rolling Station with 3D Flipping Cube */}
       <View style={styles.bottomRollStation}>
         <View style={[styles.diceRollControl, canRoll && styles.diceRollControlActive]}>
-          {/* <Text style={styles.arrowIcon}>‹</Text> */}
-          <Cube3DFlippingDice
+           <Cube3DFlippingDice
             targetValue={gameState.diceValue || 6}
             isRolling={isRolling}
             onPress={canRoll ? triggerRoll : undefined}
@@ -414,6 +423,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 4,
+  },
+  headerSideSpacer: {
+    width: 38,
+    height: 38,
   },
   circleIconBtn: {
     width: 38,
@@ -446,12 +459,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     alignItems: 'center',
-    minHeight: 52,
+    minHeight: 48,
   },
   boardContainer: {
+    flex: 1,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 4,
+    paddingVertical: 0,
   },
   noticeBanner: {
     backgroundColor: 'rgba(15, 23, 42, 0.95)',
@@ -489,19 +504,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     alignItems: 'center',
-    minHeight: 52,
+    minHeight: 48,
   },
   bottomRollStation: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: 14,
+    paddingBottom: 8,
+    paddingTop: 2,
   },
   diceRollControl: {
     flexDirection: 'row',
     alignItems: 'center',
      borderRadius: 24,
-    borderWidth: 2,
-     paddingHorizontal: 16,
+      paddingHorizontal: 16,
     paddingVertical: 6,
     gap: 12,
  

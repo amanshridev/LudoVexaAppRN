@@ -1,11 +1,9 @@
-
-
 export const THEME_LIST = [
   {
     id: 'emerald',
     name: 'Emerald Green',
     primary: '#10B981',
-    primaryLight: 'red',
+    primaryLight: '#34D399',
     primaryDark: '#047857',
     onPrimary: '#FFFFFF',
     background: '#071126',
@@ -65,8 +63,6 @@ export const THEME_LIST = [
     mutedText: '#94A3B8',
     border: 'rgba(59, 130, 246, 0.45)',
   },
-
-
   {
     id: 'cyan',
     name: 'Electric Cyan',
@@ -83,7 +79,6 @@ export const THEME_LIST = [
     mutedText: '#94A3B8',
     border: 'rgba(6, 182, 212, 0.45)',
   },
-
   {
     id: 'teal',
     name: 'Cyber Teal',
@@ -116,7 +111,6 @@ export const THEME_LIST = [
     mutedText: '#94A3B8',
     border: 'rgba(124, 58, 237, 0.45)',
   },
-
   {
     id: 'indigo',
     name: 'Midnight Indigo',
@@ -148,6 +142,72 @@ export const THEME_LIST = [
     secondaryText: '#CBD5E1',
     mutedText: '#94A3B8',
     border: 'rgba(100, 116, 139, 0.45)',
+  },
+
+  // ── Ludo Themes ────────────────────────────────────────────────────────────
+  {
+    id: 'ludo-red',
+    name: 'Ludo Red',
+    primary: '#E53935',
+    primaryLight: '#EF5350',
+    primaryDark: '#B71C1C',
+    onPrimary: '#FFFFFF',
+    background: '#071126',
+    surface: '#2A0A0A',
+    card: '#3D1010',
+    elevated: '#521515',
+    text: '#FFFFFF',
+    secondaryText: '#CBD5E1',
+    mutedText: '#94A3B8',
+    border: 'rgba(229, 57, 53, 0.45)',
+  },
+  {
+    id: 'ludo-green',
+    name: 'Ludo Green',
+    primary: '#43A047',
+    primaryLight: '#66BB6A',
+    primaryDark: '#1B5E20',
+    onPrimary: '#FFFFFF',
+    background: '#071126',
+    surface: '#0A2A0A',
+    card: '#103D10',
+    elevated: '#155215',
+    text: '#FFFFFF',
+    secondaryText: '#CBD5E1',
+    mutedText: '#94A3B8',
+    border: 'rgba(67, 160, 71, 0.45)',
+  },
+  {
+    id: 'ludo-yellow',
+    name: 'Ludo Yellow',
+    primary: '#FDD835',
+    primaryLight: '#FFEE58',
+    primaryDark: '#F9A825',
+    onPrimary: '#1A1A1A',
+    background: '#071126',
+    surface: '#1F1A00',
+    card: '#2E2600',
+    elevated: '#3D3200',
+    text: '#FFFFFF',
+    secondaryText: '#CBD5E1',
+    mutedText: '#94A3B8',
+    border: 'rgba(253, 216, 53, 0.45)',
+  },
+  {
+    id: 'ludo-blue',
+    name: 'Ludo Blue',
+    primary: '#1E88E5',
+    primaryLight: '#42A5F5',
+    primaryDark: '#0D47A1',
+    onPrimary: '#FFFFFF',
+    background: '#071126',
+    surface: '#0A1A2E',
+    card: '#102540',
+    elevated: '#153152',
+    text: '#FFFFFF',
+    secondaryText: '#CBD5E1',
+    mutedText: '#94A3B8',
+    border: 'rgba(30, 136, 229, 0.45)',
   },
 
 ];
