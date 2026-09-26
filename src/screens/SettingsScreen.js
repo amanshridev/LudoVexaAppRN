@@ -29,14 +29,14 @@ export default function SettingsScreen({ onNavigate, onBack }) {
           badgeColor: ludoTheme?.colors?.[0] || appTheme.colors.primary,
           route: 'theme',
         },
-        {
-          id: 'appColor',
-          icon: '🌈',
-          title: 'App Colors',
-          subtitle: currentAppColorObj.name,
-          badgeColor: currentAppColorObj.primary,
-          route: 'appColor',
-        },
+        // {
+        //   id: 'appColor',
+        //   icon: '🌈',
+        //   title: 'App Colors',
+        //   subtitle: currentAppColorObj.name,
+        //   badgeColor: currentAppColorObj.primary,
+        //   route: 'appColor',
+        // },
       ],
     },
 
@@ -125,15 +125,7 @@ export default function SettingsScreen({ onNavigate, onBack }) {
           </View>
         ))}
 
-        {/* Footer info */}
-        <View style={styles.footerContainer}>
-          <Text style={[styles.footerAppTitle, { color: appTheme.colors.secondaryText }]}>
-            LudoVexa App • RN Edition
-          </Text>
-          <Text style={[styles.footerBuildText, { color: appTheme.colors.mutedText }]}>
-            Build 2026.09.16 • All Rights Reserved
-          </Text>
-        </View>
+       
       </ScrollView>
     </SafeAreaView>
   );
