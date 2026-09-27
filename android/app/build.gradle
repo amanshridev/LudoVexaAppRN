@@ -85,10 +85,10 @@ android {
 
     namespace "com.ludovexaapp"
     defaultConfig {
-        applicationId "com.ludovexaapp"
+        applicationId "com.LudoVexaApp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        versionCode 2
         versionName "1.0"
     }
     signingConfigs {
