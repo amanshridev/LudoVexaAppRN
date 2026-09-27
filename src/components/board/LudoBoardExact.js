@@ -197,7 +197,7 @@ export default function LudoBoardExact({
 
     if (r === 14 && c === 7) {
       content = (
-        <Text style={[styles.entryArrowText, { color: palette.red.path }]}>
+        <Text style={[styles.entryArrowText, { color: palette.red.path,bottom: 1 }]}>
           ↑
         </Text>
       );
@@ -605,6 +605,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#334155',
     fontWeight: '900',
+    bottom: 2.8
   },
   entryArrowText: {
     fontSize: 18,
