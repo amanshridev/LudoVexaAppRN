@@ -64,7 +64,8 @@ class SoundManagerClass {
   }
 
   /**
-   * Preload all sounds on screen mount.
+   * Preload sounds non-blockingly.
+   * Priority sounds load immediately, secondary sounds load after initial paint.
    * Fails silently if any sound file is missing or invalid.
    */
   init() {
@@ -75,13 +76,15 @@ class SoundManagerClass {
       Sound.setCategory('Playback', true);
     } catch (_) {}
 
-    Object.keys(SOUND_REQUIRE_MAP).forEach((key) => {
+    const loadSoundKey = (key) => {
       const file = SOUND_REQUIRE_MAP[key];
       if (!file) return;
 
       if (POOLED_SOUNDS.includes(key)) {
-        this.pools[key] = [];
-        this.poolIndices[key] = 0;
+        if (!this.pools[key]) {
+          this.pools[key] = [];
+          this.poolIndices[key] = 0;
+        }
         for (let i = 0; i < POOL_SIZE; i++) {
           try {
             const s = new Sound(file, Sound.MAIN_BUNDLE, (error) => {
@@ -98,7 +101,6 @@ class SoundManagerClass {
         try {
           this.sounds[key] = new Sound(file, Sound.MAIN_BUNDLE, (error) => {
             if (error) {
-              // Missing file -> fail silently
               this.sounds[key] = null;
             }
           });
@@ -106,7 +108,21 @@ class SoundManagerClass {
           this.sounds[key] = null;
         }
       }
-    });
+    };
+
+    // Priority sounds needed immediately on screen display & rolls
+    const PRIORITY_SOUNDS = ['buttonTap', 'diceRoll', 'diceLand', 'tokenSelect', 'step'];
+    PRIORITY_SOUNDS.forEach((key) => loadSoundKey(key));
+
+    // Defer remaining secondary sounds (kill, extraTurn, winner, safe, etc.)
+    // so native bridge traffic does not compete with screen layout and mounting
+    const secondaryKeys = Object.keys(SOUND_REQUIRE_MAP).filter(
+      (k) => !PRIORITY_SOUNDS.includes(k)
+    );
+
+    setTimeout(() => {
+      secondaryKeys.forEach((key) => loadSoundKey(key));
+    }, 150);
   }
 
   /**

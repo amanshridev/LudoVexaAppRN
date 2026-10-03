@@ -135,7 +135,175 @@ export const ExactLudoToken = React.memo(function ExactLudoToken({ player = 'red
   );
 });
 
-export default function LudoBoardExact({
+const SAFE_CELL_KEYS = new Set(['6_1', '2_6', '1_8', '6_12', '8_13', '12_8', '13_6', '8_2']);
+
+const HomeBaseBox = React.memo(function HomeBaseBox({
+  player,
+  top,
+  left,
+  label,
+  palette,
+  cellSize,
+  tokensInBase = [],
+  movableTokenIds = [],
+  isActive = false,
+  onSelectToken,
+  tokensDisabled = false,
+}) {
+  const col = palette[player] || palette.red;
+  const boxSize = cellSize * 6;
+  const whiteBoxSize = boxSize * 0.78;
+  const isBottomPlayer = player === 'red' || player === 'blue';
+
+  const opacityAnim = React.useRef(new Animated.Value(isActive ? 1 : 0.5)).current;
+  const pulseAnim = React.useRef(new Animated.Value(0.35)).current;
+
+  React.useEffect(() => {
+    Animated.timing(opacityAnim, {
+      toValue: isActive ? 1 : 0.5,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, [isActive, opacityAnim]);
+
+  React.useEffect(() => {
+    let anim;
+    if (isActive) {
+      anim = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 900,
+            easing: Easing.inOut(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 0.35,
+            duration: 900,
+            easing: Easing.inOut(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      anim.start();
+    } else {
+      pulseAnim.setValue(0);
+    }
+    return () => anim?.stop();
+  }, [isActive, pulseAnim]);
+
+  const baseLabel = (
+    <Text
+      style={[
+        styles.baseLabelText,
+        isBottomPlayer && styles.baseLabelBelow,
+      ]}
+    >
+      {label}
+    </Text>
+  );
+
+  const hasMovableInBase = tokensInBase.some((t) => movableTokenIds.includes(t.id));
+
+  return (
+    <Animated.View
+      style={[
+        styles.baseBox,
+        {
+          top,
+          left,
+          width: boxSize,
+          height: boxSize,
+          backgroundColor: col.base,
+          borderWidth: hasMovableInBase ? 2.5 : 0,
+          borderColor: hasMovableInBase ? '#FACC15' : 'transparent',
+          zIndex: hasMovableInBase ? 40 : 10,
+          opacity: opacityAnim,
+        },
+      ]}
+    >
+      {/* Active glowing border with slow pulse */}
+      {isActive && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.activeBaseGlowBorder,
+            {
+              borderColor: col.goldRing || '#FACC15',
+              opacity: pulseAnim,
+            },
+          ]}
+        />
+      )}
+
+      {!isBottomPlayer && baseLabel}
+
+      <View
+        style={[
+          styles.whiteCourtyardSquare,
+          {
+            width: whiteBoxSize,
+            height: whiteBoxSize,
+            backgroundColor: palette.boardBg || '#FFFFFF',
+          },
+        ]}
+      >
+        <View style={styles.pedestals2x2}>
+          {[0, 1, 2, 3].map((idx) => {
+            const tokenAtBase = tokensInBase.find((t) => t.index === idx);
+            const isMovable = tokenAtBase && movableTokenIds.includes(tokenAtBase.id);
+            const slotSize = cellSize * 1.35;
+            const tokenSize = cellSize * 0.98;
+
+            return (
+              <View
+                key={`slot_${player}_${idx}`}
+                style={[
+                  styles.baseSlotCircle,
+                  {
+                    width: slotSize,
+                    height: slotSize,
+                    borderRadius: slotSize / 2,
+                    borderColor: isMovable ? '#FACC15' : col.base,
+                  },
+                  isMovable && styles.baseSlotMovableGlow,
+                ]}
+              >
+                {/* Inner recessed cup circle */}
+                <View
+                  style={[
+                    styles.baseSlotInnerPad,
+                    {
+                      width: slotSize * 0.78,
+                      height: slotSize * 0.78,
+                      borderRadius: (slotSize * 0.78) / 2,
+                      backgroundColor: col.base,
+                    },
+                  ]}
+                />
+
+                {tokenAtBase && (
+                  <View style={styles.slotTokenCenter}>
+                    <PinToken3D
+                      token={tokenAtBase}
+                      size={tokenSize}
+                      isMovable={isMovable}
+                      onPress={() => onSelectToken(tokenAtBase.id)}
+                      disabled={tokensDisabled}
+                    />
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </View>
+      </View>
+      {isBottomPlayer && baseLabel}
+    </Animated.View>
+  );
+});
+
+function LudoBoardExact({
   state,
   onSelectToken,
   boardSize = 350,
@@ -157,104 +325,7 @@ export default function LudoBoardExact({
     });
   });
 
-  const renderCell = (r, c) => {
-    if (r < 6 && c < 6) return null;
-    if (r < 6 && c > 8) return null;
-    if (r > 8 && c > 8) return null;
-    if (r > 8 && c < 6) return null;
-    if (r >= 6 && r <= 8 && c >= 6 && c <= 8) return null;
-
-    let bgColor = palette.boardBg || '#FFFFFF';
-    let borderColor = '#64748B';
-    let content = null;
-
-    if (c === 7 && r >= 9 && r <= 13) {
-      bgColor = palette.red.path;
-    } else if (r === 7 && c >= 1 && c <= 5) {
-      bgColor = palette.green.path;
-    } else if (c === 7 && r >= 1 && r <= 5) {
-      bgColor = palette.yellow.path;
-    } else if (r === 7 && c >= 9 && c <= 13) {
-      bgColor = palette.blue.path;
-    }
-
-    if (r === 6 && c === 1) {
-      bgColor = palette.boardBg || '#FFFFFF';
-      borderColor = palette.green.path;
-    } else if (r === 1 && c === 8) {
-      bgColor = palette.boardBg || '#FFFFFF';
-      borderColor = palette.yellow.path;
-    } else if (r === 8 && c === 13) {
-      bgColor = palette.boardBg || '#FFFFFF';
-      borderColor = palette.blue.path;
-    } else if (r === 13 && c === 6) {
-      bgColor = palette.boardBg || '#FFFFFF';
-      borderColor = palette.red.path;
-    }
-
-    const trackIndex = TRACK_COORDS.findIndex((coord) => coord.r === r && coord.c === c);
-    if (trackIndex !== -1 && SAFE_INDICES.includes(trackIndex)) {
-      content = (
-        <View style={styles.starBadgeContainer}>
-          <Text style={styles.starOutlineIcon}>☆</Text>
-        </View>
-      );
-    }
-
-    if (r === 14 && c === 7) {
-      content = (
-        <Text style={[styles.entryArrowText, { color: palette.red.path,bottom: 1 }]}>
-          ↑
-        </Text>
-      );
-    } else if (r === 7 && c === 0) {
-      content = (
-        <Text style={[styles.entryArrowText, { color: palette.green.path }]}>
-          →
-        </Text>
-      );
-    } else if (r === 0 && c === 7) {
-      content = (
-        <Text style={[styles.entryArrowText, { color: palette.yellow.path }]}>
-          ↓
-        </Text>
-      );
-    } else if (r === 7 && c === 14) {
-      content = (
-        <Text style={[styles.entryArrowText, { color: palette.blue.path }]}>
-          ←
-        </Text>
-      );
-    }
-
-    const cellKey = `${r}_${c}`;
-    const tokensOnCell = tokensByCell[cellKey] || [];
-    const movableTokenOnCell = tokensOnCell.find((t) => state.movableTokenIds.includes(t.id));
-
-    return (
-      <View
-        key={`cell_${r}_${c}`}
-        style={[
-          styles.cell,
-          {
-            width: cellSize,
-            height: cellSize,
-            top: r * cellSize,
-            left: c * cellSize,
-            backgroundColor: bgColor,
-            borderColor: borderColor,
-            borderWidth: 0.6,
-            zIndex: 1,
-          },
-        ]}
-      >
-        {content}
-      </View>
-    );
-  };
-
   const getBaseLabel = (player) => {
-    const isHuman = state.playerTypes?.[player] === 'human';
     if (player === state.userColor && state.isVsAi) return 'You';
     const playerNum = state.activePlayers.indexOf(player) + 1;
     if (state.isVsAi) {
@@ -263,164 +334,108 @@ export default function LudoBoardExact({
     return `Player ${playerNum}`;
   };
 
-  const HomeBaseBox = ({ player, top, left, label }) => {
-    const col = palette[player] || palette.red;
-    const boxSize = cellSize * 6;
-    const whiteBoxSize = boxSize * 0.78;
-    const isBottomPlayer = player === 'red' || player === 'blue';
-    const isActive = player === state.currentTurn;
+  // Memoize static grid cells so 72 views are not recreated on every state change
+  const gridCells = React.useMemo(() => {
+    if (cellSize <= 0) return [];
+    const cells = [];
+    for (let r = 0; r < GRID_SIZE; r++) {
+      for (let c = 0; c < GRID_SIZE; c++) {
+        if (r < 6 && c < 6) continue;
+        if (r < 6 && c > 8) continue;
+        if (r > 8 && c > 8) continue;
+        if (r > 8 && c < 6) continue;
+        if (r >= 6 && r <= 8 && c >= 6 && c <= 8) continue;
 
-    const opacityAnim = React.useRef(new Animated.Value(isActive ? 1 : 0.5)).current;
-    const pulseAnim = React.useRef(new Animated.Value(0.35)).current;
+        let bgColor = palette.boardBg || '#FFFFFF';
+        let borderColor = '#64748B';
+        let content = null;
 
-    React.useEffect(() => {
-      Animated.timing(opacityAnim, {
-        toValue: isActive ? 1 : 0.5,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
-    }, [isActive, opacityAnim]);
+        if (c === 7 && r >= 9 && r <= 13) {
+          bgColor = palette.red.path;
+        } else if (r === 7 && c >= 1 && c <= 5) {
+          bgColor = palette.green.path;
+        } else if (c === 7 && r >= 1 && r <= 5) {
+          bgColor = palette.yellow.path;
+        } else if (r === 7 && c >= 9 && c <= 13) {
+          bgColor = palette.blue.path;
+        }
 
-    React.useEffect(() => {
-      let anim;
-      if (isActive) {
-        anim = Animated.loop(
-          Animated.sequence([
-            Animated.timing(pulseAnim, {
-              toValue: 1,
-              duration: 900,
-              easing: Easing.inOut(Easing.quad),
-              useNativeDriver: true,
-            }),
-            Animated.timing(pulseAnim, {
-              toValue: 0.35,
-              duration: 900,
-              easing: Easing.inOut(Easing.quad),
-              useNativeDriver: true,
-            }),
-          ])
-        );
-        anim.start();
-      } else {
-        pulseAnim.setValue(0);
-      }
-      return () => anim?.stop();
-    }, [isActive, pulseAnim]);
+        if (r === 6 && c === 1) {
+          bgColor = palette.boardBg || '#FFFFFF';
+          borderColor = palette.green.path;
+        } else if (r === 1 && c === 8) {
+          bgColor = palette.boardBg || '#FFFFFF';
+          borderColor = palette.yellow.path;
+        } else if (r === 8 && c === 13) {
+          bgColor = palette.boardBg || '#FFFFFF';
+          borderColor = palette.blue.path;
+        } else if (r === 13 && c === 6) {
+          bgColor = palette.boardBg || '#FFFFFF';
+          borderColor = palette.red.path;
+        }
 
-    const baseLabel = (
-      <Text
-        style={[
-          styles.baseLabelText,
-          isBottomPlayer && styles.baseLabelBelow,
-        ]}
-      >
-        {label || getBaseLabel(player)}
-      </Text>
-    );
+        const cellKey = `${r}_${c}`;
+        if (SAFE_CELL_KEYS.has(cellKey)) {
+          content = (
+            <View style={styles.starBadgeContainer}>
+              <Text style={styles.starOutlineIcon}>☆</Text>
+            </View>
+          );
+        }
 
-    const tokensInBase = (state.tokens[player] || []).filter((t) => t.step === -1);
-    const hasMovableInBase = tokensInBase.some((t) => state.movableTokenIds.includes(t.id));
+        if (r === 14 && c === 7) {
+          content = (
+            <Text style={[styles.entryArrowText, { color: palette.red.path, bottom: 1 }]}>
+              ↑
+            </Text>
+          );
+        } else if (r === 7 && c === 0) {
+          content = (
+            <Text style={[styles.entryArrowText, { color: palette.green.path }]}>
+              →
+            </Text>
+          );
+        } else if (r === 0 && c === 7) {
+          content = (
+            <Text style={[styles.entryArrowText, { color: palette.yellow.path }]}>
+              ↓
+            </Text>
+          );
+        } else if (r === 7 && c === 14) {
+          content = (
+            <Text style={[styles.entryArrowText, { color: palette.blue.path }]}>
+              ←
+            </Text>
+          );
+        }
 
-    return (
-      <Animated.View
-        key={`base_${player}`}
-        style={[
-          styles.baseBox,
-          {
-            top,
-            left,
-            width: boxSize,
-            height: boxSize,
-            backgroundColor: col.base,
-            borderWidth: hasMovableInBase ? 2.5 : 0,
-            borderColor: hasMovableInBase ? '#FACC15' : 'transparent',
-            zIndex: hasMovableInBase ? 40 : 10,
-            opacity: opacityAnim,
-          },
-        ]}
-      >
-        {/* Active glowing border with slow pulse */}
-        {isActive && (
-          <Animated.View
-            pointerEvents="none"
+        cells.push(
+          <View
+            key={`cell_${r}_${c}`}
             style={[
-              styles.activeBaseGlowBorder,
+              styles.cell,
               {
-                borderColor: col.goldRing || '#FACC15',
-                opacity: pulseAnim,
+                width: cellSize,
+                height: cellSize,
+                top: r * cellSize,
+                left: c * cellSize,
+                backgroundColor: bgColor,
+                borderColor: borderColor,
+                borderWidth: 0.6,
+                zIndex: 1,
               },
             ]}
-          />
-        )}
-
-        {!isBottomPlayer && baseLabel}
-
-        <View
-          style={[
-            styles.whiteCourtyardSquare,
-            {
-              width: whiteBoxSize,
-              height: whiteBoxSize,
-              backgroundColor: palette.boardBg || '#FFFFFF',
-            },
-          ]}
-        >
-          <View style={styles.pedestals2x2}>
-            {[0, 1, 2, 3].map((idx) => {
-              const tokenAtBase = tokensInBase.find((t) => t.index === idx);
-              const isMovable = tokenAtBase && state.movableTokenIds.includes(tokenAtBase.id);
-              const slotSize = cellSize * 1.35;
-              const tokenSize = cellSize * 0.98;
-
-              return (
-                <View
-                  key={`slot_${player}_${idx}`}
-                  style={[
-                    styles.baseSlotCircle,
-                    {
-                      width: slotSize,
-                      height: slotSize,
-                      borderRadius: slotSize / 2,
-                      borderColor: isMovable ? '#FACC15' : col.base,
-                    },
-                    isMovable && styles.baseSlotMovableGlow,
-                  ]}
-                >
-                  {/* Inner recessed cup circle */}
-                  <View
-                    style={[
-                      styles.baseSlotInnerPad,
-                      {
-                        width: slotSize * 0.78,
-                        height: slotSize * 0.78,
-                        borderRadius: (slotSize * 0.78) / 2,
-                        backgroundColor: col.base,
-                      },
-                    ]}
-                  />
-
-                  {tokenAtBase && (
-                    <View style={styles.slotTokenCenter}>
-                      <PinToken3D
-                        token={tokenAtBase}
-                        size={tokenSize}
-                        isMovable={isMovable}
-                        onPress={() => onSelectToken(tokenAtBase.id)}
-                        disabled={tokensDisabled}
-                      />
-                    </View>
-                  )}
-                </View>
-              );
-            })}
+          >
+            {content}
           </View>
-        </View>
-        {isBottomPlayer && baseLabel}
-      </Animated.View>
-    );
-  };
+        );
+      }
+    }
+    return cells;
+  }, [cellSize, palette]);
 
   const renderActiveTokens = () => {
+    if (cellSize <= 0) return null;
     const rendered = [];
 
     Object.keys(tokensByCell).forEach((cellKey) => {
@@ -480,15 +495,12 @@ export default function LudoBoardExact({
     return rendered;
   };
 
-  const gridCells = [];
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c < GRID_SIZE; c++) {
-      const cell = renderCell(r, c);
-      if (cell) gridCells.push(cell);
-    }
-  }
-
   const centerSize = cellSize * 3;
+
+  const greenTokensInBase = (state.tokens.green || []).filter((t) => t.step === -1);
+  const yellowTokensInBase = (state.tokens.yellow || []).filter((t) => t.step === -1);
+  const blueTokensInBase = (state.tokens.blue || []).filter((t) => t.step === -1);
+  const redTokensInBase = (state.tokens.red || []).filter((t) => t.step === -1);
 
   return (
     <View
@@ -513,10 +525,58 @@ export default function LudoBoardExact({
       >
         {gridCells}
 
-        <HomeBaseBox player="green" top={0} left={0} />
-        <HomeBaseBox player="yellow" top={0} left={cellSize * 9} />
-        <HomeBaseBox player="blue" top={cellSize * 9} left={cellSize * 9} />
-        <HomeBaseBox player="red" top={cellSize * 9} left={0} />
+        <HomeBaseBox
+          player="green"
+          top={0}
+          left={0}
+          label={getBaseLabel('green')}
+          palette={palette}
+          cellSize={cellSize}
+          tokensInBase={greenTokensInBase}
+          movableTokenIds={state.movableTokenIds}
+          isActive={state.currentTurn === 'green'}
+          onSelectToken={onSelectToken}
+          tokensDisabled={tokensDisabled}
+        />
+        <HomeBaseBox
+          player="yellow"
+          top={0}
+          left={cellSize * 9}
+          label={getBaseLabel('yellow')}
+          palette={palette}
+          cellSize={cellSize}
+          tokensInBase={yellowTokensInBase}
+          movableTokenIds={state.movableTokenIds}
+          isActive={state.currentTurn === 'yellow'}
+          onSelectToken={onSelectToken}
+          tokensDisabled={tokensDisabled}
+        />
+        <HomeBaseBox
+          player="blue"
+          top={cellSize * 9}
+          left={cellSize * 9}
+          label={getBaseLabel('blue')}
+          palette={palette}
+          cellSize={cellSize}
+          tokensInBase={blueTokensInBase}
+          movableTokenIds={state.movableTokenIds}
+          isActive={state.currentTurn === 'blue'}
+          onSelectToken={onSelectToken}
+          tokensDisabled={tokensDisabled}
+        />
+        <HomeBaseBox
+          player="red"
+          top={cellSize * 9}
+          left={0}
+          label={getBaseLabel('red')}
+          palette={palette}
+          cellSize={cellSize}
+          tokensInBase={redTokensInBase}
+          movableTokenIds={state.movableTokenIds}
+          isActive={state.currentTurn === 'red'}
+          onSelectToken={onSelectToken}
+          tokensDisabled={tokensDisabled}
+        />
 
         <View
           style={[
@@ -538,6 +598,8 @@ export default function LudoBoardExact({
     </View>
   );
 }
+
+export default React.memo(LudoBoardExact);
 
 
 const styles = StyleSheet.create({

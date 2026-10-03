@@ -8,6 +8,7 @@ import {
   Animated,
   Easing,
   AppState,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -39,6 +40,9 @@ const ENABLE_HOP_ANIMATION = true;
 const BURST_ANGLES = [0, 0.785, 1.57, 2.356, 3.141, 3.927, 4.712, 5.497];
 const BOARD_BORDER = 4;
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const INITIAL_BOARD_SIZE = Math.max(0, Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.52, 360));
+
 const getCoordXY = (coords, currentCellSize) => {
   if (!coords) return { x: 0, y: 0 };
   const currentTokenSize = currentCellSize * 0.72;
@@ -62,7 +66,11 @@ export default function GameScreen({
   const [isRolling, setIsRolling] = useState(false);
   const [rollingDiceValue, setRollingDiceValue] = useState(null);
   const [rollNotice, setRollNotice] = useState(null);
-  const [boardArea, setBoardArea] = useState({ width: 0, height: 0 });
+  // Pre-initialize board dimensions from screen width/height so frame 0 renders immediately without blank delay
+  const [boardArea, setBoardArea] = useState(() => ({
+    width: SCREEN_WIDTH,
+    height: Math.max(INITIAL_BOARD_SIZE + 20, SCREEN_HEIGHT * 0.52),
+  }));
 
   const bgColor = appTheme?.colors?.background || (isDarkMode ? '#050B14' : '#0B1A30');
 
@@ -113,10 +121,13 @@ export default function GameScreen({
   const [isMuted, setIsMuted] = useState(settings.sound === false);
 
   useEffect(() => {
-    try {
-      SoundManager.init();
-      SoundManager.setMuted(settings.sound === false);
-    } catch (_) { }
+    // Slight deferral allows initial layout and component render to complete smoothly
+    const soundInitTimer = setTimeout(() => {
+      try {
+        SoundManager.init();
+        SoundManager.setMuted(settings.sound === false);
+      } catch (_) { }
+    }, 20);
 
     const appStateSub = AppState.addEventListener('change', (nextState) => {
       if (nextState.match(/inactive|background/)) {
@@ -127,12 +138,14 @@ export default function GameScreen({
     });
 
     return () => {
+      clearTimeout(soundInitTimer);
       try {
         appStateSub?.remove?.();
-        SoundManager.unload();
+        // Stop any active sounds on unmount without releasing cached instances
+        SoundManager.stopAll();
       } catch (_) { }
     };
-  }, []);
+  }, [settings.sound]);
 
   // Sync sound setting
   useEffect(() => {
@@ -414,7 +427,7 @@ export default function GameScreen({
     });
 
     setCapturedAnimToken(null);
-  }, [cellSize, ghostScale, ringScale, ringOpacity, capturedGhostPos, capturedGhostLift, capturedGhostScale, capturedShake]);
+  }, [cellSize, ghostScale, ringScale, ringOpacity, capturedGhostPos, capturedGhostLift, capturedGhostScale, capturedShake, userColor]);
 
   // 2. Safe Cell: short glow (opacity 0 -> 0.6 -> 0, 400 ms) + tiny bounce
   const runSafeCellEffect = React.useCallback(async (finalCoord) => {
@@ -1037,11 +1050,14 @@ export default function GameScreen({
         style={styles.boardContainer}
         onLayout={({ nativeEvent }) => {
           const { width, height } = nativeEvent.layout;
-          setBoardArea((current) => (
-            current.width === width && current.height === height
-              ? current
-              : { width, height }
-          ));
+          if (width > 0 && height > 0) {
+            setBoardArea((current) => {
+              if (Math.abs(current.width - width) < 3 && Math.abs(current.height - height) < 3) {
+                return current;
+              }
+              return { width, height };
+            });
+          }
         }}
       >
         <View style={[styles.boardWrapperRelative, { width: boardSize, height: boardSize }]}>

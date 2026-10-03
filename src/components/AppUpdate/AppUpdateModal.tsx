@@ -351,7 +351,6 @@ export default function AppUpdateModal({ autoCheck = true }: AppUpdateModalProps
 }
 
 const ACCENT_COLOR = '#10B981'; // Emerald Green
-const ACCENT_GOLD = '#F59E0B'; // Amber Gold
 const BG_CARD = '#0F1E36'; // Dark Navy Slate
 
 const styles = StyleSheet.create({

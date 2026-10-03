@@ -3,7 +3,7 @@ import { View, StyleSheet, Text } from 'react-native';
 import Svg, { Polygon, Defs, LinearGradient, Stop, Circle } from 'react-native-svg';
 import { PLAYER_COLORS } from '../../theme/colors';
 
-export default function CenterHome3D({ size = 70, theme }) {
+function CenterHome3D({ size = 70, theme }) {
   const red = PLAYER_COLORS.red;
   const green = PLAYER_COLORS.green;
   const yellow = PLAYER_COLORS.yellow;
@@ -68,3 +68,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+
+export default React.memo(CenterHome3D);

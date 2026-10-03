@@ -22,7 +22,7 @@ import Cube3DFlippingDice from '../3d/Cube3DFlippingDice.js';
  * 5. Integrated turn countdown timer bar at the bottom of the avatar box
  * 6. Symmetric layout (Dice on the side facing board center)
  */
-export default function CornerPlayerDock({
+function CornerPlayerDock({
   player = 'red',
   playerName = '',
   diceValue = 6,
@@ -456,3 +456,5 @@ const styles = StyleSheet.create({
     height: 18,
   },
 });
+
+export default React.memo(CornerPlayerDock);

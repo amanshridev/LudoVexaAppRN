@@ -73,7 +73,7 @@ export default function SplashScreen({ onFinish }) {
     }).start(() => {
       setTimeout(() => {
         onFinish?.();
-      }, 300);
+      }, 3000);
     });
 
     const listener = progressAnim.addListener(({ value }) => {

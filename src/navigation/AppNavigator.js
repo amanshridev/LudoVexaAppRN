@@ -3,6 +3,7 @@ import { View, StyleSheet, BackHandler } from 'react-native';
 
 // Storage & Utils
 import { loadSettings } from '../utils/storage';
+import SoundManager from '../utils/SoundManager';
 
 // Active Screens
 import SplashScreen from '../screens/SplashScreen';
@@ -68,6 +69,16 @@ export default function AppNavigator() {
 
   const reset = useCallback((screenName) => {
     setScreenStack([screenName]);
+  }, []);
+
+  // Pre-warm SoundManager in background on app launch so games open instantly
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        SoundManager.init();
+      } catch (_) {}
+    }, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   // Hardware back button handler on Android

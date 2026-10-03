@@ -15,7 +15,7 @@ import {
  * - Plays 3D wooden dice flipping sound on roll
  * - Settle pop & victory golden glow ring on landing
  */
-export default function Cube3DFlippingDice({
+function Cube3DFlippingDice({
   targetValue = 6,
   isRolling = false,
   onPress,
@@ -451,3 +451,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 });
+
+export default React.memo(Cube3DFlippingDice);
