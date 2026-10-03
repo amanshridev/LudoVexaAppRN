@@ -31,6 +31,7 @@ import {
   RobotIcon,
   SettingsGearIcon,
 } from '../components/ui/AppIcons.js';
+import WinnerOverlay, { WinnerErrorBoundary } from '../components/WinnerOverlay.js';
 
 const ENABLE_HOP_ANIMATION = true;
 const BURST_ANGLES = [0, 0.785, 1.57, 2.356, 3.141, 3.927, 4.712, 5.497];
@@ -75,6 +76,11 @@ export default function GameScreen({
   const isAnimatingRef = React.useRef(false);
   const isMountedRef = React.useRef(true);
 
+  // Winner Celebration Overlay State & Ref
+  const [showWinnerOverlay, setShowWinnerOverlay] = useState(false);
+  const [winnerData, setWinnerData] = useState(null);
+  const hasShownWinnerRef = React.useRef(false);
+
   // Stage 3: Effect state and animated refs
   // 1. Capture effect refs & state
   const [capturedAnimToken, setCapturedAnimToken] = useState(null);
@@ -109,6 +115,7 @@ export default function GameScreen({
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+      hasShownWinnerRef.current = false;
       ghostPos.stopAnimation();
       ghostLift.stopAnimation();
       ghostScale.stopAnimation();
@@ -472,6 +479,61 @@ export default function GameScreen({
     });
   }, [cellSize, ghostLift, burstProgress]);
 
+  const userColor = gameState.userColor || gameOptions.userColor || 'red';
+
+  const PLAYER_HEX = {
+    red: '#EF4444',
+    green: '#10B981',
+    yellow: '#F59E0B',
+    blue: '#3B82F6',
+  };
+
+  const getPlayerLabel = React.useCallback((color) => {
+    const isHuman = gameState.playerTypes?.[color] === 'human';
+    if (gameState.isVsAi) {
+      if (color === userColor) return 'You';
+      if (color === 'green') return isHuman ? 'Green' : 'Computer 2';
+      if (color === 'yellow') return isHuman ? 'Yellow' : 'Computer 3';
+      if (color === 'blue') return isHuman ? 'Blue' : 'Computer 4';
+      if (color === 'red') return isHuman ? 'Red' : 'Computer 1';
+    }
+    if (color === 'red') return 'Player 1';
+    if (color === 'green') return 'Player 2';
+    if (color === 'yellow') return 'Player 3';
+    if (color === 'blue') return 'Player 4';
+    return color.charAt(0).toUpperCase() + color.slice(1);
+  }, [gameState.playerTypes, gameState.isVsAi, userColor]);
+
+  // Restart match fresh with thorough reset of all state & animations
+  const handleRestartGame = React.useCallback(() => {
+    hasShownWinnerRef.current = false;
+    setShowWinnerOverlay(false);
+    setWinnerData(null);
+
+    setGameState(createInitialState(gameOptions));
+    setIsRolling(false);
+    setRollingDiceValue(null);
+    setRollNotice(null);
+    setLastDiceValues({});
+    setMovingToken(null);
+    setCapturedAnimToken(null);
+    setCaptureRing(null);
+    setSafeGlow(null);
+    setFinishedBurst(null);
+    setShowExtraTurn(false);
+    isAnimatingRef.current = false;
+  }, [gameOptions]);
+
+  // Exit back to home
+  const handleWinnerHome = React.useCallback(() => {
+    hasShownWinnerRef.current = false;
+    setShowWinnerOverlay(false);
+    setWinnerData(null);
+    if (onExitHome) {
+      onExitHome();
+    }
+  }, [onExitHome]);
+
   // Handle token selection with ghost hopping animation and Stage 3 effects
   const handleSelectToken = React.useCallback(async (tokenId) => {
     if (isAnimatingRef.current) return;
@@ -580,21 +642,51 @@ export default function GameScreen({
         setGameState(finalState);
 
         if (finalState.status === 'GAME_OVER') {
-          SoundFX.victory();
+          try {
+            SoundFX.victory();
+          } catch (soundErr) {
+            console.warn('SoundFX.victory error:', soundErr);
+          }
+
           recordGameResult({
             won: finalState.winners[0] === 'red',
             captures: finalState.stats.red?.captures || 0,
             homeRuns: finalState.stats.red?.homeCount || 0,
           });
-          setTimeout(() => {
-            if (isMountedRef.current) {
-              onGameOver?.({
-                winner: finalState.winners[0] || 'red',
-                coinsWon: 200,
-                opponent: 'Player 3',
-              });
+
+          // Open premium celebration overlay exactly once per game
+          if (!hasShownWinnerRef.current) {
+            hasShownWinnerRef.current = true;
+            const winnerColor = finalState.winners[0] || 'red';
+            const winnerName = getPlayerLabel(winnerColor);
+            const isUserWinner = winnerColor === userColor;
+
+            // Rankings list: only if game has 2nd/3rd/4th places in existing logic (more than 2 players)
+            // If the game ends at the first winner (2-player game), skip the list
+            let rankings = [];
+            if (finalState.activePlayers.length > 2) {
+              const allRankedColors = [
+                ...finalState.winners,
+                ...finalState.activePlayers.filter((p) => !finalState.winners.includes(p)),
+              ];
+              rankings = allRankedColors.map((color, index) => ({
+                rank: index + 1,
+                color,
+                name: getPlayerLabel(color),
+                isWinner: index === 0,
+                isUser: color === userColor,
+              }));
             }
-          }, 800);
+
+            setWinnerData({
+              winnerColor,
+              winnerName,
+              isUserWinner,
+              rankings,
+              coinsWon: 200,
+            });
+            setShowWinnerOverlay(true);
+          }
         } else if (finalState.lastEvent && finalState.lastEvent.includes('Captured')) {
           // Capture sound already played on impact
         } else {
@@ -623,7 +715,8 @@ export default function GameScreen({
     runSafeCellEffect,
     runTokenFinishedEffect,
     runExtraTurnBadge,
-    onGameOver,
+    userColor,
+    getPlayerLabel,
   ]);
 
   // Handle dice roll
@@ -707,8 +800,6 @@ export default function GameScreen({
     };
   }, [gameState, isAiTurn, isRolling, rollNotice, triggerRoll, handleSelectToken, settings.aiDifficulty]);
 
-  const userColor = gameState.userColor || gameOptions.userColor || 'red';
-
   // Persistent last rolled dice values per player (stops reverting to 6 after flip/move)
   const [lastDiceValues, setLastDiceValues] = useState({});
 
@@ -727,29 +818,6 @@ export default function GameScreen({
       if (gameState.diceValue) return gameState.diceValue;
     }
     return lastDiceValues[player] || 6;
-  };
-
-  const PLAYER_HEX = {
-    red: '#EF4444',
-    green: '#10B981',
-    yellow: '#F59E0B',
-    blue: '#3B82F6',
-  };
-
-  const getPlayerLabel = (color) => {
-    const isHuman = gameState.playerTypes?.[color] === 'human';
-    if (gameState.isVsAi) {
-      if (color === userColor) return 'You';
-      if (color === 'green') return isHuman ? 'Green' : 'Computer 2';
-      if (color === 'yellow') return isHuman ? 'Yellow' : 'Computer 3';
-      if (color === 'blue') return isHuman ? 'Blue' : 'Computer 4';
-      if (color === 'red') return isHuman ? 'Red' : 'Computer 1';
-    }
-    if (color === 'red') return 'Player 1';
-    if (color === 'green') return 'Player 2';
-    if (color === 'yellow') return 'Player 3';
-    if (color === 'blue') return 'Player 4';
-    return color.charAt(0).toUpperCase() + color.slice(1);
   };
 
   const activeTurnColor = PLAYER_HEX[gameState.currentTurn] || '#EF4444';
@@ -1077,6 +1145,30 @@ export default function GameScreen({
         ) : <View />}
       </View>
 
+      {/* Premium Winner Celebration Overlay */}
+      {showWinnerOverlay && winnerData && (
+        <WinnerErrorBoundary
+          fallbackOnGameOver={() => {
+            onGameOver?.({
+              winner: winnerData.winnerColor,
+              coinsWon: winnerData.coinsWon,
+              opponent: 'Player 3',
+            });
+          }}
+          onPlayAgain={handleRestartGame}
+        >
+          <WinnerOverlay
+            visible={showWinnerOverlay}
+            winnerColor={winnerData.winnerColor}
+            winnerName={winnerData.winnerName}
+            isUserWinner={winnerData.isUserWinner}
+            rankings={winnerData.rankings}
+            coinsWon={winnerData.coinsWon}
+            onPlayAgain={handleRestartGame}
+            onHome={handleWinnerHome}
+          />
+        </WinnerErrorBoundary>
+      )}
 
     </SafeAreaView>
   );
