@@ -314,7 +314,7 @@ export default function SettingsScreen({ onNavigate, onBack }) {
       if (isHapticsOn) {
         Vibration.vibrate(30);
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const handleToggleHaptics = (val) => {
@@ -326,7 +326,7 @@ export default function SettingsScreen({ onNavigate, onBack }) {
       if (isSoundOn) {
         SoundManager.play('buttonTap');
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const handleSelectAiDifficulty = (diff) => {
@@ -338,7 +338,7 @@ export default function SettingsScreen({ onNavigate, onBack }) {
       if (isHapticsOn) {
         Vibration.vibrate(25);
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const handleToggleHints = (val) => {
@@ -350,7 +350,7 @@ export default function SettingsScreen({ onNavigate, onBack }) {
       if (isHapticsOn) {
         Vibration.vibrate(25);
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const handleToggleSafeSpots = (val) => {
@@ -362,7 +362,7 @@ export default function SettingsScreen({ onNavigate, onBack }) {
       if (isHapticsOn) {
         Vibration.vibrate(25);
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const handleTestSound = () => {
@@ -377,7 +377,7 @@ export default function SettingsScreen({ onNavigate, onBack }) {
       }
       setTestFxActive(true);
       setTimeout(() => setTestFxActive(false), 1200);
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const handleShareApp = async () => {
@@ -390,7 +390,7 @@ export default function SettingsScreen({ onNavigate, onBack }) {
         message:
           '🎲 Play Ludo Vexa - The ultimate offline & online Ludo board game experience! Custom themes, smooth dice, and intelligent bots: https://amanshridev.github.io/ludo-offline/',
       });
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const handleResetSettings = () => {
@@ -440,53 +440,6 @@ export default function SettingsScreen({ onNavigate, onBack }) {
       >
         {/* ============================================================== */}
         {/* 1. HERO PREFERENCES DASHBOARD BANNER */}
-        {/* ============================================================== */}
-        <View
-          style={[
-            styles.heroBanner,
-            {
-              backgroundColor: appTheme.colors.surface,
-              borderColor: 'rgba(255, 255, 255, 0.08)',
-            },
-          ]}
-        >
-          <View style={styles.heroLeft}>
-            <View
-              style={[
-                styles.heroIconBox,
-                { backgroundColor: `${appTheme.colors.primary}20` },
-              ]}
-            >
-              <Text style={styles.heroEmoji}>⚙️</Text>
-            </View>
-            <View style={styles.heroTextCol}>
-              <Text style={[styles.heroTitle, { color: appTheme.colors.text }]}>
-                Game Preferences
-              </Text>
-              <Text style={[styles.heroSubtitle, { color: appTheme.colors.secondaryText }]}>
-                Audio, Themes & Gameplay Controls
-              </Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            activeOpacity={0.75}
-            onPress={handleTestSound}
-            style={[
-              styles.testSoundBtn,
-              {
-                backgroundColor: testFxActive
-                  ? appTheme.colors.primary
-                  : 'rgba(255, 255, 255, 0.08)',
-                borderColor: testFxActive ? appTheme.colors.primaryLight : 'rgba(255,255,255,0.12)',
-              },
-            ]}
-          >
-            <Text style={[styles.testSoundText, { color: testFxActive ? '#FFF' : appTheme.colors.primaryLight }]}>
-              {testFxActive ? '🎵 Playing!' : '🔊 Test SFX'}
-            </Text>
-          </TouchableOpacity>
-        </View>
 
         {/* ============================================================== */}
         {/* 2. AUDIO & HAPTIC FEEDBACK SECTION */}
@@ -706,273 +659,9 @@ export default function SettingsScreen({ onNavigate, onBack }) {
         {/* ============================================================== */}
         {/* 4. GAMEPLAY & BOT SETTINGS SECTION */}
         {/* ============================================================== */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionHeaderTitle, { color: appTheme.colors.secondaryText }]}>
-            GAMEPLAY & AI DIFFICULTY
-          </Text>
 
-          <View
-            style={[
-              styles.sectionCard,
-              {
-                backgroundColor: appTheme.colors.surface,
-                borderColor: 'rgba(255, 255, 255, 0.07)',
-              },
-            ]}
-          >
-            {/* AI BOT DIFFICULTY SEGMENTED CONTROL */}
-            <View style={[styles.rowItem, { flexDirection: 'column', alignItems: 'stretch' }]}>
-              <View style={styles.botRowTop}>
-                <View style={[styles.iconContainer, { backgroundColor: 'rgba(236, 72, 153, 0.12)' }]}>
-                  <BotBrainIcon size={20} color="#F472B6" />
-                </View>
-                <View style={styles.textContainer}>
-                  <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
-                    Computer Bot Difficulty
-                  </Text>
-                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
-                    AI decision intelligence in VS Computer mode
-                  </Text>
-                </View>
-              </View>
 
-              {/* Segmented Selector */}
-              <View style={styles.segmentContainer}>
-                {[
-                  { id: 'easy', label: 'Casual' },
-                  { id: 'medium', label: 'Balanced' },
-                  { id: 'hard', label: 'Master' },
-                ].map((item) => {
-                  const isSelected = aiDifficulty === item.id;
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      activeOpacity={0.8}
-                      onPress={() => handleSelectAiDifficulty(item.id)}
-                      style={[
-                        styles.segmentBtn,
-                        isSelected && [
-                          styles.segmentBtnActive,
-                          { backgroundColor: appTheme.colors.primary },
-                        ],
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.segmentBtnText,
-                          {
-                            color: isSelected ? '#FFFFFF' : appTheme.colors.secondaryText,
-                            fontWeight: isSelected ? '700' : '500',
-                          },
-                        ]}
-                      >
-                        {item.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
 
-            <View style={styles.rowDivider} />
-
-            {/* MOVEMENT HINTS */}
-            <View style={styles.rowItem}>
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: 'rgba(6, 182, 212, 0.12)' }]}>
-                  <TargetHintsIcon size={20} color="#22D3EE" />
-                </View>
-                <View style={styles.textContainer}>
-                  <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
-                    Movement Path Hints
-                  </Text>
-                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
-                    Display pulsing path highlight for eligible tokens
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.rowRight}>
-                <Switch
-                  value={showHints}
-                  onValueChange={handleToggleHints}
-                  trackColor={{ false: '#334155', true: appTheme.colors.primary }}
-                  thumbColor="#FFFFFF"
-                />
-              </View>
-            </View>
-
-            <View style={styles.rowDivider} />
-
-            {/* SAFE SPOTS HIGHLIGHT */}
-            <View style={styles.rowItem}>
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
-                  <SafeSpotStarIcon size={20} color="#A78BFA" />
-                </View>
-                <View style={styles.textContainer}>
-                  <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
-                    Star Safe Spots
-                  </Text>
-                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
-                    Highlight protected board cells where pawns cannot be cut
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.rowRight}>
-                <Switch
-                  value={showSafeSpots}
-                  onValueChange={handleToggleSafeSpots}
-                  trackColor={{ false: '#334155', true: appTheme.colors.primary }}
-                  thumbColor="#FFFFFF"
-                />
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* ============================================================== */}
-        {/* 5. PRIVACY, SAFETY & COMMUNITY SECTION */}
-        {/* ============================================================== */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionHeaderTitle, { color: appTheme.colors.secondaryText }]}>
-            PRIVACY & COMMUNITY
-          </Text>
-
-          <View
-            style={[
-              styles.sectionCard,
-              {
-                backgroundColor: appTheme.colors.surface,
-                borderColor: 'rgba(255, 255, 255, 0.07)',
-              },
-            ]}
-          >
-            {/* PRIVACY SETTINGS */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={styles.rowItem}
-              onPress={() => onNavigate?.('privacySettings')}
-            >
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
-                  <ShieldLockIcon size={20} color="#34D399" />
-                </View>
-                <View style={styles.textContainer}>
-                  <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
-                    Privacy & Profile Safety
-                  </Text>
-                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
-                    Profile visibility, online status & cache cleaner
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.rowRight}>
-                <ChevronRightIcon size={18} color={appTheme.colors.primaryLight} />
-              </View>
-            </TouchableOpacity>
-
-            <View style={styles.rowDivider} />
-
-            {/* SHARE GAME */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={styles.rowItem}
-              onPress={handleShareApp}
-            >
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: 'rgba(56, 189, 248, 0.12)' }]}>
-                  <ShareLinkIcon size={20} color="#38BDF8" />
-                </View>
-                <View style={styles.textContainer}>
-                  <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
-                    Share Ludo Vexa
-                  </Text>
-                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
-                    Invite friends & family to download and play
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.rowRight}>
-                <ExternalWebIcon size={18} color={appTheme.colors.primaryLight} />
-              </View>
-            </TouchableOpacity>
-
-            <View style={styles.rowDivider} />
-
-            {/* PRIVACY POLICY ONLINE */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={styles.rowItem}
-              onPress={() => Linking.openURL('https://amanshridev.github.io/ludo-offline/')}
-            >
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: 'rgba(148, 163, 184, 0.12)' }]}>
-                  <ExternalWebIcon size={20} color="#CBD5E1" />
-                </View>
-                <View style={styles.textContainer}>
-                  <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
-                    Official Privacy Policy
-                  </Text>
-                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
-                    Read player safety guidelines & data protection terms
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.rowRight}>
-                <ExternalWebIcon size={18} color="#94A3B8" />
-              </View>
-            </TouchableOpacity>
-
-            <View style={styles.rowDivider} />
-
-            {/* CHECK FOR APP UPDATES */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={styles.rowItem}
-              onPress={() => {
-                try {
-                  SoundManager.play('buttonTap');
-                } catch (_) {}
-                checkAppUpdate(true);
-              }}
-            >
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
-                  <AppUpdateArrowIcon size={20} color="#10B981" />
-                </View>
-                <View style={styles.textContainer}>
-                  <View style={styles.titleBadgeRow}>
-                    <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
-                      Check for Updates
-                    </Text>
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        { backgroundColor: 'rgba(16, 185, 129, 0.15)' },
-                      ]}
-                    >
-                      <Text style={[styles.statusBadgeText, { color: '#10B981' }]}>
-                        v{APP_VERSION}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
-                    Ensure you have the latest features & stability fixes
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.rowRight}>
-                <ChevronRightIcon size={18} color={appTheme.colors.primaryLight} />
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
 
         {/* ============================================================== */}
         {/* 6. RESET TO DEFAULTS BUTTON */}
@@ -996,15 +685,13 @@ export default function SettingsScreen({ onNavigate, onBack }) {
         {/* 7. APP INFO & BUILD FOOTER */}
         {/* ============================================================== */}
         <View style={styles.footerContainer}>
-          <Text style={[styles.footerAppTitle, { color: appTheme.colors.secondaryText }]}>
-            LUDO VEXA • PRO EDITION
-          </Text>
+
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => {
               try {
                 SoundManager.play('buttonTap');
-              } catch (_) {}
+              } catch (_) { }
               checkAppUpdate(true);
             }}
           >
