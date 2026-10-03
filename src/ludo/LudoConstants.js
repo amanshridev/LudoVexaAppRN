@@ -1,4 +1,4 @@
-export const GRID_SIZE = 15.3;
+export const GRID_SIZE = 15;
 
 export const PLAYER_ORDER = ['red', 'green', 'yellow', 'blue'];
 

@@ -142,7 +142,8 @@ export default function LudoBoardExact({
   theme = 'classic',
   isAnimating = false,
 }) {
-  const cellSize = boardSize / GRID_SIZE;
+  const BOARD_BORDER = 4;
+  const cellSize = boardSize > 0 ? (boardSize - BOARD_BORDER * 2) / 15 : 0;
   const palette = THEME_PALETTES[theme] || THEME_PALETTES.classic;
   const tokensDisabled = isAnimating || state.status !== 'WAITING_SELECT';
 
@@ -241,9 +242,9 @@ export default function LudoBoardExact({
             top: r * cellSize,
             left: c * cellSize,
             backgroundColor: bgColor,
-            borderColor: movableTokenOnCell ? '#FACC15' : borderColor,
-            borderWidth: movableTokenOnCell ? 2 : 0.6,
-            zIndex: movableTokenOnCell ? 35 : 1,
+            borderColor: borderColor,
+            borderWidth: 0.6,
+            zIndex: 1,
           },
         ]}
       >
@@ -448,6 +449,7 @@ export default function LudoBoardExact({
         }
 
         const tokenSize = cellSize * 0.72;
+        const tokenHeight = tokenSize * 1.3;
 
         rendered.push(
           <View
@@ -455,10 +457,10 @@ export default function LudoBoardExact({
             style={[
               styles.trackTokenWrap,
               {
-                top: r * cellSize + 0.5 * (cellSize - tokenSize * 1.3) + offsetY,
-                left: c * cellSize + 0.5 * (cellSize - tokenSize) + offsetX,
+                top: BOARD_BORDER + r * cellSize + 0.52 * cellSize - 0.8308 * tokenHeight + offsetY,
+                left: BOARD_BORDER + c * cellSize + 0.5 * (cellSize - tokenSize) + offsetX,
                 width: tokenSize,
-                height: tokenSize * 1.3,
+                height: tokenHeight,
                 zIndex: isMovable ? 50 : 20 + r,
               },
             ]}
@@ -692,7 +694,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#334155',
     fontWeight: '900',
-    bottom: 2.8
   },
   entryArrowText: {
     fontSize: 18,

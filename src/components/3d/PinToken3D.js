@@ -40,6 +40,7 @@ const PinToken3D = React.memo(function PinToken3D({
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const liftAnim = useRef(new Animated.Value(0)).current;
+  const movableHopAnim = useRef(new Animated.Value(0)).current;
   const isMountedRef = useRef(true);
 
   // Unmount cleanup
@@ -51,8 +52,9 @@ const PinToken3D = React.memo(function PinToken3D({
       scaleAnim.stopAnimation();
       shakeAnim.stopAnimation();
       liftAnim.stopAnimation();
+      movableHopAnim.stopAnimation();
     };
-  }, [pulseAnim, scaleAnim, shakeAnim, liftAnim]);
+  }, [pulseAnim, scaleAnim, shakeAnim, liftAnim, movableHopAnim]);
 
   // Hop animation when token moves
   const prevStepRef = useRef(token.step);
@@ -72,34 +74,53 @@ const PinToken3D = React.memo(function PinToken3D({
     }
   }, [token.step, liftAnim]);
 
-  // Pulse (scale 1 -> 1.12 loop) for movable tokens. Stopped when move starts or turn changes.
+  // Ludo King style gentle bobbing hop + scale breathing for movable tokens (zero color stains)
   useEffect(() => {
     if (isMovable) {
-      const pulse = Animated.loop(
+      const hopLoop = Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.12,
-            duration: 400,
-            easing: Easing.inOut(Easing.quad),
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1.0,
-            duration: 400,
-            easing: Easing.inOut(Easing.quad),
-            useNativeDriver: true,
-          }),
+          Animated.parallel([
+            Animated.timing(movableHopAnim, {
+              toValue: -5,
+              duration: 340,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.timing(pulseAnim, {
+              toValue: 1.06,
+              duration: 340,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(movableHopAnim, {
+              toValue: 0,
+              duration: 340,
+              easing: Easing.in(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.timing(pulseAnim, {
+              toValue: 1.0,
+              duration: 340,
+              easing: Easing.in(Easing.quad),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.delay(100),
         ])
       );
-      pulse.start();
+      hopLoop.start();
       return () => {
-        pulse.stop();
+        hopLoop.stop();
       };
     } else {
+      movableHopAnim.stopAnimation();
+      movableHopAnim.setValue(0);
       pulseAnim.stopAnimation();
       pulseAnim.setValue(1.0);
     }
-  }, [isMovable, pulseAnim]);
+  }, [isMovable, movableHopAnim, pulseAnim]);
 
   const handlePress = () => {
     if (disabled) return;
@@ -164,25 +185,6 @@ const PinToken3D = React.memo(function PinToken3D({
       disabled={disabled}
       style={[styles.container, { width: size, height: tokenHeight }]}
     >
-      {/* Colored glow ring below them */}
-      {isMovable && (
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.glowRing,
-            {
-              width: size * 1.05,
-              height: size * 0.36,
-              borderRadius: (size * 0.36) / 2,
-              borderColor: '#FACC15',
-              backgroundColor: colorConfig.glow || 'rgba(239, 68, 68, 0.4)',
-              shadowColor: '#FACC15',
-              transform: [{ scale: pulseAnim }],
-            },
-          ]}
-        />
-      )}
-
       {/* Pawn SVG with transforms */}
       <Animated.View
         style={[
@@ -191,6 +193,7 @@ const PinToken3D = React.memo(function PinToken3D({
             width: size,
             height: tokenHeight,
             transform: [
+              { translateY: movableHopAnim },
               { scale: isMovable ? pulseAnim : 1 },
             ],
           },
@@ -210,7 +213,7 @@ const PinToken3D = React.memo(function PinToken3D({
           <Svg
             width={size}
             height={tokenHeight}
-            viewBox="10 2 80 120"
+            viewBox="0 0 100 130"
             preserveAspectRatio="xMidYMid meet"
           >
             <Defs>
@@ -335,15 +338,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-  },
-  glowRing: {
-    position: 'absolute',
-    bottom: -2,
-    borderWidth: 2.5,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 6,
-    elevation: 5,
   },
   svgWrapper: {
     alignItems: 'center',

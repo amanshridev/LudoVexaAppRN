@@ -35,13 +35,15 @@ import WinnerOverlay, { WinnerErrorBoundary } from '../components/WinnerOverlay.
 
 const ENABLE_HOP_ANIMATION = true;
 const BURST_ANGLES = [0, 0.785, 1.57, 2.356, 3.141, 3.927, 4.712, 5.497];
+const BOARD_BORDER = 4;
 
 const getCoordXY = (coords, currentCellSize) => {
   if (!coords) return { x: 0, y: 0 };
   const currentTokenSize = currentCellSize * 0.72;
+  const currentTokenHeight = currentTokenSize * 1.3;
   return {
-    x: (coords.c || 0) * currentCellSize + 0.5 * (currentCellSize - currentTokenSize),
-    y: (coords.r || 0) * currentCellSize + 0.5 * (currentCellSize - currentTokenSize * 1.3),
+    x: BOARD_BORDER + (coords.c || 0) * currentCellSize + 0.5 * (currentCellSize - currentTokenSize),
+    y: BOARD_BORDER + (coords.r || 0) * currentCellSize + 0.52 * currentCellSize - 0.8308 * currentTokenHeight,
   };
 };
 
@@ -66,7 +68,7 @@ export default function GameScreen({
     0,
     Math.min(boardArea.width - 32, boardArea.height - 20, 360)
   );
-  const cellSize = boardSize > 0 ? boardSize / GRID_SIZE : 0;
+  const cellSize = boardSize > 0 ? (boardSize - BOARD_BORDER * 2) / 15 : 0;
 
   // Ghost moving token state and refs
   const [movingToken, setMovingToken] = useState(null);
@@ -263,8 +265,8 @@ export default function GameScreen({
     const capTargetXY = getCoordXY(homeCoord, cellSize);
 
     const centerRing = {
-      x: (finalCoord.c + 0.5) * cellSize,
-      y: (finalCoord.r + 0.5) * cellSize,
+      x: BOARD_BORDER + (finalCoord.c + 0.5) * cellSize,
+      y: BOARD_BORDER + (finalCoord.r + 0.5) * cellSize,
     };
 
     capturedGhostPos.setValue(capStartXY);
@@ -353,8 +355,8 @@ export default function GameScreen({
   const runSafeCellEffect = React.useCallback(async (finalCoord) => {
     if (!isMountedRef.current || cellSize <= 0) return;
     const cellXY = {
-      x: (finalCoord.c || 0) * cellSize,
-      y: (finalCoord.r || 0) * cellSize,
+      x: BOARD_BORDER + (finalCoord.c || 0) * cellSize,
+      y: BOARD_BORDER + (finalCoord.r || 0) * cellSize,
     };
     safeGlowOpacity.setValue(0);
     setSafeGlow(cellXY);
