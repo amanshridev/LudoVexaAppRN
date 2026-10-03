@@ -3,6 +3,7 @@ import {
   Animated,
   TouchableOpacity,
   StyleSheet,
+  Easing,
 } from 'react-native';
 import Svg, {
   Defs,
@@ -34,8 +35,9 @@ export default function PinToken3D({
 }) {
   const colorConfig = PLAYER_COLORS[token.player] || PLAYER_COLORS.red;
 
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const liftAnim  = useRef(new Animated.Value(0)).current;
+  const pulseAnim  = useRef(new Animated.Value(1)).current;
+  const liftAnim   = useRef(new Animated.Value(0)).current;
+  const bounceAnim = useRef(new Animated.Value(0)).current;
 
   // Hop animation when token moves
   const prevStepRef = useRef(token.step);
@@ -55,21 +57,42 @@ export default function PinToken3D({
     }
   }, [token.step, liftAnim]);
 
-  // Pulse glow when movable
+  // Continuous energetic jumping/bouncing & pulsing glow when movable (e.g. after rolling 6 or any playable number)
   useEffect(() => {
     if (isMovable) {
-      const pulse = Animated.loop(
+      const bounce = Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.15, duration: 480, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1.0,  duration: 480, useNativeDriver: true }),
+          Animated.timing(bounceAnim, {
+            toValue: -10,
+            duration: 320,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(bounceAnim, {
+            toValue: 0,
+            duration: 320,
+            easing: Easing.in(Easing.quad),
+            useNativeDriver: true,
+          }),
         ])
       );
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.2, duration: 320, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1.0, duration: 320, useNativeDriver: true }),
+        ])
+      );
+      bounce.start();
       pulse.start();
-      return () => pulse.stop();
+      return () => {
+        bounce.stop();
+        pulse.stop();
+      };
     } else {
+      bounceAnim.setValue(0);
       pulseAnim.setValue(1.0);
     }
-  }, [isMovable, pulseAnim]);
+  }, [isMovable, bounceAnim, pulseAnim]);
 
   const handlePressIn  = () => { if (!isMovable) return; Animated.spring(liftAnim, { toValue: -8, friction: 5, useNativeDriver: true }).start(); };
   const handlePressOut = () => { Animated.spring(liftAnim, { toValue: 0,  friction: 5, useNativeDriver: true }).start(); };
@@ -115,7 +138,7 @@ export default function PinToken3D({
             width: size,
             height: size,
             transform: [
-              { translateY: liftAnim },
+              { translateY: Animated.add(liftAnim, bounceAnim) },
               { scale: isMovable ? pulseAnim : 1 },
             ],
           },

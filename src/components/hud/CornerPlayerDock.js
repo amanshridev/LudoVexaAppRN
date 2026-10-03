@@ -75,14 +75,21 @@ export default function CornerPlayerDock({
   );
 
   const renderDiceBox = () => (
-    <Cube3DFlippingDice
-      targetValue={diceValue || 6}
-      isRolling={isRolling}
-      onPress={onRoll}
-      disabled={!canRoll}
-      size={isSmall ? 32 : 38}
-      themeColor={col.base}
-    />
+    <View style={styles.diceWrapContainer}>
+      {canRoll && (
+        <View style={styles.rollTooltipBadge}>
+          <Text style={styles.rollTooltipText}>ROLL!</Text>
+        </View>
+      )}
+      <Cube3DFlippingDice
+        targetValue={diceValue}
+        isRolling={isTurn && isRolling}
+        onPress={onRoll}
+        disabled={!canRoll}
+        size={isSmall ? 32 : 38}
+        themeColor={col.base}
+      />
+    </View>
   );
 
   return (
@@ -337,5 +344,32 @@ const styles = StyleSheet.create({
     textShadowColor: '#000000',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
+  },
+  diceWrapContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  rollTooltipBadge: {
+    position: 'absolute',
+    top: -12,
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    zIndex: 10,
+    elevation: 4,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+  },
+  rollTooltipText: {
+    color: '#FFFFFF',
+    fontSize: 8,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
 });

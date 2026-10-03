@@ -17,7 +17,7 @@ import {
 import { getTokenCoordinates } from '../../ludo/LudoEngine.js';
 
 import CenterHome3D from './CenterHome3D.js';
-import BallToken3D from '../3d/BallToken3D.js';
+import PinToken3D from '../3d/PinToken3D.js';
 
 export const THEME_PALETTES = {
   classic: {
@@ -225,31 +225,6 @@ export default function LudoBoardExact({
     const tokensOnCell = tokensByCell[cellKey] || [];
     const movableTokenOnCell = tokensOnCell.find((t) => state.movableTokenIds.includes(t.id));
 
-    if (movableTokenOnCell) {
-      return (
-        <TouchableOpacity
-          key={`cell_${r}_${c}`}
-          activeOpacity={0.7}
-          onPress={() => onSelectToken(movableTokenOnCell.id)}
-          style={[
-            styles.cell,
-            {
-              width: cellSize,
-              height: cellSize,
-              top: r * cellSize,
-              left: c * cellSize,
-              backgroundColor: bgColor,
-              borderColor: '#FACC15',
-              borderWidth: 2,
-              zIndex: 35,
-            },
-          ]}
-        >
-          {content}
-        </TouchableOpacity>
-      );
-    }
-
     return (
       <View
         key={`cell_${r}_${c}`}
@@ -261,7 +236,9 @@ export default function LudoBoardExact({
             top: r * cellSize,
             left: c * cellSize,
             backgroundColor: bgColor,
-            borderColor,
+            borderColor: movableTokenOnCell ? '#FACC15' : borderColor,
+            borderWidth: movableTokenOnCell ? 2 : 0.6,
+            zIndex: movableTokenOnCell ? 35 : 1,
           },
         ]}
       >
@@ -299,18 +276,9 @@ export default function LudoBoardExact({
     const tokensInBase = (state.tokens[player] || []).filter((t) => t.step === -1);
     const hasMovableInBase = tokensInBase.some((t) => state.movableTokenIds.includes(t.id));
 
-    const handleBasePress = () => {
-      if (!hasMovableInBase) return;
-      const movableToken = tokensInBase.find((t) => state.movableTokenIds.includes(t.id));
-      if (movableToken) onSelectToken(movableToken.id);
-    };
-
     return (
-      <TouchableOpacity
+      <View
         key={`base_${player}`}
-        activeOpacity={hasMovableInBase ? 0.85 : 1}
-        disabled={!hasMovableInBase}
-        onPress={handleBasePress}
         style={[
           styles.baseBox,
           {
@@ -327,13 +295,7 @@ export default function LudoBoardExact({
       >
         {!isBottomPlayer && baseLabel}
 
-        <TouchableOpacity
-          activeOpacity={hasMovableInBase ? 0.85 : 1}
-          disabled={!hasMovableInBase}
-          onPress={() => {
-            const movableToken = tokensInBase.find((t) => state.movableTokenIds.includes(t.id));
-            if (movableToken) onSelectToken(movableToken.id);
-          }}
+        <View
           style={[
             styles.whiteCourtyardSquare,
             {
@@ -362,9 +324,9 @@ export default function LudoBoardExact({
                   ]}
                 >
                   {tokenAtBase && (
-                    <BallToken3D
+                    <PinToken3D
                       token={tokenAtBase}
-                      size={cellSize * 0.72}
+                      size={cellSize * 0.82}
                       isMovable={isMovable}
                       onPress={() => onSelectToken(tokenAtBase.id)}
                     />
@@ -373,9 +335,9 @@ export default function LudoBoardExact({
               );
             })}
           </View>
-        </TouchableOpacity>
+        </View>
         {isBottomPlayer && baseLabel}
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -423,9 +385,9 @@ export default function LudoBoardExact({
               },
             ]}
           >
-            <BallToken3D
+            <PinToken3D
               token={token}
-              size={tokenSize}
+              size={tokenSize * 1.05}
               isMovable={isMovable}
               onPress={() => onSelectToken(token.id)}
             />

@@ -49,6 +49,7 @@ export default function GameScreen({
   );
 
   const [isAnimatingMove, setIsAnimatingMove] = useState(false);
+  const isMovingLockRef = React.useRef(false);
 
   // Sync sound setting
   useEffect(() => {
@@ -67,7 +68,7 @@ export default function GameScreen({
 
   // Handle token selection with step-by-step 1-by-1 box jumping animation
   const handleSelectToken = React.useCallback((tokenId) => {
-    if (isAnimatingMove) return;
+    if (isAnimatingMove || isMovingLockRef.current) return;
 
     setRollNotice(null);
 
@@ -79,6 +80,8 @@ export default function GameScreen({
       const playerTokens = prevState.tokens[player] || [];
       const token = playerTokens.find((t) => t.id === tokenId);
       if (!token) return prevState;
+
+      isMovingLockRef.current = true;
 
       const startStep = token.step;
       const diceVal = prevState.diceValue || 0;
@@ -99,6 +102,7 @@ export default function GameScreen({
       }
 
       if (stepsPath.length === 0) {
+        isMovingLockRef.current = false;
         return finalState;
       }
 
@@ -137,6 +141,7 @@ export default function GameScreen({
           // Finish stepping animation -> apply final calculated state
           setGameState(finalState);
           setIsAnimatingMove(false);
+          isMovingLockRef.current = false;
 
           if (finalState.status === 'GAME_OVER') {
             SoundFX.victory();
@@ -166,13 +171,14 @@ export default function GameScreen({
       return {
         ...prevState,
         status: 'ANIMATING',
+        movableTokenIds: [],
       };
     });
   }, [isAnimatingMove, onGameOver]);
 
   // Handle dice roll
   const triggerRoll = React.useCallback(() => {
-    if (isRolling || isAnimatingMove || gameState.status !== 'ROLLING') {
+    if (isRolling || isAnimatingMove || isMovingLockRef.current || gameState.status !== 'ROLLING') {
       return;
     }
 
@@ -189,6 +195,7 @@ export default function GameScreen({
 
       const rolledVal = nextState.diceValue;
       const isSix = rolledVal === 6;
+      const isBotTurn = nextState.playerTypes?.[nextState.currentTurn] === 'bot';
 
       if (nextState.status === 'NO_MOVES') {
         setRollNotice(`❌ Rolled ${rolledVal} — No moves! Passing turn...`);
@@ -197,13 +204,13 @@ export default function GameScreen({
           setGameState((prev) => passTurn(prev));
           SoundFX.turnSwitch();
         }, 1000);
-      } else if (nextState.movableTokenIds.length === 1) {
-        // Auto-move single valid token for smooth gameplay
+      } else if (nextState.movableTokenIds.length === 1 && isBotTurn) {
+        // Auto-move single valid token only for BOT turns
         const singleTokenId = nextState.movableTokenIds[0];
         setRollNotice(`🎲 Rolled ${rolledVal}! Moving token...`);
         setTimeout(() => {
           handleSelectToken(singleTokenId);
-        }, 180);
+        }, 220);
       } else {
         if (isSix) {
           setRollNotice('🎉 Rolled a 6! Tap a token to move!');
@@ -245,6 +252,25 @@ export default function GameScreen({
 
   const userColor = gameState.userColor || gameOptions.userColor || 'red';
 
+  // Persistent last rolled dice values per player (stops reverting to 6 after flip/move)
+  const [lastDiceValues, setLastDiceValues] = useState({});
+
+  useEffect(() => {
+    if (gameState.diceValue != null && gameState.diceValue >= 1 && gameState.diceValue <= 6) {
+      setLastDiceValues((prev) => ({
+        ...prev,
+        [gameState.currentTurn]: gameState.diceValue,
+      }));
+    }
+  }, [gameState.diceValue, gameState.currentTurn]);
+
+  const getPlayerDiceValue = (player) => {
+    if (gameState.currentTurn === player && gameState.diceValue) {
+      return gameState.diceValue;
+    }
+    return lastDiceValues[player] || 6;
+  };
+
   const PLAYER_HEX = {
     red: '#EF4444',
     green: '#10B981',
@@ -271,13 +297,17 @@ export default function GameScreen({
   const activeTurnColor = PLAYER_HEX[gameState.currentTurn] || '#EF4444';
   const playerTurnName = getPlayerLabel(gameState.currentTurn || 'red').toUpperCase();
 
+  // Dock positioning: User at bottom, AI at top
+  const is2Player = gameState.activePlayers.length === 2;
+  const topPlayers = gameState.activePlayers.filter((p) => p !== userColor);
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: bgColor }]}>
       <StatusBar barStyle="light-content" backgroundColor={bgColor} />
 
       {/* Top Header Row with Back Button, Room Mode Badge & Settings */}
-      <View style={[styles.topHeader, {marginBottom: 15}]}>
-        
+      <View style={[styles.topHeader, { marginBottom: 15 }]}>
+
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={onExitHome}
@@ -310,36 +340,55 @@ export default function GameScreen({
         </TouchableOpacity>
       </View>
 
-   
+      {/* Top Docks Row (AI / Opponents) */}
       <View style={styles.topDocksRow}>
-        {gameState.activePlayers.includes('green') ? (
+        {is2Player ? (
           <CornerPlayerDock
-            player="green"
-            playerName={getPlayerLabel('green')}
-            diceValue={gameState.currentTurn === 'green' ? (gameState.diceValue || 6) : 6}
-            isTurn={gameState.currentTurn === 'green'}
-            isRolling={isRolling && gameState.currentTurn === 'green'}
+            player={topPlayers[0] || 'yellow'}
+            playerName={getPlayerLabel(topPlayers[0] || 'yellow')}
+            diceValue={getPlayerDiceValue(topPlayers[0] || 'yellow')}
+            isTurn={gameState.currentTurn === (topPlayers[0] || 'yellow')}
+            isRolling={isRolling && gameState.currentTurn === (topPlayers[0] || 'yellow')}
             onRoll={triggerRoll}
-            canRoll={canRoll && gameState.currentTurn === 'green'}
-            isBot={gameState.playerTypes?.green === 'bot'}
+            canRoll={canRoll && gameState.currentTurn === (topPlayers[0] || 'yellow')}
+            isBot={gameState.playerTypes?.[topPlayers[0] || 'yellow'] === 'bot'}
             layout="left-badge"
           />
-        ) : <View />}
+        ) : (
+          <>
+            {gameState.activePlayers.includes('green') ? (
+              <CornerPlayerDock
+                player="green"
+                playerName={getPlayerLabel('green')}
+                diceValue={getPlayerDiceValue('green')}
+                isTurn={gameState.currentTurn === 'green'}
+                isRolling={isRolling && gameState.currentTurn === 'green'}
+                onRoll={triggerRoll}
+                canRoll={canRoll && gameState.currentTurn === 'green'}
+                isBot={gameState.playerTypes?.green === 'bot'}
+                layout="left-badge"
+              />
+            ) : <View />}
 
-        {gameState.activePlayers.includes('yellow') ? (
-          <CornerPlayerDock
-            player="yellow"
-            playerName={getPlayerLabel('yellow')}
-            diceValue={gameState.currentTurn === 'yellow' ? (gameState.diceValue || 6) : 6}
-            isTurn={gameState.currentTurn === 'yellow'}
-            isRolling={isRolling && gameState.currentTurn === 'yellow'}
-            onRoll={triggerRoll}
-            canRoll={canRoll && gameState.currentTurn === 'yellow'}
-            isBot={gameState.playerTypes?.yellow === 'bot'}
-            layout="right-badge"
-          />
-        ) : <View />}
+            {gameState.activePlayers.includes('yellow') ? (
+              <CornerPlayerDock
+                player="yellow"
+                playerName={getPlayerLabel('yellow')}
+                diceValue={getPlayerDiceValue('yellow')}
+                isTurn={gameState.currentTurn === 'yellow'}
+                isRolling={isRolling && gameState.currentTurn === 'yellow'}
+                onRoll={triggerRoll}
+                canRoll={canRoll && gameState.currentTurn === 'yellow'}
+                isBot={gameState.playerTypes?.yellow === 'bot'}
+                layout="right-badge"
+              />
+            ) : <View />}
+          </>
+        )}
       </View>
+
+      {/* Floating Status & Event Notice Banner */}
+
 
       {/* Center Ludo Board */}
       <View
@@ -360,13 +409,26 @@ export default function GameScreen({
           theme={settings?.ludoTheme || settings?.theme || 'classic'}
         />
       </View>
- 
+
+      {/* Bottom Docks Row (User at bottom left, opponent at bottom right if 4P) */}
       <View style={styles.bottomDocksRow}>
-        {gameState.activePlayers.includes('red') ? (
+        {gameState.activePlayers.includes(userColor) ? (
+          <CornerPlayerDock
+            player={userColor}
+            playerName={getPlayerLabel(userColor)}
+            diceValue={getPlayerDiceValue(userColor)}
+            isTurn={gameState.currentTurn === userColor}
+            isRolling={isRolling && gameState.currentTurn === userColor}
+            onRoll={triggerRoll}
+            canRoll={canRoll && gameState.currentTurn === userColor}
+            isBot={gameState.playerTypes?.[userColor] === 'bot'}
+            layout="left-badge"
+          />
+        ) : (
           <CornerPlayerDock
             player="red"
             playerName={getPlayerLabel('red')}
-            diceValue={gameState.currentTurn === 'red' ? (gameState.diceValue || 6) : 6}
+            diceValue={getPlayerDiceValue('red')}
             isTurn={gameState.currentTurn === 'red'}
             isRolling={isRolling && gameState.currentTurn === 'red'}
             onRoll={triggerRoll}
@@ -374,13 +436,13 @@ export default function GameScreen({
             isBot={gameState.playerTypes?.red === 'bot'}
             layout="left-badge"
           />
-        ) : <View />}
+        )}
 
-        {gameState.activePlayers.includes('blue') ? (
+        {!is2Player && gameState.activePlayers.includes('blue') && userColor !== 'blue' ? (
           <CornerPlayerDock
             player="blue"
             playerName={getPlayerLabel('blue')}
-            diceValue={gameState.currentTurn === 'blue' ? (gameState.diceValue || 6) : 6}
+            diceValue={getPlayerDiceValue('blue')}
             isTurn={gameState.currentTurn === 'blue'}
             isRolling={isRolling && gameState.currentTurn === 'blue'}
             onRoll={triggerRoll}
@@ -391,20 +453,7 @@ export default function GameScreen({
         ) : <View />}
       </View>
 
-      {/* Bottom Center Active Rolling Station with 3D Flipping Cube */}
-      <View style={styles.bottomRollStation}>
-        <View style={[styles.diceRollControl, canRoll && styles.diceRollControlActive]}>
-           <Cube3DFlippingDice
-            targetValue={gameState.diceValue || 6}
-            isRolling={isRolling}
-            onPress={canRoll ? triggerRoll : undefined}
-            disabled={!canRoll}
-            size={50}
-            themeColor={activeTurnColor}
-          />
-          {/* <Text style={styles.arrowIcon}>›</Text> */}
-        </View>
-      </View>
+
     </SafeAreaView>
   );
 }
@@ -468,36 +517,51 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 0,
   },
-  noticeBanner: {
-    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+  noticeContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+    height: 34,
+  },
+  noticeBannerHighlight: {
+    backgroundColor: 'rgba(234, 179, 8, 0.95)',
     borderWidth: 1.5,
-    borderColor: '#FACC15',
-    borderRadius: 12,
-    paddingVertical: 5,
+    borderColor: '#FEF08A',
+    borderRadius: 14,
+    paddingVertical: 4,
     paddingHorizontal: 16,
-    alignSelf: 'center',
+    shadowColor: '#FACC15',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  noticeTextHighlight: {
+    color: '#0F172A',
+    fontSize: 12,
+    fontWeight: '900',
   },
   noticeBannerTurn: {
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 14,
     paddingVertical: 4,
     paddingHorizontal: 14,
-    alignSelf: 'center',
   },
-  noticePlaceholder: {
-    height: 24,
-  },
-  noticeText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
+  turnDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   noticeTurnText: {
-    color: '#CBD5E1',
-    fontSize: 12,
-    fontWeight: '700',
+    color: '#F8FAFC',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   bottomDocksRow: {
     flexDirection: 'row',
@@ -515,14 +579,14 @@ const styles = StyleSheet.create({
   diceRollControl: {
     flexDirection: 'row',
     alignItems: 'center',
-     borderRadius: 24,
-      paddingHorizontal: 16,
+    borderRadius: 24,
+    paddingHorizontal: 16,
     paddingVertical: 6,
     gap: 12,
- 
+
   },
   diceRollControlActive: {
- 
+
     shadowOpacity: 0.8,
   },
   arrowIcon: {

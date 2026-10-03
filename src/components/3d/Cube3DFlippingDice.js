@@ -35,10 +35,10 @@ export default function Cube3DFlippingDice({
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const glowOpacity = useRef(new Animated.Value(0)).current;
 
-  // Sync display value when targetValue changes while not rolling
+  // Sync display value when valid targetValue changes while not rolling
   useEffect(() => {
-    if (!isRolling) {
-      setDisplayValue(targetValue || 6);
+    if (!isRolling && targetValue != null && targetValue >= 1 && targetValue <= 6) {
+      setDisplayValue(targetValue);
     }
   }, [targetValue, isRolling]);
 
@@ -144,7 +144,9 @@ export default function Cube3DFlippingDice({
         }),
       ]).start(() => {
         clearInterval(shuffleInterval);
-        setDisplayValue(targetValue || 6);
+        if (targetValue != null && targetValue >= 1 && targetValue <= 6) {
+          setDisplayValue(targetValue);
+        }
 
         // Landing reveal pop animation
         Animated.sequence([

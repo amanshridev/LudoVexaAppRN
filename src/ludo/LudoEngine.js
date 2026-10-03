@@ -10,7 +10,7 @@ import { getPowerAtTrackIndex } from './PowerTiles.js';
 export function createInitialState(options = {}) {
   const userColor = options.userColor || 'red';
   const playerCount = options.playerCount || 4;
-  const gameMode = options.gameMode || 'power'; // 'power' | 'classic' | 'rush'
+  const gameMode = options.gameMode || 'classic'; // 'classic' | 'power' | 'rush'
   const isVsAi = options.isVsAi !== undefined ? options.isVsAi : true;
 
   const OPPOSITE = {
