@@ -7,17 +7,44 @@ import {
   StatusBar,
   ScrollView,
   Linking,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../components/ui/ScreenHeader';
 import { useTheme } from '../context/ThemeContext';
+import SoundManager from '../utils/SoundManager';
 
 export default function SettingsScreen({ onNavigate, onBack }) {
-  const { appTheme, ludoTheme, settings, themesList } = useTheme();
+  const { appTheme, ludoTheme, settings, updateSettings, themesList } = useTheme();
 
-  const currentAppColorObj = themesList.find((t) => t.id === (settings.appColor || 'emerald')) || themesList[0];
+  // Sound is enabled by default (settings.sound !== false)
+  const isSoundOn = settings.sound !== false;
+
+  const handleToggleSound = (val) => {
+    try {
+      updateSettings({ sound: val });
+      SoundManager.setMuted(!val);
+      if (val) {
+        SoundManager.play('buttonTap');
+      }
+    } catch (_) {}
+  };
 
   const sections = [
+    {
+      title: 'AUDIO & SOUND',
+      items: [
+        {
+          id: 'sound',
+          icon: isSoundOn ? '🔊' : '🔇',
+          title: 'Game Sounds (SFX)',
+          subtitle: isSoundOn ? 'Dice, moves, captures & effects ON' : 'All game sounds muted (OFF)',
+          isSwitch: true,
+          value: isSoundOn,
+          onToggle: handleToggleSound,
+        },
+      ],
+    },
     {
       title: 'APPEARANCE',
       items: [
@@ -29,19 +56,9 @@ export default function SettingsScreen({ onNavigate, onBack }) {
           badgeColor: ludoTheme?.colors?.[0] || appTheme.colors.primary,
           route: 'theme',
         },
-        // {
-        //   id: 'appColor',
-        //   icon: '🌈',
-        //   title: 'App Colors',
-        //   subtitle: currentAppColorObj.name,
-        //   badgeColor: currentAppColorObj.primary,
-        //   route: 'appColor',
-        // },
       ],
     },
-
-
-     {
+    {
       title: 'PRIVACY & ACCOUNT',
       items: [
         {
@@ -52,18 +69,6 @@ export default function SettingsScreen({ onNavigate, onBack }) {
         },
       ],
     },
-    // {
-    //   title: 'PRIVACY & ACCOUNT',
-    //   items: [
-    //     {
-    //       id: 'privacySettings',
-    //       icon: '🔒',
-    //       title: 'Privacy & Safety',
-    //       subtitle: `${settings.profileVisibility ? settings.profileVisibility.toUpperCase() : 'PUBLIC'} Profile`,
-    //       route: 'privacySettings',
-    //     },
-    //   ],
-    // },
   ];
 
   return (
@@ -88,13 +93,17 @@ export default function SettingsScreen({ onNavigate, onBack }) {
                 return (
                   <React.Fragment key={item.id}>
                     <TouchableOpacity
-                      activeOpacity={0.7}
+                      activeOpacity={item.isSwitch ? 1 : 0.7}
                       style={styles.rowItem}
-                      onPress={() => (
-                        item.openline
-                          ? Linking.openURL(item.openline)
-                          : onNavigate?.(item.route)
-                      )}
+                      onPress={() => {
+                        if (item.isSwitch) {
+                          item.onToggle?.(!item.value);
+                        } else if (item.openline) {
+                          Linking.openURL(item.openline);
+                        } else {
+                          onNavigate?.(item.route);
+                        }
+                      }}
                     >
                       <View style={styles.rowLeft}>
                         <View style={[styles.iconContainer, { backgroundColor: 'rgba(255,255,255,0.06)' }]}>
@@ -114,7 +123,16 @@ export default function SettingsScreen({ onNavigate, onBack }) {
                       </View>
 
                       <View style={styles.rowRight}>
-                        <Text style={[styles.arrowIcon, { color: appTheme.colors.primary }]}>→</Text>
+                        {item.isSwitch ? (
+                          <Switch
+                            value={item.value}
+                            onValueChange={item.onToggle}
+                            trackColor={{ false: '#334155', true: appTheme.colors.primary }}
+                            thumbColor="#FFFFFF"
+                          />
+                        ) : (
+                          <Text style={[styles.arrowIcon, { color: appTheme.colors.primary }]}>→</Text>
+                        )}
                       </View>
                     </TouchableOpacity>
                     {!isLast && <View style={styles.rowDivider} />}
