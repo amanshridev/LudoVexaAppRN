@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -8,23 +8,19 @@ import {
   Easing,
   useWindowDimensions,
 } from 'react-native';
-import Svg, { Circle, Polygon } from 'react-native-svg';
+import Svg, { Polygon } from 'react-native-svg';
 import { PLAYER_COLORS } from '../../theme/colors.js';
 import PinToken3D from '../3d/PinToken3D.js';
 import Cube3DFlippingDice from '../3d/Cube3DFlippingDice.js';
 
 /**
- * Authentic Ludo King-Style Corner Player Dock
- * 1. Player Profile:
- *    - Round Avatar with Circular SVG Countdown Timer Ring (Green -> Yellow -> Red)
- *    - Name Badge directly below avatar
- *    - Crown 👑 (You) or Bot 🤖 Mini-Badge
- * 2. 3D Dice Station:
- *    - Dedicated 3D Beveled Dice Podium (touchable to roll)
- *    - Animated Bouncing Down-Arrow (⬇️ ROLL) pointing directly at the dice
- * 3. Symmetrical Layout:
- *    - Left Players (Red/Green): [ Profile ] [ Dice ⬇️ ]
- *    - Right Players (Yellow/Blue): [ Dice ⬇️ ] [ Profile ]
+ * Authentic Ludo King Style Corner Player Dock:
+ * 1. Classic Square Avatar Box with metallic border & player color trim
+ * 2. Name Ribbon directly attached below the avatar box
+ * 3. Dedicated Square 3D Dice Platform with gold border
+ * 4. Animated Bouncing Green Pointer Arrow (⬇️ ROLL) pointing down into dice
+ * 5. Integrated turn countdown timer bar at the bottom of the avatar box
+ * 6. Symmetric layout (Dice on the side facing board center)
  */
 export default function CornerPlayerDock({
   player = 'red',
@@ -35,21 +31,17 @@ export default function CornerPlayerDock({
   onRoll,
   canRoll = false,
   isBot = false,
-  layout = 'left-badge', // 'left-badge' (dice on right) or 'right-badge' (dice on left)
+  layout = 'left-badge', // 'left-badge': [Avatar+Name] [Dice], 'right-badge': [Dice] [Avatar+Name]
 }) {
   const { width: screenWidth } = useWindowDimensions();
   const isSmall = screenWidth < 380;
 
   // Responsive dimensions
-  const svgSize = isSmall ? 44 : 48;
-  const radius = isSmall ? 19 : 21;
-  const strokeWidth = 3.5;
-  const innerAvatarSize = isSmall ? 32 : 36;
-  const pinSize = isSmall ? 18 : 22;
-  const traySize = isSmall ? 42 : 46;
+  const boxSize = isSmall ? 42 : 46;
+  const pinSize = isSmall ? 20 : 23;
   const diceSize = isSmall ? 32 : 36;
+  const ribbonWidth = isSmall ? 48 : 54;
 
-  const circumference = 2 * Math.PI * radius;
   const pColor = PLAYER_COLORS[player] || PLAYER_COLORS.red;
   const isYou = playerName === 'You';
   const displayName = isYou ? 'You' : playerName || player.toUpperCase();
@@ -57,35 +49,12 @@ export default function CornerPlayerDock({
   // Animation values
   const arrowBounceAnim = useRef(new Animated.Value(0)).current;
   const avatarPulseAnim = useRef(new Animated.Value(1)).current;
+  const timerAnim = useRef(new Animated.Value(1)).current;
 
-  // Turn Countdown Progress (15-second standard Ludo timer)
-  const [turnProgress, setTurnProgress] = useState(1);
-
-  useEffect(() => {
-    if (isTurn) {
-      setTurnProgress(1);
-      const startTime = Date.now();
-      const totalDuration = 15000; // 15 seconds
-
-      const interval = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, 1 - elapsed / totalDuration);
-        setTurnProgress(remaining);
-        if (remaining <= 0) {
-          clearInterval(interval);
-        }
-      }, 100);
-
-      return () => clearInterval(interval);
-    } else {
-      setTurnProgress(1);
-    }
-  }, [isTurn]);
-
-  // Down-arrow bouncing animation when player can roll
+  // 1. Downward arrow bouncy animation when player can roll
   useEffect(() => {
     if (isTurn && canRoll) {
-      const loop = Animated.loop(
+      const arrowLoop = Animated.loop(
         Animated.sequence([
           Animated.timing(arrowBounceAnim, {
             toValue: 5,
@@ -101,20 +70,20 @@ export default function CornerPlayerDock({
           }),
         ])
       );
-      loop.start();
-      return () => loop.stop();
+      arrowLoop.start();
+      return () => arrowLoop.stop();
     } else {
       arrowBounceAnim.setValue(0);
     }
   }, [isTurn, canRoll, arrowBounceAnim]);
 
-  // Active avatar subtle pulse
+  // 2. Active avatar subtle scale pulse
   useEffect(() => {
     if (isTurn) {
-      const loop = Animated.loop(
+      const pulseLoop = Animated.loop(
         Animated.sequence([
           Animated.timing(avatarPulseAnim, {
-            toValue: 1.05,
+            toValue: 1.04,
             duration: 600,
             easing: Easing.inOut(Easing.quad),
             useNativeDriver: true,
@@ -127,106 +96,106 @@ export default function CornerPlayerDock({
           }),
         ])
       );
-      loop.start();
-      return () => loop.stop();
+      pulseLoop.start();
+      return () => pulseLoop.stop();
     } else {
       avatarPulseAnim.setValue(1);
     }
   }, [isTurn, avatarPulseAnim]);
 
-  // Circular timer color transitions (Green -> Amber -> Red)
-  const getTimerRingColor = () => {
-    if (!isTurn) return pColor.primary;
-    if (turnProgress > 0.5) return '#10B981'; // Emerald Green
-    if (turnProgress > 0.25) return '#F59E0B'; // Amber Yellow
-    return '#EF4444'; // Red (Time running out)
-  };
+  // 3. 15-second Turn Timer countdown
+  useEffect(() => {
+    if (isTurn) {
+      timerAnim.setValue(1);
+      const timerAnimation = Animated.timing(timerAnim, {
+        toValue: 0,
+        duration: 15000,
+        easing: Easing.linear,
+        useNativeDriver: false,
+      });
+      timerAnimation.start();
+      return () => timerAnimation.stop();
+    } else {
+      timerAnim.setValue(1);
+    }
+  }, [isTurn, timerAnim]);
 
-  const strokeDashoffset = isTurn
-    ? circumference * (1 - turnProgress)
-    : 0;
-
-  // 1. Render Player Profile (Avatar with Circular Timer Ring + Name Plate)
+  // Section 1: Ludo King Classic Profile (Avatar Box + Name Ribbon)
   const renderProfile = () => (
-    <View style={styles.profileContainer}>
-      {/* Avatar with Circular Progress Ring */}
+    <View style={styles.profileCol}>
+      {/* Square Avatar Box */}
       <Animated.View
         style={[
-          styles.avatarFrame,
-          { width: svgSize, height: svgSize },
-          isTurn && { transform: [{ scale: avatarPulseAnim }] },
+          styles.avatarSquare,
+          {
+            width: boxSize,
+            height: boxSize,
+            borderColor: isTurn ? '#FACC15' : pColor.primary,
+            transform: [{ scale: avatarPulseAnim }],
+          },
+          isTurn && {
+            shadowColor: '#FACC15',
+            shadowOpacity: 0.9,
+            shadowRadius: 8,
+            elevation: 8,
+          },
         ]}
       >
-        <Svg width={svgSize} height={svgSize} style={styles.svgRing}>
-          {/* Background Track */}
-          <Circle
-            cx={svgSize / 2}
-            cy={svgSize / 2}
-            r={radius}
-            stroke={isTurn ? 'rgba(255, 255, 255, 0.18)' : pColor.primary}
-            strokeWidth={strokeWidth}
-            fill="none"
-          />
-          {/* Active Depleting Timer Ring */}
-          {isTurn && (
-            <Circle
-              cx={svgSize / 2}
-              cy={svgSize / 2}
-              r={radius}
-              stroke={getTimerRingColor()}
-              strokeWidth={strokeWidth + 0.5}
-              fill="none"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
-              transform={`rotate(-90 ${svgSize / 2} ${svgSize / 2})`}
-            />
-          )}
-        </Svg>
-
-        {/* Inner Avatar Disk with Pin Token */}
+        {/* Inner background */}
         <View
           style={[
             styles.avatarInner,
-            {
-              width: innerAvatarSize,
-              height: innerAvatarSize,
-              borderRadius: innerAvatarSize / 2,
-              backgroundColor: isTurn ? pColor.dark || '#16233B' : '#0B1526',
-            },
+            { backgroundColor: isTurn ? pColor.dark || '#16233B' : '#0B1526' },
           ]}
         >
           <PinToken3D token={{ player }} size={pinSize} />
         </View>
 
-        {/* Crown 👑 or Bot 🤖 Mini Badge */}
+        {/* Role Badge (👑 Crown for You, 🤖 Bot for Computer) */}
         {isBot ? (
-          <View style={styles.badgeAnchor}>
-            <View style={styles.roleBadge}>
-              <Text style={styles.roleBadgeText}>🤖</Text>
-            </View>
+          <View style={styles.roleBadge}>
+            <Text style={styles.roleBadgeText}>🤖</Text>
           </View>
         ) : isYou ? (
-          <View style={styles.badgeAnchor}>
-            <View style={[styles.roleBadge, styles.youCrownBadge]}>
-              <Text style={styles.roleBadgeText}>👑</Text>
-            </View>
+          <View style={[styles.roleBadge, styles.crownBadge]}>
+            <Text style={styles.roleBadgeText}>👑</Text>
           </View>
         ) : null}
+
+        {/* Turn Countdown Timer Bar at bottom edge of avatar box */}
+        {isTurn && (
+          <View style={styles.timerTrack}>
+            <Animated.View
+              style={[
+                styles.timerFill,
+                {
+                  width: timerAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0%', '100%'],
+                  }),
+                  backgroundColor: timerAnim.interpolate({
+                    inputRange: [0, 0.25, 0.5, 1],
+                    outputRange: ['#EF4444', '#F59E0B', '#10B981', '#10B981'],
+                  }),
+                },
+              ]}
+            />
+          </View>
+        )}
       </Animated.View>
 
-      {/* Name Plate directly below the avatar */}
+      {/* Name Ribbon directly below avatar box */}
       <View
         style={[
-          styles.namePlate,
-          isTurn && styles.namePlateActive,
-          isTurn && { borderColor: '#FACC15' },
+          styles.nameRibbon,
+          { width: ribbonWidth },
+          isTurn && styles.nameRibbonActive,
         ]}
       >
         <Text
           style={[
-            styles.namePlateText,
-            isTurn && styles.namePlateTextActive,
+            styles.nameText,
+            isTurn && styles.nameTextActive,
           ]}
           numberOfLines={1}
         >
@@ -236,45 +205,46 @@ export default function CornerPlayerDock({
     </View>
   );
 
-  // 2. Render Dedicated 3D Dice Tray (with Downward Bouncing Prompt)
+  // Section 2: Ludo King Classic Dice Platform (Roller Pad + Down Arrow)
   const renderDice = () => (
-    <View style={styles.diceContainer}>
-      {/* Animated Bouncing Down-Arrow & "ROLL" Badge */}
+    <View style={styles.diceCol}>
+      {/* Downward Bouncing "ROLL" Pointer Arrow */}
       {canRoll && (
         <Animated.View
           pointerEvents="none"
           style={[
-            styles.rollPromptWrap,
+            styles.arrowPromptWrap,
             { transform: [{ translateY: arrowBounceAnim }] },
           ]}
         >
-          <View style={[styles.rollBadgePill, { backgroundColor: pColor.primary }]}>
+          <View style={styles.rollBadgePill}>
             <Text style={styles.rollBadgeText}>ROLL</Text>
           </View>
-          <Svg width={12} height={8} viewBox="0 0 12 8">
+          <Svg width={14} height={9} viewBox="0 0 14 9">
             <Polygon
-              points="6,8 0,0 12,0"
-              fill="#FACC15"
-              stroke="#78350F"
-              strokeWidth="1"
+              points="7,9 0,0 14,0"
+              fill="#10B981"
+              stroke="#064E3B"
+              strokeWidth="1.2"
               strokeLinejoin="round"
             />
           </Svg>
         </Animated.View>
       )}
 
-      {/* 3D Dice Platform / Podium */}
+      {/* Square 3D Dice Platform */}
       <TouchableOpacity
         activeOpacity={canRoll ? 0.75 : 1}
         onPress={canRoll ? onRoll : undefined}
         disabled={!canRoll}
         style={[
-          styles.dicePodium,
+          styles.dicePlatform,
           {
-            width: traySize,
-            height: traySize,
+            width: boxSize,
+            height: boxSize,
+            borderColor: isTurn && canRoll ? '#FACC15' : 'rgba(255, 255, 255, 0.18)',
           },
-          isTurn && canRoll && styles.dicePodiumActive,
+          isTurn && canRoll && styles.dicePlatformActive,
         ]}
       >
         <Cube3DFlippingDice
@@ -286,20 +256,23 @@ export default function CornerPlayerDock({
           themeColor={pColor.primary}
         />
       </TouchableOpacity>
+
+      {/* Spacer matching name ribbon height so baseline remains perfectly level */}
+      <View style={styles.diceBottomSpacer} />
     </View>
   );
 
   return (
     <View style={styles.dockRoot}>
       {layout === 'left-badge' ? (
-        // Left Side: [ Profile (Avatar + Name) ]  [ Dice Podium ⬇️ ]
-        <View style={styles.dockCluster}>
+        // Left Player: [ Profile (Avatar + Name) ]  [ Dice Platform ⬇️ ]
+        <View style={styles.dockRow}>
           {renderProfile()}
           {renderDice()}
         </View>
       ) : (
-        // Right Side: [ Dice Podium ⬇️ ]  [ Profile (Avatar + Name) ]
-        <View style={styles.dockCluster}>
+        // Right Player: [ Dice Platform ⬇️ ]  [ Profile (Avatar + Name) ]
+        <View style={styles.dockRow}>
           {renderDice()}
           {renderProfile()}
         </View>
@@ -313,43 +286,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dockCluster: {
+  dockRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 8,
   },
 
-  // --- Profile Section ---
-  profileContainer: {
+  // --- Profile Column (Avatar Box + Name Ribbon) ---
+  profileCol: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarFrame: {
+
+  // Square Avatar Box (Ludo King Iconic Frame)
+  avatarSquare: {
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0A1322',
     position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  svgRing: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-  },
-  avatarInner: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.5,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  badgeAnchor: {
+  avatarInner: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Role Badge (Top-Right of avatar box)
+  roleBadge: {
     position: 'absolute',
     top: -2,
     right: -2,
-    zIndex: 10,
-  },
-  roleBadge: {
     backgroundColor: '#1E293B',
     borderRadius: 7,
     paddingHorizontal: 2.5,
@@ -357,33 +332,46 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFFFFF',
     elevation: 4,
+    zIndex: 10,
   },
-  youCrownBadge: {
+  crownBadge: {
     backgroundColor: '#D97706',
   },
   roleBadgeText: {
-    fontSize: 8,
+    fontSize: 7.5,
   },
 
-  // Name Plate Capsule
-  namePlate: {
-    marginTop: 2,
+  // Turn Countdown Timer Bar (Flush with bottom of Avatar Box)
+  timerTrack: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  timerFill: {
+    height: '100%',
+  },
+
+  // Name Ribbon Plate (Directly attached under Avatar Box)
+  nameRibbon: {
+    marginTop: 3,
     backgroundColor: '#0B1526',
     borderWidth: 1.2,
     borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    minWidth: 42,
+    borderRadius: 7,
+    paddingVertical: 1.5,
+    paddingHorizontal: 3,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.35,
     shadowRadius: 2,
     elevation: 2,
   },
-  namePlateActive: {
+  nameRibbonActive: {
     backgroundColor: '#16233B',
     borderColor: '#FACC15',
     shadowColor: '#FACC15',
@@ -391,40 +379,41 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-  namePlateText: {
+  nameText: {
     color: '#CBD5E1',
-    fontSize: 9.5,
+    fontSize: 9,
     fontWeight: '800',
     letterSpacing: 0.3,
     textAlign: 'center',
   },
-  namePlateTextActive: {
+  nameTextActive: {
     color: '#FACC15',
     fontWeight: '900',
   },
 
-  // --- Dice Section ---
-  diceContainer: {
-    position: 'relative',
+  // --- Dice Column (Roller Platform + Downward Arrow) ---
+  diceCol: {
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
-  dicePodium: {
-    borderRadius: 12,
-    backgroundColor: '#070F1D',
+
+  // Square 3D Dice Platform
+  dicePlatform: {
+    borderRadius: 10,
+    backgroundColor: '#070F1C',
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.16)',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.5,
     shadowRadius: 4,
     elevation: 4,
   },
-  dicePodiumActive: {
-    borderColor: '#FACC15',
+  dicePlatformActive: {
     backgroundColor: '#0D1A33',
+    borderColor: '#FACC15',
     shadowColor: '#FACC15',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.9,
@@ -432,8 +421,8 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
 
-  // Downward Bouncing "ROLL" Prompt
-  rollPromptWrap: {
+  // Downward Bouncing "ROLL" Arrow Prompt
+  arrowPromptWrap: {
     position: 'absolute',
     top: -21,
     alignItems: 'center',
@@ -442,22 +431,28 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   rollBadgePill: {
-    paddingHorizontal: 6,
+    backgroundColor: '#10B981',
+    paddingHorizontal: 5,
     paddingVertical: 1,
-    borderRadius: 6,
+    borderRadius: 5,
     borderWidth: 1,
     borderColor: '#FFFFFF',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 3,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.4,
+    shadowRadius: 2,
+    elevation: 4,
     marginBottom: -1,
   },
   rollBadgeText: {
     color: '#FFFFFF',
     fontSize: 7.5,
     fontWeight: '900',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
+  },
+
+  // Bottom Spacer matching name ribbon height (maintains perfect level alignment)
+  diceBottomSpacer: {
+    height: 18,
   },
 });
