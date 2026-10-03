@@ -116,13 +116,13 @@ export default function GameScreen({
     try {
       SoundManager.init();
       SoundManager.setMuted(settings.sound === false);
-    } catch (_) {}
+    } catch (_) { }
 
     const appStateSub = AppState.addEventListener('change', (nextState) => {
       if (nextState.match(/inactive|background/)) {
         try {
           SoundManager.stopAll();
-        } catch (_) {}
+        } catch (_) { }
       }
     });
 
@@ -130,7 +130,7 @@ export default function GameScreen({
       try {
         appStateSub?.remove?.();
         SoundManager.unload();
-      } catch (_) {}
+      } catch (_) { }
     };
   }, []);
 
@@ -141,7 +141,7 @@ export default function GameScreen({
       setIsMuted(muted);
       SoundManager.setMuted(muted);
       SoundFX.setSoundEnabled(!muted);
-    } catch (_) {}
+    } catch (_) { }
   }, [settings.sound]);
 
   const toggleSoundMute = React.useCallback(() => {
@@ -153,7 +153,7 @@ export default function GameScreen({
         if (!next) {
           SoundManager.play('buttonTap');
         }
-      } catch (_) {}
+      } catch (_) { }
       return next;
     });
   }, []);
@@ -253,7 +253,7 @@ export default function GameScreen({
         const stepRate = Math.min(1.5, 1.0 + (i * 0.05));
         SoundManager.play('step', { volume: 0.35, rate: stepRate });
         SoundFX.hop();
-      } catch (_) {}
+      } catch (_) { }
 
       const isLast = i === cells.length - 1;
       const targetXY = getCoordXY(cell, cellSize);
@@ -332,7 +332,7 @@ export default function GameScreen({
     try {
       SoundManager.play('kill', { volume: 0.95 });
       SoundFX.capture();
-    } catch (_) {}
+    } catch (_) { }
 
     // 100ms after kill impact: play victim down-tone (killed / killedMine)
     setTimeout(() => {
@@ -340,7 +340,7 @@ export default function GameScreen({
       try {
         const isVictimMine = capturedToken.player === userColor;
         SoundManager.play(isVictimMine ? 'killedMine' : 'killed', { volume: 0.85 });
-      } catch (_) {}
+      } catch (_) { }
     }, 100);
 
     // Attacker squash bounce (1 -> 1.3 -> 0.9 -> 1) + expanding ring (scale 0 -> 2, opacity 0.8 -> 0, 300 ms)
@@ -376,7 +376,7 @@ export default function GameScreen({
     // Captured token flies back to its home slot using the same ghost method (400 ms)
     try {
       SoundManager.play('captureReturn', { volume: 0.7 });
-    } catch (_) {}
+    } catch (_) { }
     await new Promise((res) => {
       Animated.parallel([
         Animated.timing(capturedGhostPos, {
@@ -427,7 +427,7 @@ export default function GameScreen({
     setSafeGlow(cellXY);
     try {
       SoundManager.play('safe', { volume: 0.7 });
-    } catch (_) {}
+    } catch (_) { }
 
     await new Promise((res) => {
       Animated.parallel([
@@ -473,7 +473,7 @@ export default function GameScreen({
     setShowExtraTurn(true);
     try {
       SoundManager.play('extraTurn', { volume: 0.85 });
-    } catch (_) {}
+    } catch (_) { }
 
     await new Promise((res) => {
       Animated.sequence([
@@ -524,7 +524,7 @@ export default function GameScreen({
     try {
       SoundManager.play('tokenFinish', { volume: 0.9 });
       SoundFX.victory();
-    } catch (_) {}
+    } catch (_) { }
 
     await new Promise((res) => {
       Animated.parallel([
@@ -617,7 +617,7 @@ export default function GameScreen({
     if (!gameState.movableTokenIds.includes(tokenId)) {
       try {
         SoundManager.play('invalid');
-      } catch (_) {}
+      } catch (_) { }
       return;
     }
 
@@ -630,7 +630,7 @@ export default function GameScreen({
     setRollNotice(null);
     try {
       SoundManager.play('tokenSelect');
-    } catch (_) {}
+    } catch (_) { }
 
     // 7-second safety timeout that force-releases lock if anything hangs
     const safetyTimeout = setTimeout(() => {
@@ -660,7 +660,7 @@ export default function GameScreen({
       if (startStep === -1) {
         try {
           SoundManager.play('tokenEnter', { volume: 0.85 });
-        } catch (_) {}
+        } catch (_) { }
         stepsPath.push(0);
       } else {
         for (let s = startStep + 1; s <= finalStep; s++) {
@@ -781,7 +781,7 @@ export default function GameScreen({
           try {
             SoundManager.play('turnChange', { volume: 0.25 });
             SoundFX.turnSwitch();
-          } catch (_) {}
+          } catch (_) { }
         }
       }
     } catch (err) {
@@ -822,7 +822,7 @@ export default function GameScreen({
     try {
       SoundManager.play('diceRoll');
       SoundFX.dice();
-    } catch (_) {}
+    } catch (_) { }
 
     const nextState = rollDice(gameState);
     const rolledVal = nextState.diceValue;
@@ -837,7 +837,7 @@ export default function GameScreen({
       isAnimatingRef.current = false;
       try {
         SoundManager.play('diceLand');
-      } catch (_) {}
+      } catch (_) { }
 
       const isSix = rolledVal === 6;
       const isBotTurn = nextState.playerTypes?.[nextState.currentTurn] === 'bot';
@@ -851,7 +851,7 @@ export default function GameScreen({
           try {
             SoundManager.play('turnChange');
             SoundFX.turnSwitch();
-          } catch (_) {}
+          } catch (_) { }
         }, 1000);
       } else if (nextState.movableTokenIds.length === 1 && isBotTurn) {
         // Auto-move single valid token only for BOT turns
@@ -939,7 +939,7 @@ export default function GameScreen({
           onPress={() => {
             try {
               SoundManager.play('buttonTap');
-            } catch (_) {}
+            } catch (_) { }
             onExitHome?.();
           }}
           style={styles.circleIconBtn}
@@ -962,24 +962,14 @@ export default function GameScreen({
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {/* Speaker Mute/Unmute Button */}
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={toggleSoundMute}
-            style={styles.circleIconBtn}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessibilityRole="button"
-            accessibilityLabel={isMuted ? 'Unmute sound' : 'Mute sound'}
-          >
-            <Text style={{ fontSize: 16 }}>{isMuted ? '🔇' : '🔊'}</Text>
-          </TouchableOpacity>
+
 
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => {
               try {
                 SoundManager.play('buttonTap');
-              } catch (_) {}
+              } catch (_) { }
               onOpenSettings?.();
             }}
             style={styles.circleIconBtn}
