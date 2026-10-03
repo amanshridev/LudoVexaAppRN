@@ -7,6 +7,7 @@ import {
   StatusBar,
   Animated,
   Easing,
+  AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -20,6 +21,7 @@ import {
 import { GRID_SIZE, SAFE_INDICES, HOME_STEP } from '../ludo/LudoConstants.js';
 import { chooseBestTokenToMove } from '../ludo/LudoAI.js';
 import { SoundFX } from '../utils/soundFX.js';
+import SoundManager from '../utils/SoundManager.js';
 import { recordGameResult } from '../utils/storage.js';
 import LudoBoardExact from '../components/board/LudoBoardExact.js';
 import CornerPlayerDock from '../components/hud/CornerPlayerDock.js';
@@ -107,10 +109,54 @@ export default function GameScreen({
   const [finishedBurst, setFinishedBurst] = useState(null);
   const burstProgress = React.useRef(new Animated.Value(0)).current;
 
+  // Sound state and SoundManager lifecycle
+  const [isMuted, setIsMuted] = useState(settings.sound === false);
+
+  useEffect(() => {
+    try {
+      SoundManager.init();
+      SoundManager.setMuted(settings.sound === false);
+    } catch (_) {}
+
+    const appStateSub = AppState.addEventListener('change', (nextState) => {
+      if (nextState.match(/inactive|background/)) {
+        try {
+          SoundManager.stopAll();
+        } catch (_) {}
+      }
+    });
+
+    return () => {
+      try {
+        appStateSub?.remove?.();
+        SoundManager.unload();
+      } catch (_) {}
+    };
+  }, []);
+
   // Sync sound setting
   useEffect(() => {
-    SoundFX.setSoundEnabled(settings.sound !== false);
+    try {
+      const muted = settings.sound === false;
+      setIsMuted(muted);
+      SoundManager.setMuted(muted);
+      SoundFX.setSoundEnabled(!muted);
+    } catch (_) {}
   }, [settings.sound]);
+
+  const toggleSoundMute = React.useCallback(() => {
+    setIsMuted((prev) => {
+      const next = !prev;
+      try {
+        SoundManager.setMuted(next);
+        SoundFX.setSoundEnabled(!next);
+        if (!next) {
+          SoundManager.play('buttonTap');
+        }
+      } catch (_) {}
+      return next;
+    });
+  }, []);
 
   // Handle unmount cleanup
   useEffect(() => {
@@ -203,7 +249,11 @@ export default function GameScreen({
 
       const cell = cells[i];
       console.log('HOP', tokenId, cell);
-      SoundFX.hop();
+      try {
+        const stepRate = Math.min(1.5, 1.0 + (i * 0.05));
+        SoundManager.play('step', { volume: 0.35, rate: stepRate });
+        SoundFX.hop();
+      } catch (_) {}
 
       const isLast = i === cells.length - 1;
       const targetXY = getCoordXY(cell, cellSize);
@@ -279,7 +329,19 @@ export default function GameScreen({
     setCaptureRing(centerRing);
     setCapturedAnimToken({ tokenId: capturedToken.id, color: capturedToken.player });
 
-    SoundFX.capture();
+    try {
+      SoundManager.play('kill', { volume: 0.95 });
+      SoundFX.capture();
+    } catch (_) {}
+
+    // 100ms after kill impact: play victim down-tone (killed / killedMine)
+    setTimeout(() => {
+      if (!isMountedRef.current) return;
+      try {
+        const isVictimMine = capturedToken.player === userColor;
+        SoundManager.play(isVictimMine ? 'killedMine' : 'killed', { volume: 0.85 });
+      } catch (_) {}
+    }, 100);
 
     // Attacker squash bounce (1 -> 1.3 -> 0.9 -> 1) + expanding ring (scale 0 -> 2, opacity 0.8 -> 0, 300 ms)
     // Simultaneously: Captured token shakes (200 ms)
@@ -312,6 +374,9 @@ export default function GameScreen({
     ]);
 
     // Captured token flies back to its home slot using the same ghost method (400 ms)
+    try {
+      SoundManager.play('captureReturn', { volume: 0.7 });
+    } catch (_) {}
     await new Promise((res) => {
       Animated.parallel([
         Animated.timing(capturedGhostPos, {
@@ -360,6 +425,9 @@ export default function GameScreen({
     };
     safeGlowOpacity.setValue(0);
     setSafeGlow(cellXY);
+    try {
+      SoundManager.play('safe', { volume: 0.7 });
+    } catch (_) {}
 
     await new Promise((res) => {
       Animated.parallel([
@@ -403,6 +471,9 @@ export default function GameScreen({
     extraTurnAnim.setValue(0);
     extraTurnScale.setValue(0.5);
     setShowExtraTurn(true);
+    try {
+      SoundManager.play('extraTurn', { volume: 0.85 });
+    } catch (_) {}
 
     await new Promise((res) => {
       Animated.sequence([
@@ -450,7 +521,10 @@ export default function GameScreen({
     };
     burstProgress.setValue(0);
     setFinishedBurst({ ...tokenCenter, color: playerColor });
-    SoundFX.victory();
+    try {
+      SoundManager.play('tokenFinish', { volume: 0.9 });
+      SoundFX.victory();
+    } catch (_) {}
 
     await new Promise((res) => {
       Animated.parallel([
@@ -540,7 +614,12 @@ export default function GameScreen({
   const handleSelectToken = React.useCallback(async (tokenId) => {
     if (isAnimatingRef.current) return;
     if (gameState.status !== 'WAITING_SELECT') return;
-    if (!gameState.movableTokenIds.includes(tokenId)) return;
+    if (!gameState.movableTokenIds.includes(tokenId)) {
+      try {
+        SoundManager.play('invalid');
+      } catch (_) {}
+      return;
+    }
 
     const player = gameState.currentTurn;
     const playerTokens = gameState.tokens[player] || [];
@@ -549,6 +628,9 @@ export default function GameScreen({
 
     isAnimatingRef.current = true;
     setRollNotice(null);
+    try {
+      SoundManager.play('tokenSelect');
+    } catch (_) {}
 
     // 7-second safety timeout that force-releases lock if anything hangs
     const safetyTimeout = setTimeout(() => {
@@ -576,6 +658,9 @@ export default function GameScreen({
       // Build step-by-step sequence of cells
       const stepsPath = [];
       if (startStep === -1) {
+        try {
+          SoundManager.play('tokenEnter', { volume: 0.85 });
+        } catch (_) {}
         stepsPath.push(0);
       } else {
         for (let s = startStep + 1; s <= finalStep; s++) {
@@ -645,9 +730,10 @@ export default function GameScreen({
 
         if (finalState.status === 'GAME_OVER') {
           try {
+            SoundManager.play('winner', { volume: 1.0 });
             SoundFX.victory();
           } catch (soundErr) {
-            console.warn('SoundFX.victory error:', soundErr);
+            console.warn('Sound error:', soundErr);
           }
 
           recordGameResult({
@@ -692,7 +778,10 @@ export default function GameScreen({
         } else if (finalState.lastEvent && finalState.lastEvent.includes('Captured')) {
           // Capture sound already played on impact
         } else {
-          SoundFX.turnSwitch();
+          try {
+            SoundManager.play('turnChange', { volume: 0.25 });
+            SoundFX.turnSwitch();
+          } catch (_) {}
         }
       }
     } catch (err) {
@@ -730,7 +819,10 @@ export default function GameScreen({
     isAnimatingRef.current = true;
     setIsRolling(true);
     setRollNotice(null);
-    SoundFX.dice();
+    try {
+      SoundManager.play('diceRoll');
+      SoundFX.dice();
+    } catch (_) {}
 
     const nextState = rollDice(gameState);
     const rolledVal = nextState.diceValue;
@@ -743,6 +835,9 @@ export default function GameScreen({
       setRollingDiceValue(null);
       setIsRolling(false);
       isAnimatingRef.current = false;
+      try {
+        SoundManager.play('diceLand');
+      } catch (_) {}
 
       const isSix = rolledVal === 6;
       const isBotTurn = nextState.playerTypes?.[nextState.currentTurn] === 'bot';
@@ -753,7 +848,10 @@ export default function GameScreen({
           if (!isMountedRef.current) return;
           setRollNotice(null);
           setGameState((prev) => passTurn(prev));
-          SoundFX.turnSwitch();
+          try {
+            SoundManager.play('turnChange');
+            SoundFX.turnSwitch();
+          } catch (_) {}
         }, 1000);
       } else if (nextState.movableTokenIds.length === 1 && isBotTurn) {
         // Auto-move single valid token only for BOT turns
@@ -833,12 +931,17 @@ export default function GameScreen({
     <SafeAreaView style={[styles.safeArea, { backgroundColor: bgColor }]}>
       <StatusBar barStyle="light-content" backgroundColor={bgColor} />
 
-      {/* Top Header Row with Back Button, Room Mode Badge & Settings */}
+      {/* Top Header Row with Back Button, Room Mode Badge, Speaker & Settings */}
       <View style={[styles.topHeader, { marginBottom: 15 }]}>
 
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={onExitHome}
+          onPress={() => {
+            try {
+              SoundManager.play('buttonTap');
+            } catch (_) {}
+            onExitHome?.();
+          }}
           style={styles.circleIconBtn}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityRole="button"
@@ -858,14 +961,35 @@ export default function GameScreen({
           </Text>
         </View>
 
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={onOpenSettings}
-          style={styles.circleIconBtn}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <SettingsGearIcon size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {/* Speaker Mute/Unmute Button */}
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={toggleSoundMute}
+            style={styles.circleIconBtn}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole="button"
+            accessibilityLabel={isMuted ? 'Unmute sound' : 'Mute sound'}
+          >
+            <Text style={{ fontSize: 16 }}>{isMuted ? '🔇' : '🔊'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              try {
+                SoundManager.play('buttonTap');
+              } catch (_) {}
+              onOpenSettings?.();
+            }}
+            style={styles.circleIconBtn}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
+          >
+            <SettingsGearIcon size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Top Docks Row (AI / Opponents) */}
@@ -1290,7 +1414,7 @@ const styles = StyleSheet.create({
   extraTurnBadgeText: {
     color: '#FACC15',
     fontSize: 14,
-    fontWeight: '900',
+    fontWeight: '500',
     letterSpacing: 1,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 1, height: 1 },
