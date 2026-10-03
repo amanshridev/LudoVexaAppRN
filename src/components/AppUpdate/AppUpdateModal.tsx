@@ -46,7 +46,7 @@ export const openPlayStore = async () => {
       await Linking.openURL(PLAY_STORE_MARKET_URL);
       return;
     }
-  } catch (_) {}
+  } catch (_) { }
   try {
     await Linking.openURL(PLAY_STORE_URL);
   } catch (_) {
@@ -256,8 +256,8 @@ export default function AppUpdateModal({ autoCheck = true }: AppUpdateModalProps
             {modalState === 'downloaded'
               ? 'Update Ready to Install!'
               : modalState === 'downloading'
-              ? 'Downloading Update...'
-              : 'New Update Available!'}
+                ? 'Downloading Update...'
+                : 'New Update Available!'}
           </Text>
 
           {/* Description */}
@@ -265,19 +265,15 @@ export default function AppUpdateModal({ autoCheck = true }: AppUpdateModalProps
             {modalState === 'downloaded'
               ? 'The latest update has been downloaded. Restart the app now to enjoy fresh features and smoother gameplay.'
               : modalState === 'downloading'
-              ? 'Downloading update in the background. You can continue playing your game while it downloads.'
-              : 'A brand new version of Ludo Vexa is available on Google Play with enhanced performance, smarter AI, and improvements.'}
+                ? 'Downloading update in the background. You can continue playing your game while it downloads.'
+                : 'A brand new version of Ludo Vexa is available on Google Play with enhanced performance, smarter AI, and improvements.'}
           </Text>
 
           {/* Version Pill Badges */}
           <View style={styles.versionRow}>
-            <View style={styles.currentVersionBadge}>
-              <Text style={styles.versionLabel}>Current: </Text>
-              <Text style={styles.versionValue}>v{APP_VERSION}</Text>
-            </View>
+
             {!!storeVersion && (
               <>
-                <Text style={styles.arrowSeparator}>➜</Text>
                 <View style={styles.newVersionBadge}>
                   <Text style={styles.versionLabelNew}>Latest: </Text>
                   <Text style={styles.versionValueNew}>v{storeVersion}</Text>
@@ -306,7 +302,7 @@ export default function AppUpdateModal({ autoCheck = true }: AppUpdateModalProps
                 onPress={handleInstallNow}
                 activeOpacity={0.85}
               >
-                <Text style={styles.primaryBtnText}>Restart & Install Now ⚡</Text>
+                <Text style={styles.primaryBtnText}>Restart & Install Now</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.laterBtn} onPress={handleClose} activeOpacity={0.7}>
                 <Text style={styles.laterText}>Install Later</Text>
@@ -331,7 +327,7 @@ export default function AppUpdateModal({ autoCheck = true }: AppUpdateModalProps
                 activeOpacity={0.85}
               >
                 <Text style={styles.primaryBtnText}>
-                  {isUpdating ? 'Starting Download...' : 'Update Now 🚀'}
+                  {isUpdating ? 'Starting Download...' : 'Update Now'}
                 </Text>
               </TouchableOpacity>
 
@@ -340,7 +336,7 @@ export default function AppUpdateModal({ autoCheck = true }: AppUpdateModalProps
                 onPress={openPlayStore}
                 activeOpacity={0.8}
               >
-                <Text style={styles.secondaryBtnText}>Open in Google Play Store 🌐</Text>
+                <Text style={styles.secondaryBtnText}>Open in Google Play Store</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.laterBtn} onPress={handleClose} activeOpacity={0.7}>
@@ -375,11 +371,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: 'rgba(16, 185, 129, 0.35)',
-    elevation: 16,
-    shadowColor: ACCENT_COLOR,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
+
   },
   closeBtn: {
     position: 'absolute',
@@ -392,6 +384,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 2,
+
   },
   closeText: {
     fontSize: 15,
@@ -514,11 +507,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: ACCENT_COLOR,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 4,
+
   },
   primaryBtnText: {
     color: '#FFFFFF',
