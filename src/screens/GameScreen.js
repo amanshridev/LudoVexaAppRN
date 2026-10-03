@@ -5,6 +5,8 @@ import {
   Text,
   TouchableOpacity,
   StatusBar,
+  Animated,
+  Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -12,13 +14,16 @@ import {
   rollDice,
   moveToken,
   passTurn,
+  getTokenCoordinates,
+  getTrackIndex,
 } from '../ludo/LudoEngine.js';
+import { GRID_SIZE, SAFE_INDICES, HOME_STEP } from '../ludo/LudoConstants.js';
 import { chooseBestTokenToMove } from '../ludo/LudoAI.js';
 import { SoundFX } from '../utils/soundFX.js';
 import { recordGameResult } from '../utils/storage.js';
 import LudoBoardExact from '../components/board/LudoBoardExact.js';
 import CornerPlayerDock from '../components/hud/CornerPlayerDock.js';
-import Cube3DFlippingDice from '../components/3d/Cube3DFlippingDice.js';
+import PinToken3D from '../components/3d/PinToken3D.js';
 import { useTheme } from '../context/ThemeContext.js';
 import {
   BackArrowIcon,
@@ -26,6 +31,18 @@ import {
   RobotIcon,
   SettingsGearIcon,
 } from '../components/ui/AppIcons.js';
+
+const ENABLE_HOP_ANIMATION = true;
+const BURST_ANGLES = [0, 0.785, 1.57, 2.356, 3.141, 3.927, 4.712, 5.497];
+
+const getCoordXY = (coords, currentCellSize) => {
+  if (!coords) return { x: 0, y: 0 };
+  const currentTokenSize = currentCellSize * 0.72;
+  return {
+    x: (coords.c || 0) * currentCellSize + 0.5 * (currentCellSize - currentTokenSize),
+    y: (coords.r || 0) * currentCellSize + 0.5 * (currentCellSize - currentTokenSize * 1.3),
+  };
+};
 
 export default function GameScreen({
   gameOptions = {},
@@ -38,6 +55,7 @@ export default function GameScreen({
   const { appTheme } = useTheme();
   const [gameState, setGameState] = useState(() => createInitialState(gameOptions));
   const [isRolling, setIsRolling] = useState(false);
+  const [rollingDiceValue, setRollingDiceValue] = useState(null);
   const [rollNotice, setRollNotice] = useState(null);
   const [boardArea, setBoardArea] = useState({ width: 0, height: 0 });
 
@@ -47,14 +65,79 @@ export default function GameScreen({
     0,
     Math.min(boardArea.width - 32, boardArea.height - 20, 360)
   );
+  const cellSize = boardSize > 0 ? boardSize / GRID_SIZE : 0;
 
-  const [isAnimatingMove, setIsAnimatingMove] = useState(false);
-  const isMovingLockRef = React.useRef(false);
+  // Ghost moving token state and refs
+  const [movingToken, setMovingToken] = useState(null);
+  const ghostPos = React.useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const ghostLift = React.useRef(new Animated.Value(0)).current;
+  const ghostScale = React.useRef(new Animated.Value(1)).current;
+  const isAnimatingRef = React.useRef(false);
+  const isMountedRef = React.useRef(true);
+
+  // Stage 3: Effect state and animated refs
+  // 1. Capture effect refs & state
+  const [capturedAnimToken, setCapturedAnimToken] = useState(null);
+  const capturedGhostPos = React.useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const capturedGhostLift = React.useRef(new Animated.Value(0)).current;
+  const capturedGhostScale = React.useRef(new Animated.Value(1)).current;
+  const capturedShake = React.useRef(new Animated.Value(0)).current;
+  const [captureRing, setCaptureRing] = useState(null);
+  const ringScale = React.useRef(new Animated.Value(0)).current;
+  const ringOpacity = React.useRef(new Animated.Value(0.8)).current;
+
+  // 2. Safe cell effect refs & state
+  const [safeGlow, setSafeGlow] = useState(null);
+  const safeGlowOpacity = React.useRef(new Animated.Value(0)).current;
+
+  // 3. Extra turn badge refs & state
+  const [showExtraTurn, setShowExtraTurn] = useState(false);
+  const extraTurnAnim = React.useRef(new Animated.Value(0)).current;
+  const extraTurnScale = React.useRef(new Animated.Value(0.5)).current;
+
+  // 5. Token finished particle burst refs & state
+  const [finishedBurst, setFinishedBurst] = useState(null);
+  const burstProgress = React.useRef(new Animated.Value(0)).current;
 
   // Sync sound setting
   useEffect(() => {
     SoundFX.setSoundEnabled(settings.sound !== false);
   }, [settings.sound]);
+
+  // Handle unmount cleanup
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      ghostPos.stopAnimation();
+      ghostLift.stopAnimation();
+      ghostScale.stopAnimation();
+      capturedGhostPos.stopAnimation();
+      capturedGhostLift.stopAnimation();
+      capturedGhostScale.stopAnimation();
+      capturedShake.stopAnimation();
+      ringScale.stopAnimation();
+      ringOpacity.stopAnimation();
+      safeGlowOpacity.stopAnimation();
+      extraTurnAnim.stopAnimation();
+      extraTurnScale.stopAnimation();
+      burstProgress.stopAnimation();
+    };
+  }, [
+    ghostPos,
+    ghostLift,
+    ghostScale,
+    capturedGhostPos,
+    capturedGhostLift,
+    capturedGhostScale,
+    capturedShake,
+    ringScale,
+    ringOpacity,
+    safeGlowOpacity,
+    extraTurnAnim,
+    extraTurnScale,
+    burstProgress,
+  ]);
 
   // Check if current turn belongs to a bot
   const isAiTurn =
@@ -62,36 +145,371 @@ export default function GameScreen({
       ? gameState.playerTypes[gameState.currentTurn] === 'bot'
       : gameState.isVsAi && gameState.currentTurn !== 'red') &&
     gameState.status !== 'GAME_OVER' &&
-    !isAnimatingMove;
+    !isAnimatingRef.current;
 
-  const canRoll = !isRolling && !isAnimatingMove && gameState.status === 'ROLLING' && !isAiTurn;
+  const canRoll = !isRolling && !isAnimatingRef.current && gameState.status === 'ROLLING' && !isAiTurn;
 
-  // Handle token selection with step-by-step 1-by-1 box jumping animation
-  const handleSelectToken = React.useCallback((tokenId) => {
-    if (isAnimatingMove || isMovingLockRef.current) return;
+  // Board state hiding both moving token and captured token during animations
+  const displayedState = React.useMemo(() => {
+    if (!movingToken && !capturedAnimToken) return gameState;
+    const hideTokens = (player) => {
+      let list = gameState.tokens[player] || [];
+      if (movingToken && movingToken.color === player) {
+        list = list.filter((t) => t.id !== movingToken.tokenId);
+      }
+      if (capturedAnimToken && capturedAnimToken.color === player) {
+        list = list.filter((t) => t.id !== capturedAnimToken.tokenId);
+      }
+      return list;
+    };
 
+    const newTokens = {};
+    gameState.activePlayers.forEach((p) => {
+      newTokens[p] = hideTokens(p);
+    });
+
+    return {
+      ...gameState,
+      movableTokenIds: [],
+      tokens: newTokens,
+    };
+  }, [gameState, movingToken, capturedAnimToken]);
+
+  // Animate ghost token hopping cell-by-cell along path
+  const animateMove = React.useCallback(async (tokenId, color, cells, oldCoord) => {
+    if (!isMountedRef.current || cells.length === 0) return;
+
+    const startXY = getCoordXY(oldCoord, cellSize);
+    ghostPos.setValue(startXY);
+    ghostLift.setValue(0);
+    ghostScale.setValue(1);
+
+    setMovingToken({ tokenId, color });
+
+    // Brief yield for component to mount ghost and hide real token
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    for (let i = 0; i < cells.length; i++) {
+      if (!isMountedRef.current) break;
+
+      const cell = cells[i];
+      console.log('HOP', tokenId, cell);
+      SoundFX.hop();
+
+      const isLast = i === cells.length - 1;
+      const targetXY = getCoordXY(cell, cellSize);
+
+      await new Promise((resolve) => {
+        if (!isMountedRef.current) {
+          resolve();
+          return;
+        }
+
+        Animated.parallel([
+          Animated.timing(ghostPos, {
+            toValue: targetXY,
+            duration: 120,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.sequence([
+            Animated.timing(ghostLift, {
+              toValue: -cellSize * 0.35,
+              duration: 60,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.timing(ghostLift, {
+              toValue: 0,
+              duration: 60,
+              easing: Easing.in(Easing.quad),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.sequence([
+            Animated.timing(ghostScale, {
+              toValue: isLast ? 1.25 : 1.12,
+              duration: 60,
+              useNativeDriver: true,
+            }),
+            Animated.timing(ghostScale, {
+              toValue: 1.0,
+              duration: 60,
+              useNativeDriver: true,
+            }),
+          ]),
+        ]).start(() => resolve());
+      });
+    }
+  }, [cellSize, ghostPos, ghostLift, ghostScale]);
+
+  // 1. Capture Effect: attacker squash bounce + ring + captured shake + fly back to home + settle spring
+  const runCaptureEffect = React.useCallback(async (capturedToken, finalCoord) => {
+    if (!isMountedRef.current || cellSize <= 0) return;
+    const capCoord = getTokenCoordinates(capturedToken);
+    const capStartXY = getCoordXY(capCoord, cellSize);
+    const homeCoord = getTokenCoordinates({
+      player: capturedToken.player,
+      step: -1,
+      index: capturedToken.index,
+    });
+    const capTargetXY = getCoordXY(homeCoord, cellSize);
+
+    const centerRing = {
+      x: (finalCoord.c + 0.5) * cellSize,
+      y: (finalCoord.r + 0.5) * cellSize,
+    };
+
+    capturedGhostPos.setValue(capStartXY);
+    capturedGhostLift.setValue(0);
+    capturedGhostScale.setValue(1);
+    capturedShake.setValue(0);
+
+    ringScale.setValue(0);
+    ringOpacity.setValue(0.8);
+    setCaptureRing(centerRing);
+    setCapturedAnimToken({ tokenId: capturedToken.id, color: capturedToken.player });
+
+    SoundFX.capture();
+
+    // Attacker squash bounce (1 -> 1.3 -> 0.9 -> 1) + expanding ring (scale 0 -> 2, opacity 0.8 -> 0, 300 ms)
+    // Simultaneously: Captured token shakes (200 ms)
+    await Promise.all([
+      new Promise((res) => {
+        Animated.parallel([
+          Animated.sequence([
+            Animated.timing(ghostScale, { toValue: 1.3, duration: 100, useNativeDriver: true }),
+            Animated.timing(ghostScale, { toValue: 0.9, duration: 100, useNativeDriver: true }),
+            Animated.timing(ghostScale, { toValue: 1.0, duration: 100, useNativeDriver: true }),
+          ]),
+          Animated.parallel([
+            Animated.timing(ringScale, { toValue: 2.0, duration: 300, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+            Animated.timing(ringOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+          ]),
+        ]).start(() => {
+          setCaptureRing(null);
+          res();
+        });
+      }),
+      new Promise((res) => {
+        Animated.sequence([
+          Animated.timing(capturedShake, { toValue: -4, duration: 40, useNativeDriver: true }),
+          Animated.timing(capturedShake, { toValue: 4, duration: 40, useNativeDriver: true }),
+          Animated.timing(capturedShake, { toValue: -3, duration: 40, useNativeDriver: true }),
+          Animated.timing(capturedShake, { toValue: 3, duration: 40, useNativeDriver: true }),
+          Animated.timing(capturedShake, { toValue: 0, duration: 40, useNativeDriver: true }),
+        ]).start(() => res());
+      }),
+    ]);
+
+    // Captured token flies back to its home slot using the same ghost method (400 ms)
+    await new Promise((res) => {
+      Animated.parallel([
+        Animated.timing(capturedGhostPos, {
+          toValue: capTargetXY,
+          duration: 400,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.timing(capturedGhostLift, {
+            toValue: -cellSize * 0.45,
+            duration: 200,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(capturedGhostLift, {
+            toValue: 0,
+            duration: 200,
+            easing: Easing.in(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start(() => res());
+    });
+
+    // Settles with a spring
+    await new Promise((res) => {
+      capturedGhostScale.setValue(1.25);
+      Animated.spring(capturedGhostScale, {
+        toValue: 1.0,
+        friction: 4,
+        tension: 120,
+        useNativeDriver: true,
+      }).start(() => res());
+    });
+
+    setCapturedAnimToken(null);
+  }, [cellSize, ghostScale, ringScale, ringOpacity, capturedGhostPos, capturedGhostLift, capturedGhostScale, capturedShake]);
+
+  // 2. Safe Cell: short glow (opacity 0 -> 0.6 -> 0, 400 ms) + tiny bounce
+  const runSafeCellEffect = React.useCallback(async (finalCoord) => {
+    if (!isMountedRef.current || cellSize <= 0) return;
+    const cellXY = {
+      x: (finalCoord.c || 0) * cellSize,
+      y: (finalCoord.r || 0) * cellSize,
+    };
+    safeGlowOpacity.setValue(0);
+    setSafeGlow(cellXY);
+
+    await new Promise((res) => {
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(safeGlowOpacity, {
+            toValue: 0.6,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(safeGlowOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.timing(ghostLift, {
+            toValue: -cellSize * 0.18,
+            duration: 200,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(ghostLift, {
+            toValue: 0,
+            duration: 200,
+            easing: Easing.in(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start(() => {
+        setSafeGlow(null);
+        res();
+      });
+    });
+  }, [cellSize, ghostLift, safeGlowOpacity]);
+
+  // 3. Extra Turn on 6: floating badge "🎲 EXTRA TURN" at board center
+  // fade+scale in 200 ms, hold 700 ms, fade out 200 ms, pointerEvents="none"
+  const runExtraTurnBadge = React.useCallback(async () => {
+    if (!isMountedRef.current) return;
+    extraTurnAnim.setValue(0);
+    extraTurnScale.setValue(0.5);
+    setShowExtraTurn(true);
+
+    await new Promise((res) => {
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(extraTurnAnim, {
+            toValue: 1,
+            duration: 200,
+            easing: Easing.out(Easing.back(1.5)),
+            useNativeDriver: true,
+          }),
+          Animated.timing(extraTurnScale, {
+            toValue: 1,
+            duration: 200,
+            easing: Easing.out(Easing.back(1.5)),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.delay(700),
+        Animated.parallel([
+          Animated.timing(extraTurnAnim, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(extraTurnScale, {
+            toValue: 0.8,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start(() => {
+        setShowExtraTurn(false);
+        res();
+      });
+    });
+  }, [extraTurnAnim, extraTurnScale]);
+
+  // 5. Token Finished: bounce + 6-8 small circles flying outward and fading (fixed count: 8, 400 ms)
+  const runTokenFinishedEffect = React.useCallback(async (centerCoord, playerColor) => {
+    if (!isMountedRef.current || cellSize <= 0) return;
+    const landingXY = getCoordXY(centerCoord, cellSize);
+    const tokenCenter = {
+      x: landingXY.x + (cellSize * 0.65) / 2,
+      y: landingXY.y + (cellSize * 0.65) / 2,
+    };
+    burstProgress.setValue(0);
+    setFinishedBurst({ ...tokenCenter, color: playerColor });
+    SoundFX.victory();
+
+    await new Promise((res) => {
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(ghostLift, {
+            toValue: -cellSize * 0.38,
+            duration: 200,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(ghostLift, {
+            toValue: 0,
+            duration: 200,
+            easing: Easing.in(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.timing(burstProgress, {
+          toValue: 1,
+          duration: 400,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setFinishedBurst(null);
+        res();
+      });
+    });
+  }, [cellSize, ghostLift, burstProgress]);
+
+  // Handle token selection with ghost hopping animation and Stage 3 effects
+  const handleSelectToken = React.useCallback(async (tokenId) => {
+    if (isAnimatingRef.current) return;
+    if (gameState.status !== 'WAITING_SELECT') return;
+    if (!gameState.movableTokenIds.includes(tokenId)) return;
+
+    const player = gameState.currentTurn;
+    const playerTokens = gameState.tokens[player] || [];
+    const token = playerTokens.find((t) => t.id === tokenId);
+    if (!token) return;
+
+    isAnimatingRef.current = true;
     setRollNotice(null);
 
-    setGameState((prevState) => {
-      if (prevState.status !== 'WAITING_SELECT') return prevState;
-      if (!prevState.movableTokenIds.includes(tokenId)) return prevState;
+    // 7-second safety timeout that force-releases lock if anything hangs
+    const safetyTimeout = setTimeout(() => {
+      console.warn('Animation safety timeout triggered (7s)');
+      if (isMountedRef.current) {
+        setMovingToken(null);
+        setCapturedAnimToken(null);
+        setCaptureRing(null);
+        setSafeGlow(null);
+        setFinishedBurst(null);
+        setShowExtraTurn(false);
+      }
+      isAnimatingRef.current = false;
+    }, 7000);
 
-      const player = prevState.currentTurn;
-      const playerTokens = prevState.tokens[player] || [];
-      const token = playerTokens.find((t) => t.id === tokenId);
-      if (!token) return prevState;
-
-      isMovingLockRef.current = true;
-
+    try {
       const startStep = token.step;
-      const diceVal = prevState.diceValue || 0;
+      const diceVal = gameState.diceValue || 0;
 
-      // Calculate final state from engine
-      const finalState = moveToken(prevState, tokenId);
+      // Calculate final state from engine (exact rules logic untouched)
+      const finalState = moveToken(gameState, tokenId);
       const updatedToken = (finalState.tokens[player] || []).find((t) => t.id === tokenId);
       const finalStep = updatedToken ? updatedToken.step : (startStep === -1 ? 0 : startStep + diceVal);
 
-      // Build step-by-step sequence of steps
+      // Build step-by-step sequence of cells
       const stepsPath = [];
       if (startStep === -1) {
         stepsPath.push(0);
@@ -101,105 +519,143 @@ export default function GameScreen({
         }
       }
 
-      if (stepsPath.length === 0) {
-        isMovingLockRef.current = false;
-        return finalState;
+      if (ENABLE_HOP_ANIMATION && stepsPath.length > 0 && cellSize > 0) {
+        try {
+          const cells = stepsPath.map((s) => ({
+            step: s,
+            ...getTokenCoordinates({ player, step: s, index: token.index }),
+          }));
+          const oldCoord = getTokenCoordinates({ player, step: startStep, index: token.index });
+
+          await animateMove(tokenId, player, cells, oldCoord);
+        } catch (animErr) {
+          console.error('Hop animation error, falling back to instant move:', animErr);
+        }
       }
 
-      setIsAnimatingMove(true);
+      // STAGE 3: EFFECTS (All run AFTER the hop finishes and BEFORE existing turn change code)
+      const finalCoord = getTokenCoordinates({ player, step: finalStep, index: token.index });
 
-      let stepIndex = 0;
-
-      const runStepAnimation = () => {
-        if (stepIndex < stepsPath.length) {
-          const stepVal = stepsPath[stepIndex];
-          stepIndex++;
-
-          SoundFX.hop();
-
-          setGameState((animState) => {
-            const newTokens = { ...animState.tokens };
-            const pTokens = [...(newTokens[player] || [])];
-            const tIdx = pTokens.findIndex((t) => t.id === tokenId);
-            if (tIdx !== -1) {
-              pTokens[tIdx] = {
-                ...pTokens[tIdx],
-                step: stepVal,
-                isHome: stepVal === 56,
-              };
-              newTokens[player] = pTokens;
+      // 1. Capture check
+      let capturedToken = null;
+      gameState.activePlayers.forEach((opp) => {
+        if (opp !== player) {
+          (gameState.tokens[opp] || []).forEach((tOld) => {
+            const tNew = (finalState.tokens[opp] || []).find((t) => t.id === tOld.id);
+            if (tOld.step >= 0 && tNew && tNew.step === -1) {
+              capturedToken = tOld;
             }
-            return {
-              ...animState,
-              tokens: newTokens,
-              status: 'ANIMATING',
-            };
           });
+        }
+      });
 
-          setTimeout(runStepAnimation, 110);
-        } else {
-          // Finish stepping animation -> apply final calculated state
-          setGameState(finalState);
-          setIsAnimatingMove(false);
-          isMovingLockRef.current = false;
+      // 2. Safe cell check
+      const finalTrackIdx = (finalStep >= 0 && finalStep <= 50) ? getTrackIndex(player, finalStep) : -1;
+      const isSafeCell = SAFE_INDICES.includes(finalTrackIdx) && !capturedToken;
 
-          if (finalState.status === 'GAME_OVER') {
-            SoundFX.victory();
-            recordGameResult({
-              won: finalState.winners[0] === 'red',
-              captures: finalState.stats.red?.captures || 0,
-              homeRuns: finalState.stats.red?.homeCount || 0,
-            });
-            setTimeout(() => {
+      // 3. Finished check
+      const isFinished = updatedToken?.isHome || finalStep === HOME_STEP;
+
+      // 4. Extra turn on 6 check
+      const isSix = diceVal === 6;
+
+      try {
+        if (capturedToken) {
+          await runCaptureEffect(capturedToken, finalCoord);
+        } else if (isSafeCell) {
+          await runSafeCellEffect(finalCoord);
+        } else if (isFinished) {
+          await runTokenFinishedEffect(finalCoord, player);
+        }
+
+        if (isSix) {
+          await runExtraTurnBadge();
+        }
+      } catch (effectErr) {
+        console.error('Stage 3 effect error:', effectErr);
+      }
+
+      // Apply the final calculated state (move, capture, extra turn, turn switch)
+      if (isMountedRef.current) {
+        setGameState(finalState);
+
+        if (finalState.status === 'GAME_OVER') {
+          SoundFX.victory();
+          recordGameResult({
+            won: finalState.winners[0] === 'red',
+            captures: finalState.stats.red?.captures || 0,
+            homeRuns: finalState.stats.red?.homeCount || 0,
+          });
+          setTimeout(() => {
+            if (isMountedRef.current) {
               onGameOver?.({
                 winner: finalState.winners[0] || 'red',
                 coinsWon: 200,
                 opponent: 'Player 3',
               });
-            }, 800);
-          } else if (finalState.lastEvent && finalState.lastEvent.includes('Captured')) {
-            SoundFX.capture();
-          } else {
-            SoundFX.turnSwitch();
-          }
+            }
+          }, 800);
+        } else if (finalState.lastEvent && finalState.lastEvent.includes('Captured')) {
+          // Capture sound already played on impact
+        } else {
+          SoundFX.turnSwitch();
         }
-      };
-
-      // Trigger first step after a short tick
-      setTimeout(runStepAnimation, 20);
-
-      return {
-        ...prevState,
-        status: 'ANIMATING',
-        movableTokenIds: [],
-      };
-    });
-  }, [isAnimatingMove, onGameOver]);
+      }
+    } catch (err) {
+      console.error('Error in handleSelectToken:', err);
+    } finally {
+      clearTimeout(safetyTimeout);
+      if (isMountedRef.current) {
+        setMovingToken(null);
+        setCapturedAnimToken(null);
+        setCaptureRing(null);
+        setSafeGlow(null);
+        setFinishedBurst(null);
+        setShowExtraTurn(false);
+      }
+      isAnimatingRef.current = false;
+    }
+  }, [
+    gameState,
+    cellSize,
+    animateMove,
+    runCaptureEffect,
+    runSafeCellEffect,
+    runTokenFinishedEffect,
+    runExtraTurnBadge,
+    onGameOver,
+  ]);
 
   // Handle dice roll
   const triggerRoll = React.useCallback(() => {
-    if (isRolling || isAnimatingMove || isMovingLockRef.current || gameState.status !== 'ROLLING') {
+    if (isRolling || isAnimatingRef.current || gameState.status !== 'ROLLING') {
       return;
     }
 
-    SoundFX.dice();
+    isAnimatingRef.current = true;
     setIsRolling(true);
     setRollNotice(null);
+    SoundFX.dice();
 
     const nextState = rollDice(gameState);
+    const rolledVal = nextState.diceValue;
+    setRollingDiceValue(rolledVal);
 
-    // Fast Roll animation delay (320ms)
+    // Roll animation delay (560ms rotate+shake, real value shown + pop spring)
     setTimeout(() => {
+      if (!isMountedRef.current) return;
       setGameState(nextState);
+      setRollingDiceValue(null);
       setIsRolling(false);
+      isAnimatingRef.current = false;
 
-      const rolledVal = nextState.diceValue;
       const isSix = rolledVal === 6;
       const isBotTurn = nextState.playerTypes?.[nextState.currentTurn] === 'bot';
 
       if (nextState.status === 'NO_MOVES') {
         setRollNotice(`❌ Rolled ${rolledVal} — No moves! Passing turn...`);
         setTimeout(() => {
+          if (!isMountedRef.current) return;
           setRollNotice(null);
           setGameState((prev) => passTurn(prev));
           SoundFX.turnSwitch();
@@ -209,6 +665,7 @@ export default function GameScreen({
         const singleTokenId = nextState.movableTokenIds[0];
         setRollNotice(`🎲 Rolled ${rolledVal}! Moving token...`);
         setTimeout(() => {
+          if (!isMountedRef.current) return;
           handleSelectToken(singleTokenId);
         }, 220);
       } else {
@@ -218,14 +675,14 @@ export default function GameScreen({
           setRollNotice(`🎲 Rolled ${rolledVal}! Tap a token to move`);
         }
       }
-    }, 320);
-  }, [isRolling, isAnimatingMove, gameState, handleSelectToken]);
+    }, 600);
+  }, [isRolling, gameState, handleSelectToken]);
 
   // AI automation loop
   useEffect(() => {
     let timer = null;
 
-    if (isAiTurn && !isAnimatingMove) {
+    if (isAiTurn && !isAnimatingRef.current) {
       if (gameState.status === 'ROLLING' && !isRolling && !rollNotice) {
         timer = setTimeout(() => {
           triggerRoll();
@@ -248,7 +705,7 @@ export default function GameScreen({
         clearTimeout(timer);
       }
     };
-  }, [gameState, isAiTurn, isRolling, isAnimatingMove, rollNotice, triggerRoll, handleSelectToken, settings.aiDifficulty]);
+  }, [gameState, isAiTurn, isRolling, rollNotice, triggerRoll, handleSelectToken, settings.aiDifficulty]);
 
   const userColor = gameState.userColor || gameOptions.userColor || 'red';
 
@@ -265,8 +722,9 @@ export default function GameScreen({
   }, [gameState.diceValue, gameState.currentTurn]);
 
   const getPlayerDiceValue = (player) => {
-    if (gameState.currentTurn === player && gameState.diceValue) {
-      return gameState.diceValue;
+    if (gameState.currentTurn === player) {
+      if (rollingDiceValue != null) return rollingDiceValue;
+      if (gameState.diceValue) return gameState.diceValue;
     }
     return lastDiceValues[player] || 6;
   };
@@ -402,12 +860,178 @@ export default function GameScreen({
           ));
         }}
       >
-        <LudoBoardExact
-          state={gameState}
-          onSelectToken={handleSelectToken}
-          boardSize={boardSize}
-          theme={settings?.ludoTheme || settings?.theme || 'classic'}
-        />
+        <View style={[styles.boardWrapperRelative, { width: boardSize, height: boardSize }]}>
+          <LudoBoardExact
+            state={displayedState}
+            onSelectToken={handleSelectToken}
+            boardSize={boardSize}
+            theme={settings?.ludoTheme || settings?.theme || 'classic'}
+            isAnimating={isAnimatingRef.current || isRolling}
+          />
+
+          {/* Safe Cell Glow */}
+          {safeGlow && (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.safeCellGlow,
+                {
+                  left: safeGlow.x,
+                  top: safeGlow.y,
+                  width: cellSize,
+                  height: cellSize,
+                  opacity: safeGlowOpacity,
+                },
+              ]}
+            />
+          )}
+
+          {/* Capture Expanding Ring */}
+          {captureRing && (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.captureRing,
+                {
+                  left: captureRing.x - cellSize * 0.75,
+                  top: captureRing.y - cellSize * 0.75,
+                  width: cellSize * 1.5,
+                  height: cellSize * 1.5,
+                  borderRadius: (cellSize * 1.5) / 2,
+                  opacity: ringOpacity,
+                  transform: [{ scale: ringScale }],
+                },
+              ]}
+            />
+          )}
+
+          {/* Ghost Moving Token Overlay */}
+          {movingToken && (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.ghostToken,
+                {
+                  width: cellSize * 0.72,
+                  height: cellSize * 0.72 * 1.3,
+                  transform: [
+                    { translateX: ghostPos.x },
+                    { translateY: ghostPos.y },
+                    { translateY: ghostLift },
+                    { scale: ghostScale },
+                  ],
+                },
+              ]}
+            >
+              <PinToken3D
+                token={{ id: movingToken.tokenId, player: movingToken.color }}
+                size={cellSize * 0.72}
+                isMovable={false}
+              />
+            </Animated.View>
+          )}
+
+          {/* Captured Ghost Token Overlay */}
+          {capturedAnimToken && (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.ghostToken,
+                {
+                  width: cellSize * 0.72,
+                  height: cellSize * 0.72 * 1.3,
+                  zIndex: 80,
+                  transform: [
+                    { translateX: capturedGhostPos.x },
+                    { translateY: capturedGhostPos.y },
+                    { translateX: capturedShake },
+                    { translateY: capturedGhostLift },
+                    { scale: capturedGhostScale },
+                  ],
+                },
+              ]}
+            >
+              <PinToken3D
+                token={{ id: capturedAnimToken.tokenId, player: capturedAnimToken.color }}
+                size={cellSize * 0.72}
+                isMovable={false}
+              />
+            </Animated.View>
+          )}
+
+          {/* Token Finished Particle Burst (8 small circles) */}
+          {finishedBurst && (
+            <View
+              pointerEvents="none"
+              style={[
+                styles.burstContainer,
+                {
+                  left: finishedBurst.x,
+                  top: finishedBurst.y,
+                },
+              ]}
+            >
+              {BURST_ANGLES.map((angle, idx) => {
+                const dist = cellSize * 1.25;
+                const dx = Math.cos(angle) * dist;
+                const dy = Math.sin(angle) * dist;
+                return (
+                  <Animated.View
+                    key={`burst_${idx}`}
+                    style={[
+                      styles.burstCircle,
+                      {
+                        backgroundColor: idx % 2 === 0 ? '#FACC15' : '#38BDF8',
+                        opacity: burstProgress.interpolate({
+                          inputRange: [0, 0.7, 1],
+                          outputRange: [1, 0.8, 0],
+                        }),
+                        transform: [
+                          {
+                            translateX: burstProgress.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0, dx],
+                            }),
+                          },
+                          {
+                            translateY: burstProgress.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0, dy],
+                            }),
+                          },
+                          {
+                            scale: burstProgress.interpolate({
+                              inputRange: [0, 0.4, 1],
+                              outputRange: [0.6, 1.3, 0.2],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  />
+                );
+              })}
+            </View>
+          )}
+
+          {/* Extra Turn on 6 Floating Badge at Board Center */}
+          {showExtraTurn && (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.extraTurnFloatingBadge,
+                {
+                  left: (boardSize - 170) / 2,
+                  top: (boardSize - 44) / 2,
+                  opacity: extraTurnAnim,
+                  transform: [{ scale: extraTurnScale }],
+                },
+              ]}
+            >
+              <Text style={styles.extraTurnBadgeText}>🎲 EXTRA TURN</Text>
+            </Animated.View>
+          )}
+        </View>
       </View>
 
       {/* Bottom Docks Row (User at bottom left, opponent at bottom right if 4P) */}
@@ -516,6 +1140,83 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 0,
+  },
+  boardWrapperRelative: {
+    position: 'relative',
+  },
+  ghostToken: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    zIndex: 999,
+    elevation: 10,
+  },
+  captureRing: {
+    position: 'absolute',
+    borderWidth: 3.5,
+    borderColor: '#EF4444',
+    zIndex: 85,
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 8,
+  },
+  safeCellGlow: {
+    position: 'absolute',
+    borderRadius: 6,
+    backgroundColor: '#38BDF8',
+    borderColor: '#FACC15',
+    borderWidth: 2,
+    zIndex: 60,
+    shadowColor: '#38BDF8',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  extraTurnFloatingBadge: {
+    position: 'absolute',
+    width: 170,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#0F1E36',
+    borderWidth: 2.5,
+    borderColor: '#FACC15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FACC15',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.9,
+    shadowRadius: 12,
+    elevation: 15,
+    zIndex: 1000,
+  },
+  extraTurnBadgeText: {
+    color: '#FACC15',
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  burstContainer: {
+    position: 'absolute',
+    width: 0,
+    height: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 95,
+  },
+  burstCircle: {
+    position: 'absolute',
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    shadowColor: '#FACC15',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
   },
   noticeContainer: {
     alignItems: 'center',

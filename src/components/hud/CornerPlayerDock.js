@@ -102,7 +102,9 @@ export default function CornerPlayerDock({
             <View style={styles.infoCol}>
               {playerName ? (
                 <Text style={[styles.nameTag, isTurn && styles.nameTagActive]} numberOfLines={1}>
-                  {playerName}
+                  {isTurn
+                    ? (playerName === 'You' ? 'Your turn' : `${playerName}'s turn`)
+                    : playerName}
                 </Text>
               ) : null}
               {renderDiceBox()}
@@ -113,7 +115,9 @@ export default function CornerPlayerDock({
             <View style={styles.infoCol}>
               {playerName ? (
                 <Text style={[styles.nameTag, isTurn && styles.nameTagActive]} numberOfLines={1}>
-                  {playerName}
+                  {isTurn
+                    ? (playerName === 'You' ? 'Your turn' : `${playerName}'s turn`)
+                    : playerName}
                 </Text>
               ) : null}
               {renderDiceBox()}
@@ -267,6 +271,8 @@ const styles = StyleSheet.create({
   },
   nameTagActive: {
     color: '#FACC15',
+    fontWeight: '900',
+    fontSize: 9.5,
   },
   diceCube: {
     width: 44,

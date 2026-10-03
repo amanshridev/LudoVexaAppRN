@@ -25,15 +25,29 @@ export default function Cube3DFlippingDice({
 }) {
   const [displayValue, setDisplayValue] = useState(targetValue || 6);
 
-  // Animated values
-  const rotX = useRef(new Animated.Value(0)).current;
-  const rotY = useRef(new Animated.Value(0)).current;
-  const rotZ = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(0)).current;
-  const shadowScale = useRef(new Animated.Value(1)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  // Animated values in refs
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const glowOpacity = useRef(new Animated.Value(0)).current;
+  const rotAnim = useRef(new Animated.Value(0)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const intervalRef = useRef(null);
+  const isMountedRef = useRef(true);
+
+  // Unmount cleanup
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      scaleAnim.stopAnimation();
+      rotAnim.stopAnimation();
+      shakeAnim.stopAnimation();
+      pulseAnim.stopAnimation();
+    };
+  }, [scaleAnim, rotAnim, shakeAnim, pulseAnim]);
 
   // Sync display value when valid targetValue changes while not rolling
   useEffect(() => {
@@ -42,230 +56,202 @@ export default function Cube3DFlippingDice({
     }
   }, [targetValue, isRolling]);
 
-  // Idle pulse animation when active turn
+  // Slow pulse loop when it is the player's turn to roll (stop it otherwise)
   useEffect(() => {
-    if (!isRolling && !disabled) {
+    if (!disabled && !isRolling) {
       const pulse = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
             toValue: 1.08,
-            duration: 500,
+            duration: 600,
+            easing: Easing.inOut(Easing.quad),
             useNativeDriver: true,
           }),
           Animated.timing(pulseAnim, {
             toValue: 1.0,
-            duration: 500,
+            duration: 600,
+            easing: Easing.inOut(Easing.quad),
             useNativeDriver: true,
           }),
         ])
       );
       pulse.start();
-      return () => pulse.stop();
+      return () => {
+        pulse.stop();
+      };
     } else {
+      pulseAnim.stopAnimation();
       pulseAnim.setValue(1.0);
     }
-  }, [isRolling, disabled, pulseAnim]);
+  }, [disabled, isRolling, pulseAnim]);
 
-  // 3D Multi-Axis Flip & Tumble Roll Physics
+  // Roll animation: scale to 0.9, ~500ms rotate + shake with 80ms interval, then real value + pop spring
   useEffect(() => {
     if (isRolling) {
-      // Cycle rapidly through faces 1..6 during the roll so every side is shown flipping
-      let stepCount = 0;
-      const shuffleInterval = setInterval(() => {
-        stepCount++;
-        setDisplayValue((prev) => (prev % 6) + 1);
-        if (stepCount >= 9) {
-          clearInterval(shuffleInterval);
-          setDisplayValue(targetValue || 6);
+      pulseAnim.stopAnimation();
+      pulseAnim.setValue(1.0);
+
+      let isCancelled = false;
+
+      const runRoll = async () => {
+        try {
+          // Scale to 0.9
+          await new Promise((res) => {
+            Animated.timing(scaleAnim, {
+              toValue: 0.9,
+              duration: 60,
+              useNativeDriver: true,
+            }).start(() => res());
+          });
+
+          if (isCancelled || !isMountedRef.current) return;
+
+          // ONE setInterval changing shown number every 80 ms
+          intervalRef.current = setInterval(() => {
+            setDisplayValue(Math.floor(Math.random() * 6) + 1);
+          }, 80);
+
+          rotAnim.setValue(0);
+          shakeAnim.setValue(0);
+
+          // 10 steps of 50ms = 500ms shake
+          const shakeSequence = Animated.sequence([
+            Animated.timing(shakeAnim, { toValue: -5, duration: 50, useNativeDriver: true }),
+            Animated.timing(shakeAnim, { toValue: 5, duration: 50, useNativeDriver: true }),
+            Animated.timing(shakeAnim, { toValue: -4, duration: 50, useNativeDriver: true }),
+            Animated.timing(shakeAnim, { toValue: 4, duration: 50, useNativeDriver: true }),
+            Animated.timing(shakeAnim, { toValue: -3, duration: 50, useNativeDriver: true }),
+            Animated.timing(shakeAnim, { toValue: 3, duration: 50, useNativeDriver: true }),
+            Animated.timing(shakeAnim, { toValue: -2, duration: 50, useNativeDriver: true }),
+            Animated.timing(shakeAnim, { toValue: 2, duration: 50, useNativeDriver: true }),
+            Animated.timing(shakeAnim, { toValue: -1, duration: 50, useNativeDriver: true }),
+            Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+          ]);
+
+          // Rotate 360 deg over 500ms
+          const rotateTiming = Animated.timing(rotAnim, {
+            toValue: 360,
+            duration: 500,
+            easing: Easing.linear,
+            useNativeDriver: true,
+          });
+
+          await new Promise((res) => {
+            Animated.parallel([shakeSequence, rotateTiming]).start(() => res());
+          });
+        } finally {
+          // ONE setInterval, cleared in finally and on unmount
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
         }
-      }, 70);
 
-      // Reset animated transform values
-      rotX.setValue(0);
-      rotY.setValue(0);
-      rotZ.setValue(0);
-      translateY.setValue(0);
+        if (isCancelled || !isMountedRef.current) return;
 
-      Animated.parallel([
-        // High-Arc 3D Jump & Double Bounce
-        Animated.sequence([
-          Animated.timing(translateY, {
-            toValue: -size * 0.75,
-            duration: 220,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
-          }),
-          Animated.timing(translateY, {
-            toValue: 0,
-            duration: 160,
-            easing: Easing.in(Easing.quad),
-            useNativeDriver: true,
-          }),
-          Animated.timing(translateY, {
-            toValue: -size * 0.25,
-            duration: 110,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
-          }),
-          Animated.timing(translateY, {
-            toValue: 0,
-            duration: 140,
-            easing: Easing.bounce,
-            useNativeDriver: true,
-          }),
-        ]),
-
-        // Dynamic 3D Floor Shadow
-        Animated.sequence([
-          Animated.timing(shadowScale, { toValue: 0.5, duration: 220, useNativeDriver: true }),
-          Animated.timing(shadowScale, { toValue: 1.2, duration: 160, useNativeDriver: true }),
-          Animated.timing(shadowScale, { toValue: 0.8, duration: 110, useNativeDriver: true }),
-          Animated.timing(shadowScale, { toValue: 1.0, duration: 140, useNativeDriver: true }),
-        ]),
-
-        // 3D Multi-axis Rotational Tumble
-        Animated.timing(rotX, {
-          toValue: 1080,
-          duration: 630,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(rotY, {
-          toValue: 1440,
-          duration: 630,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(rotZ, {
-          toValue: 720,
-          duration: 630,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        clearInterval(shuffleInterval);
+        // Show the REAL value from existing dice logic
         if (targetValue != null && targetValue >= 1 && targetValue <= 6) {
           setDisplayValue(targetValue);
         }
 
-        // Landing reveal pop animation
+        // Pop: scale 1 -> 1.3 -> 1 spring
+        scaleAnim.setValue(1.0);
         Animated.sequence([
           Animated.timing(scaleAnim, {
-            toValue: 1.15,
-            duration: 120,
+            toValue: 1.3,
+            duration: 100,
+            easing: Easing.out(Easing.quad),
             useNativeDriver: true,
           }),
           Animated.spring(scaleAnim, {
             toValue: 1.0,
             friction: 4,
+            tension: 40,
             useNativeDriver: true,
           }),
         ]).start();
+      };
 
-        // Landing gold glow flash
-        Animated.sequence([
-          Animated.timing(glowOpacity, { toValue: 0.9, duration: 120, useNativeDriver: true }),
-          Animated.timing(glowOpacity, { toValue: 0, duration: 350, useNativeDriver: true }),
-        ]).start();
-      });
+      runRoll();
 
-      return () => clearInterval(shuffleInterval);
+      return () => {
+        isCancelled = true;
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      };
     }
-  }, [isRolling, targetValue, rotX, rotY, rotZ, translateY, shadowScale, scaleAnim, glowOpacity, size]);
+  }, [isRolling, targetValue, scaleAnim, rotAnim, shakeAnim, pulseAnim]);
 
-  const rotXStr = rotX.interpolate({
-    inputRange: [0, 1080],
-    outputRange: ['0deg', '1080deg'],
+  const rotStr = rotAnim.interpolate({
+    inputRange: [0, 360],
+    outputRange: ['0deg', '360deg'],
   });
-  const rotYStr = rotY.interpolate({
-    inputRange: [0, 1440],
-    outputRange: ['0deg', '1440deg'],
-  });
-  const rotZStr = rotZ.interpolate({
-    inputRange: [0, 720],
-    outputRange: ['0deg', '720deg'],
-  });
+
+  const handlePress = () => {
+    if (disabled || isRolling) return;
+    Animated.timing(scaleAnim, {
+      toValue: 0.9,
+      duration: 50,
+      useNativeDriver: true,
+    }).start();
+    onPress && onPress();
+  };
 
   return (
-    <TouchableOpacity
-      activeOpacity={disabled ? 1 : 0.75}
-      onPress={!disabled ? onPress : undefined}
-      disabled={disabled}
-      style={[styles.container, { width: size + 16, height: size + 16 }]}
+    <Animated.View
+      style={{
+        transform: [{ scale: pulseAnim }],
+      }}
     >
-      {/* Dynamic 3D Floor Shadow */}
-      <Animated.View
-        style={[
-          styles.floorShadow,
-          {
-            width: size * 0.9,
-            height: size * 0.28,
-            bottom: 2,
-            transform: [{ scale: shadowScale }],
-          },
-        ]}
-      />
-
-      {/* Golden Pulse Ring when Active */}
-      {!disabled && !isRolling && (
-        <Animated.View
+      <TouchableOpacity
+        activeOpacity={disabled || isRolling ? 1 : 0.75}
+        onPress={handlePress}
+        disabled={disabled || isRolling}
+        style={[styles.container, { width: size + 16, height: size + 16 }]}
+      >
+        {/* Dynamic Floor Shadow */}
+        <View
           style={[
-            styles.idleRing,
+            styles.floorShadow,
             {
-              width: size + 10,
-              height: size + 10,
-              borderRadius: (size + 10) / 4,
-              borderColor: '#FACC15',
-              transform: [{ scale: pulseAnim }],
+              width: size * 0.9,
+              height: size * 0.28,
+              bottom: 2,
             },
           ]}
         />
-      )}
 
-      {/* Landing Flash Glow */}
-      <Animated.View
-        style={[
-          styles.glowFlash,
-          {
-            width: size + 14,
-            height: size + 14,
-            borderRadius: (size + 14) / 4,
-            opacity: glowOpacity,
-          },
-        ]}
-      />
+        {/* Tumbling / Shaking Cube Body */}
+        <Animated.View
+          style={[
+            styles.cubeBody,
+            {
+              width: size,
+              height: size,
+              borderRadius: size / 4,
+              transform: [
+                { scale: scaleAnim },
+                { translateX: shakeAnim },
+                { rotate: rotStr },
+              ],
+            },
+          ]}
+        >
+          <View style={[styles.face, { width: size, height: size, borderRadius: size / 4 }]}>
+            {/* Beveled Top Specular Edge */}
+            <View style={styles.specularTop} />
 
-      {/* 3D Tumbling Cube Body */}
-      <Animated.View
-        style={[
-          styles.cubeBody,
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 4,
-            transform: [
-              { perspective: 900 },
-              { translateY },
-              { rotateX: rotXStr },
-              { rotateY: rotYStr },
-              { rotateZ: rotZStr },
-              { scale: scaleAnim },
-            ],
-          },
-        ]}
-      >
-        <View style={[styles.face, { width: size, height: size, borderRadius: size / 4 }]}>
-          {/* Beveled Top Specular Edge */}
-          <View style={styles.specularTop} />
+            {/* Face Pips */}
+            <CubeFacePips val={displayValue} size={size} />
 
-          {/* 3D Face Pips */}
-          <CubeFacePips val={displayValue} size={size} />
-
-          {/* Depth Bottom Edge */}
-          <View style={styles.depthBottom} />
-        </View>
-      </Animated.View>
-    </TouchableOpacity>
+            {/* Depth Bottom Edge */}
+            <View style={styles.depthBottom} />
+          </View>
+        </Animated.View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 

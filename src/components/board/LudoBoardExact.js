@@ -4,6 +4,8 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Animated,
+  Easing,
 } from 'react-native';
 import Svg, {
   Polygon,
@@ -66,7 +68,7 @@ export const THEME_PALETTES = {
 
 export const EXACT_COLORS = THEME_PALETTES.classic;
 
-export function ExactLudoToken({ player = 'red', size = 26, isMovable = false, onPress, palette, token }) {
+export const ExactLudoToken = React.memo(function ExactLudoToken({ player = 'red', size = 26, isMovable = false, onPress, palette, token, disabled = false }) {
   if (token) {
     return (
       <PinToken3D
@@ -74,6 +76,7 @@ export function ExactLudoToken({ player = 'red', size = 26, isMovable = false, o
         size={size}
         isMovable={isMovable}
         onPress={onPress}
+        disabled={disabled}
       />
     );
   }
@@ -130,16 +133,18 @@ export function ExactLudoToken({ player = 'red', size = 26, isMovable = false, o
       </View>
     </TouchableOpacity>
   );
-}
+});
 
 export default function LudoBoardExact({
   state,
   onSelectToken,
   boardSize = 350,
   theme = 'classic',
+  isAnimating = false,
 }) {
   const cellSize = boardSize / GRID_SIZE;
   const palette = THEME_PALETTES[theme] || THEME_PALETTES.classic;
+  const tokensDisabled = isAnimating || state.status !== 'WAITING_SELECT';
 
   const tokensByCell = {};
   state.activePlayers.forEach((player) => {
@@ -257,11 +262,50 @@ export default function LudoBoardExact({
     return `Player ${playerNum}`;
   };
 
-  const renderBaseBox = (player, top, left, label) => {
+  const HomeBaseBox = ({ player, top, left, label }) => {
     const col = palette[player] || palette.red;
     const boxSize = cellSize * 6;
     const whiteBoxSize = boxSize * 0.78;
     const isBottomPlayer = player === 'red' || player === 'blue';
+    const isActive = player === state.currentTurn;
+
+    const opacityAnim = React.useRef(new Animated.Value(isActive ? 1 : 0.5)).current;
+    const pulseAnim = React.useRef(new Animated.Value(0.35)).current;
+
+    React.useEffect(() => {
+      Animated.timing(opacityAnim, {
+        toValue: isActive ? 1 : 0.5,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }, [isActive, opacityAnim]);
+
+    React.useEffect(() => {
+      let anim;
+      if (isActive) {
+        anim = Animated.loop(
+          Animated.sequence([
+            Animated.timing(pulseAnim, {
+              toValue: 1,
+              duration: 900,
+              easing: Easing.inOut(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.timing(pulseAnim, {
+              toValue: 0.35,
+              duration: 900,
+              easing: Easing.inOut(Easing.quad),
+              useNativeDriver: true,
+            }),
+          ])
+        );
+        anim.start();
+      } else {
+        pulseAnim.setValue(0);
+      }
+      return () => anim?.stop();
+    }, [isActive, pulseAnim]);
+
     const baseLabel = (
       <Text
         style={[
@@ -277,7 +321,7 @@ export default function LudoBoardExact({
     const hasMovableInBase = tokensInBase.some((t) => state.movableTokenIds.includes(t.id));
 
     return (
-      <View
+      <Animated.View
         key={`base_${player}`}
         style={[
           styles.baseBox,
@@ -290,9 +334,24 @@ export default function LudoBoardExact({
             borderWidth: hasMovableInBase ? 2.5 : 0,
             borderColor: hasMovableInBase ? '#FACC15' : 'transparent',
             zIndex: hasMovableInBase ? 40 : 10,
+            opacity: opacityAnim,
           },
         ]}
       >
+        {/* Active glowing border with slow pulse */}
+        {isActive && (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.activeBaseGlowBorder,
+              {
+                borderColor: col.goldRing || '#FACC15',
+                opacity: pulseAnim,
+              },
+            ]}
+          />
+        )}
+
         {!isBottomPlayer && baseLabel}
 
         <View
@@ -309,6 +368,8 @@ export default function LudoBoardExact({
             {[0, 1, 2, 3].map((idx) => {
               const tokenAtBase = tokensInBase.find((t) => t.index === idx);
               const isMovable = tokenAtBase && state.movableTokenIds.includes(tokenAtBase.id);
+              const slotSize = cellSize * 1.35;
+              const tokenSize = cellSize * 0.98;
 
               return (
                 <View
@@ -316,20 +377,37 @@ export default function LudoBoardExact({
                   style={[
                     styles.baseSlotCircle,
                     {
-                      width: cellSize * 1.3,
-                      height: cellSize * 1.3,
-                      borderRadius: (cellSize * 1.3) / 2,
-                      backgroundColor: col.base,
+                      width: slotSize,
+                      height: slotSize,
+                      borderRadius: slotSize / 2,
+                      borderColor: isMovable ? '#FACC15' : col.base,
                     },
+                    isMovable && styles.baseSlotMovableGlow,
                   ]}
                 >
+                  {/* Inner recessed cup circle */}
+                  <View
+                    style={[
+                      styles.baseSlotInnerPad,
+                      {
+                        width: slotSize * 0.78,
+                        height: slotSize * 0.78,
+                        borderRadius: (slotSize * 0.78) / 2,
+                        backgroundColor: col.base,
+                      },
+                    ]}
+                  />
+
                   {tokenAtBase && (
-                    <PinToken3D
-                      token={tokenAtBase}
-                      size={cellSize * 0.82}
-                      isMovable={isMovable}
-                      onPress={() => onSelectToken(tokenAtBase.id)}
-                    />
+                    <View style={styles.slotTokenCenter}>
+                      <PinToken3D
+                        token={tokenAtBase}
+                        size={tokenSize}
+                        isMovable={isMovable}
+                        onPress={() => onSelectToken(tokenAtBase.id)}
+                        disabled={tokensDisabled}
+                      />
+                    </View>
                   )}
                 </View>
               );
@@ -337,7 +415,7 @@ export default function LudoBoardExact({
           </View>
         </View>
         {isBottomPlayer && baseLabel}
-      </View>
+      </Animated.View>
     );
   };
 
@@ -369,7 +447,7 @@ export default function LudoBoardExact({
           offsetY = Math.sin(angle) * (cellSize * 0.16);
         }
 
-        const tokenSize = cellSize * 0.65;
+        const tokenSize = cellSize * 0.72;
 
         rendered.push(
           <View
@@ -377,19 +455,20 @@ export default function LudoBoardExact({
             style={[
               styles.trackTokenWrap,
               {
-                top: r * cellSize + 0.5 * (cellSize - tokenSize) + offsetY,
+                top: r * cellSize + 0.5 * (cellSize - tokenSize * 1.3) + offsetY,
                 left: c * cellSize + 0.5 * (cellSize - tokenSize) + offsetX,
                 width: tokenSize,
-                height: tokenSize,
+                height: tokenSize * 1.3,
                 zIndex: isMovable ? 50 : 20 + r,
               },
             ]}
           >
             <PinToken3D
               token={token}
-              size={tokenSize * 1.05}
+              size={tokenSize}
               isMovable={isMovable}
               onPress={() => onSelectToken(token.id)}
+              disabled={tokensDisabled}
             />
           </View>
         );
@@ -432,10 +511,10 @@ export default function LudoBoardExact({
       >
         {gridCells}
 
-        {renderBaseBox('green', 0, 0)}
-        {renderBaseBox('yellow', 0, cellSize * 9)}
-        {renderBaseBox('blue', cellSize * 9, cellSize * 9)}
-        {renderBaseBox('red', cellSize * 9, 0)}
+        <HomeBaseBox player="green" top={0} left={0} />
+        <HomeBaseBox player="yellow" top={0} left={cellSize * 9} />
+        <HomeBaseBox player="blue" top={cellSize * 9} left={cellSize * 9} />
+        <HomeBaseBox player="red" top={cellSize * 9} left={0} />
 
         <View
           style={[
@@ -490,6 +569,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  activeBaseGlowBorder: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    right: -2,
+    bottom: -2,
+    borderWidth: 3,
+    borderRadius: 8,
+    shadowColor: '#FACC15',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 8,
+    zIndex: 45,
+  },
   baseLabel: {
     position: 'absolute',
     color: '#FFFFFF',
@@ -523,18 +617,20 @@ const styles = StyleSheet.create({
   },
   whiteCourtyardSquare: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
   },
   pedestals2x2: {
-    width: '80%',
-    height: '80%',
+    width: '84%',
+    height: '84%',
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
@@ -543,9 +639,38 @@ const styles = StyleSheet.create({
   baseSlotCircle: {
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2.5,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 3,
+    elevation: 3,
+    position: 'relative',
+  },
+  baseSlotMovableGlow: {
+    borderColor: '#FACC15',
+    borderWidth: 3,
+    shadowColor: '#FACC15',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  baseSlotInnerPad: {
     borderWidth: 1.5,
-    borderColor: 'rgba(0, 0, 0, 0.15)',
-    borderStyle: 'dashed',
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  slotTokenCenter: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
   centerArea: {
     position: 'absolute',
