@@ -17,6 +17,7 @@ import Svg, { Path, Rect, Circle, G } from 'react-native-svg';
 import ScreenHeader from '../components/ui/ScreenHeader';
 import { useTheme } from '../context/ThemeContext';
 import SoundManager from '../utils/SoundManager';
+import { checkAppUpdate, APP_VERSION } from '../components/AppUpdate/AppUpdateModal';
 
 // ============================================================================
 // VECTOR SVG ICONS FOR SETTINGS
@@ -239,6 +240,18 @@ const ResetIcon = ({ size = 18, color = '#EF4444' }) => (
     />
     <Path
       d="M3 3v5h5"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const AppUpdateArrowIcon = ({ size = 20, color = '#10B981' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
       stroke={color}
       strokeWidth={2}
       strokeLinecap="round"
@@ -914,6 +927,50 @@ export default function SettingsScreen({ onNavigate, onBack }) {
                 <ExternalWebIcon size={18} color="#94A3B8" />
               </View>
             </TouchableOpacity>
+
+            <View style={styles.rowDivider} />
+
+            {/* CHECK FOR APP UPDATES */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.rowItem}
+              onPress={() => {
+                try {
+                  SoundManager.play('buttonTap');
+                } catch (_) {}
+                checkAppUpdate(true);
+              }}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
+                  <AppUpdateArrowIcon size={20} color="#10B981" />
+                </View>
+                <View style={styles.textContainer}>
+                  <View style={styles.titleBadgeRow}>
+                    <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
+                      Check for Updates
+                    </Text>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        { backgroundColor: 'rgba(16, 185, 129, 0.15)' },
+                      ]}
+                    >
+                      <Text style={[styles.statusBadgeText, { color: '#10B981' }]}>
+                        v{APP_VERSION}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
+                    Ensure you have the latest features & stability fixes
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.rowRight}>
+                <ChevronRightIcon size={18} color={appTheme.colors.primaryLight} />
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -942,9 +999,19 @@ export default function SettingsScreen({ onNavigate, onBack }) {
           <Text style={[styles.footerAppTitle, { color: appTheme.colors.secondaryText }]}>
             LUDO VEXA • PRO EDITION
           </Text>
-          <Text style={[styles.footerBuildText, { color: appTheme.colors.mutedText }]}>
-            Version 1.2.0 • Offline & AI Multiplayer
-          </Text>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              try {
+                SoundManager.play('buttonTap');
+              } catch (_) {}
+              checkAppUpdate(true);
+            }}
+          >
+            <Text style={[styles.footerBuildText, { color: appTheme.colors.primaryLight }]}>
+              Version {APP_VERSION} • Tap to Check for Updates 🔄
+            </Text>
+          </TouchableOpacity>
           <Text style={[styles.footerCopyrightText, { color: appTheme.colors.mutedText }]}>
             Crafted for Smooth Gaming Experience
           </Text>

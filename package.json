@@ -17,7 +17,8 @@
     "react-native-safe-area-context": "^5.9.1",
     "react-native-sound": "^0.13.0",
     "react-native-svg": "^15.15.5",
-    "react-native-webview": "^14.0.1"
+    "react-native-webview": "^14.0.1",
+    "sp-react-native-in-app-updates": "^2.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
