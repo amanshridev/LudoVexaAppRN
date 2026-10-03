@@ -1226,7 +1226,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     alignItems: 'center',
-    minHeight: 48,
+    minHeight: 62,
+    marginVertical: 4,
+    zIndex: 20,
   },
   boardContainer: {
     flex: 1,
@@ -1363,7 +1365,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     alignItems: 'center',
-    minHeight: 48,
+    minHeight: 62,
+    marginVertical: 4,
+    paddingBottom: 4,
+    zIndex: 20,
   },
   bottomRollStation: {
     alignItems: 'center',
