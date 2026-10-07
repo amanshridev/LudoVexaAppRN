@@ -89,7 +89,7 @@ export default function AppUpdateModal({ autoCheck = true }: AppUpdateModalProps
     if (Platform.OS !== 'android') {
       if (isManual) {
         Alert.alert(
-          'Ludo Vexa Updates',
+          'Updates',
           'In-app updates via Google Play are only supported on Android devices.',
           [{ text: 'OK' }]
         );

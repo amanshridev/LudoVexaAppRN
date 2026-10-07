@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "308306148209",
+    "project_id": "ludo-game-eeef7",
+    "storage_bucket": "ludo-game-eeef7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:308306148209:android:300b13616beba671b114d0",
+        "android_client_info": {
+          "package_name": "com.ludovexaapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyActjQRvsvm2WpeMkpKrmJv8uimyktaGaY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:308306148209:android:300b13616beba671b114d0",
+        "android_client_info": {
+          "package_name": "com.LudoVexaApp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyActjQRvsvm2WpeMkpKrmJv8uimyktaGaY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

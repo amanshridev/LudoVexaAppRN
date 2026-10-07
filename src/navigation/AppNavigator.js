@@ -4,6 +4,7 @@ import { View, StyleSheet, BackHandler } from 'react-native';
 // Storage & Utils
 import { loadSettings } from '../utils/storage';
 import SoundManager from '../utils/SoundManager';
+import AnalyticsService from '../services/analytics';
 
 // Active Screens
 import SplashScreen from '../screens/SplashScreen';
@@ -98,8 +99,20 @@ export default function AppNavigator() {
     return () => subscription.remove();
   }, [screenStack, goBack]);
 
+  // Log screen views to Firebase Analytics automatically when currentScreen changes
+  useEffect(() => {
+    if (currentScreen) {
+      AnalyticsService.logScreenView(currentScreen);
+    }
+  }, [currentScreen]);
+
   const handleGameOver = ({ winner, coinsWon, opponent }) => {
     setGameResult({ winner, coinsWon, opponent });
+    AnalyticsService.logEvent('game_over', {
+      winner,
+      coins_won: coinsWon || 0,
+      opponent: opponent || 'AI',
+    });
     if (winner === 'red') {
       setUser((prev) => ({
         ...prev,
@@ -139,10 +152,20 @@ export default function AppNavigator() {
           <WelcomeLoginScreen
             onPlayNow={(options) => {
               if (options) setGameOptions(options);
+              AnalyticsService.logEvent('game_start', {
+                mode: options?.gameMode || 'classic',
+                players: options?.playerCount || 4,
+                type: 'play_now',
+              });
               reset('home');
             }}
             onContinueGuest={(options) => {
               if (options) setGameOptions(options);
+              AnalyticsService.logEvent('game_start', {
+                mode: options?.gameMode || 'classic',
+                players: options?.playerCount || 4,
+                type: 'guest',
+              });
               reset('home');
             }}
             onOpenSettings={() => navigate('settings')}
