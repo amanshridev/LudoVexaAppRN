@@ -89,7 +89,7 @@ export default function AppUpdateModal({ autoCheck = true }: AppUpdateModalProps
     if (Platform.OS !== 'android') {
       if (isManual) {
         Alert.alert(
-          'Updates',
+          'Ludo Updates',
           'In-app updates via Google Play are only supported on Android devices.',
           [{ text: 'OK' }]
         );
@@ -368,8 +368,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 24,
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(16, 185, 129, 0.35)',
+
 
   },
   closeBtn: {
