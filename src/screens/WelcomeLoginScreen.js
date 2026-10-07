@@ -92,7 +92,7 @@ export default function WelcomeLoginScreen({
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: appTheme.colors.background }]}>
-      <StatusBar barStyle="light-content" backgroundColor={appTheme.colors.surface} />
+      <StatusBar barStyle="light-content" backgroundColor={appTheme.colors.background} />
 
       {/* Top Header: Player profile & Settings */}
       <View style={styles.topBar}>
