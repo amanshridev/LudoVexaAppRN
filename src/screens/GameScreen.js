@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -40,6 +40,15 @@ const ENABLE_HOP_ANIMATION = true;
 const BURST_ANGLES = [0, 0.785, 1.57, 2.356, 3.141, 3.927, 4.712, 5.497];
 const BOARD_BORDER = 4;
 
+const PLAYER_HEX = Object.freeze({
+  red: '#EF4444',
+  green: '#10B981',
+  yellow: '#F59E0B',
+  blue: '#3B82F6',
+});
+
+const ICON_BTN_HIT_SLOP = Object.freeze({ top: 10, bottom: 10, left: 10, right: 10 });
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const INITIAL_BOARD_SIZE = Math.max(0, Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.52, 360));
 
@@ -66,7 +75,8 @@ export default function GameScreen({
   const [isRolling, setIsRolling] = useState(false);
   const [rollingDiceValue, setRollingDiceValue] = useState(null);
   const [rollNotice, setRollNotice] = useState(null);
-  // Pre-initialize board dimensions from screen width/height so frame 0 renders immediately without blank delay
+
+  // Pre-initialize board dimensions from screen width/height so frame 0 renders immediately
   const [boardArea, setBoardArea] = useState(() => ({
     width: SCREEN_WIDTH,
     height: Math.max(INITIAL_BOARD_SIZE + 20, SCREEN_HEIGHT * 0.52),
@@ -82,46 +92,61 @@ export default function GameScreen({
 
   // Ghost moving token state and refs
   const [movingToken, setMovingToken] = useState(null);
-  const ghostPos = React.useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-  const ghostLift = React.useRef(new Animated.Value(0)).current;
-  const ghostScale = React.useRef(new Animated.Value(1)).current;
-  const isAnimatingRef = React.useRef(false);
-  const isMountedRef = React.useRef(true);
+  const ghostPos = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const ghostLift = useRef(new Animated.Value(0)).current;
+  const ghostScale = useRef(new Animated.Value(1)).current;
+  const isAnimatingRef = useRef(false);
+  const isMountedRef = useRef(true);
+
+  // Timer ref tracker for memory safety
+  const timersRef = useRef([]);
+
+  const addTimeout = useCallback((fn, delay) => {
+    const id = setTimeout(() => {
+      timersRef.current = timersRef.current.filter((t) => t !== id);
+      fn();
+    }, delay);
+    timersRef.current.push(id);
+    return id;
+  }, []);
+
+  const clearAllTimeouts = useCallback(() => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+  }, []);
 
   // Winner Celebration Overlay State & Ref
   const [showWinnerOverlay, setShowWinnerOverlay] = useState(false);
   const [winnerData, setWinnerData] = useState(null);
-  const hasShownWinnerRef = React.useRef(false);
+  const hasShownWinnerRef = useRef(false);
 
   // Stage 3: Effect state and animated refs
-  // 1. Capture effect refs & state
   const [capturedAnimToken, setCapturedAnimToken] = useState(null);
-  const capturedGhostPos = React.useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-  const capturedGhostLift = React.useRef(new Animated.Value(0)).current;
-  const capturedGhostScale = React.useRef(new Animated.Value(1)).current;
-  const capturedShake = React.useRef(new Animated.Value(0)).current;
+  const capturedGhostPos = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const capturedGhostLift = useRef(new Animated.Value(0)).current;
+  const capturedGhostScale = useRef(new Animated.Value(1)).current;
+  const capturedShake = useRef(new Animated.Value(0)).current;
+
   const [captureRing, setCaptureRing] = useState(null);
-  const ringScale = React.useRef(new Animated.Value(0)).current;
-  const ringOpacity = React.useRef(new Animated.Value(0.8)).current;
+  const ringScale = useRef(new Animated.Value(0)).current;
+  const ringOpacity = useRef(new Animated.Value(0.8)).current;
 
-  // 2. Safe cell effect refs & state
   const [safeGlow, setSafeGlow] = useState(null);
-  const safeGlowOpacity = React.useRef(new Animated.Value(0)).current;
+  const safeGlowOpacity = useRef(new Animated.Value(0)).current;
 
-  // 3. Extra turn badge refs & state
   const [showExtraTurn, setShowExtraTurn] = useState(false);
-  const extraTurnAnim = React.useRef(new Animated.Value(0)).current;
-  const extraTurnScale = React.useRef(new Animated.Value(0.5)).current;
+  const extraTurnAnim = useRef(new Animated.Value(0)).current;
+  const extraTurnScale = useRef(new Animated.Value(0.5)).current;
 
-  // 5. Token finished particle burst refs & state
   const [finishedBurst, setFinishedBurst] = useState(null);
-  const burstProgress = React.useRef(new Animated.Value(0)).current;
+  const burstProgress = useRef(new Animated.Value(0)).current;
 
   // Sound state and SoundManager lifecycle
   const [isMuted, setIsMuted] = useState(settings.sound === false);
 
+  const userColor = gameState.userColor || gameOptions.userColor || 'red';
+
   useEffect(() => {
-    // Slight deferral allows initial layout and component render to complete smoothly
     const soundInitTimer = setTimeout(() => {
       try {
         SoundManager.init();
@@ -141,7 +166,6 @@ export default function GameScreen({
       clearTimeout(soundInitTimer);
       try {
         appStateSub?.remove?.();
-        // Stop any active sounds on unmount without releasing cached instances
         SoundManager.stopAll();
       } catch (_) { }
     };
@@ -157,7 +181,7 @@ export default function GameScreen({
     } catch (_) { }
   }, [settings.sound]);
 
-  const toggleSoundMute = React.useCallback(() => {
+  const toggleSoundMute = useCallback(() => {
     setIsMuted((prev) => {
       const next = !prev;
       try {
@@ -177,6 +201,7 @@ export default function GameScreen({
     return () => {
       isMountedRef.current = false;
       hasShownWinnerRef.current = false;
+      clearAllTimeouts();
       ghostPos.stopAnimation();
       ghostLift.stopAnimation();
       ghostScale.stopAnimation();
@@ -192,6 +217,7 @@ export default function GameScreen({
       burstProgress.stopAnimation();
     };
   }, [
+    clearAllTimeouts,
     ghostPos,
     ghostLift,
     ghostScale,
@@ -208,17 +234,22 @@ export default function GameScreen({
   ]);
 
   // Check if current turn belongs to a bot
-  const isAiTurn =
-    (gameState.playerTypes
-      ? gameState.playerTypes[gameState.currentTurn] === 'bot'
-      : gameState.isVsAi && gameState.currentTurn !== 'red') &&
-    gameState.status !== 'GAME_OVER' &&
-    !isAnimatingRef.current;
+  const isAiTurn = useMemo(() => {
+    return (
+      (gameState.playerTypes
+        ? gameState.playerTypes[gameState.currentTurn] === 'bot'
+        : gameState.isVsAi && gameState.currentTurn !== 'red') &&
+      gameState.status !== 'GAME_OVER' &&
+      !isAnimatingRef.current
+    );
+  }, [gameState.playerTypes, gameState.currentTurn, gameState.isVsAi, gameState.status]);
 
-  const canRoll = !isRolling && !isAnimatingRef.current && gameState.status === 'ROLLING' && !isAiTurn;
+  const canRoll = useMemo(() => {
+    return !isRolling && !isAnimatingRef.current && gameState.status === 'ROLLING' && !isAiTurn;
+  }, [isRolling, gameState.status, isAiTurn]);
 
   // Board state hiding both moving token and captured token during animations
-  const displayedState = React.useMemo(() => {
+  const displayedState = useMemo(() => {
     if (!movingToken && !capturedAnimToken) return gameState;
     const hideTokens = (player) => {
       let list = gameState.tokens[player] || [];
@@ -244,7 +275,7 @@ export default function GameScreen({
   }, [gameState, movingToken, capturedAnimToken]);
 
   // Animate ghost token hopping cell-by-cell along path
-  const animateMove = React.useCallback(async (tokenId, color, cells, oldCoord) => {
+  const animateMove = useCallback(async (tokenId, color, cells, oldCoord) => {
     if (!isMountedRef.current || cells.length === 0) return;
 
     const startXY = getCoordXY(oldCoord, cellSize);
@@ -254,16 +285,14 @@ export default function GameScreen({
 
     setMovingToken({ tokenId, color });
 
-    // Brief yield for component to mount ghost and hide real token
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     for (let i = 0; i < cells.length; i++) {
       if (!isMountedRef.current) break;
 
       const cell = cells[i];
-      console.log('HOP', tokenId, cell);
       try {
-        const stepRate = Math.min(1.5, 1.0 + (i * 0.05));
+        const stepRate = Math.min(1.5, 1.0 + i * 0.05);
         SoundManager.play('step', { volume: 0.35, rate: stepRate });
         SoundFX.hop();
       } catch (_) { }
@@ -315,8 +344,8 @@ export default function GameScreen({
     }
   }, [cellSize, ghostPos, ghostLift, ghostScale]);
 
-  // 1. Capture Effect: attacker squash bounce + ring + captured shake + fly back to home + settle spring
-  const runCaptureEffect = React.useCallback(async (capturedToken, finalCoord) => {
+  // Capture Effect
+  const runCaptureEffect = useCallback(async (capturedToken, finalCoord) => {
     if (!isMountedRef.current || cellSize <= 0) return;
     const capCoord = getTokenCoordinates(capturedToken);
     const capStartXY = getCoordXY(capCoord, cellSize);
@@ -347,8 +376,7 @@ export default function GameScreen({
       SoundFX.capture();
     } catch (_) { }
 
-    // 100ms after kill impact: play victim down-tone (killed / killedMine)
-    setTimeout(() => {
+    addTimeout(() => {
       if (!isMountedRef.current) return;
       try {
         const isVictimMine = capturedToken.player === userColor;
@@ -356,8 +384,6 @@ export default function GameScreen({
       } catch (_) { }
     }, 100);
 
-    // Attacker squash bounce (1 -> 1.3 -> 0.9 -> 1) + expanding ring (scale 0 -> 2, opacity 0.8 -> 0, 300 ms)
-    // Simultaneously: Captured token shakes (200 ms)
     await Promise.all([
       new Promise((res) => {
         Animated.parallel([
@@ -386,10 +412,10 @@ export default function GameScreen({
       }),
     ]);
 
-    // Captured token flies back to its home slot using the same ghost method (400 ms)
     try {
       SoundManager.play('captureReturn', { volume: 0.7 });
     } catch (_) { }
+
     await new Promise((res) => {
       Animated.parallel([
         Animated.timing(capturedGhostPos, {
@@ -415,7 +441,6 @@ export default function GameScreen({
       ]).start(() => res());
     });
 
-    // Settles with a spring
     await new Promise((res) => {
       capturedGhostScale.setValue(1.25);
       Animated.spring(capturedGhostScale, {
@@ -427,10 +452,10 @@ export default function GameScreen({
     });
 
     setCapturedAnimToken(null);
-  }, [cellSize, ghostScale, ringScale, ringOpacity, capturedGhostPos, capturedGhostLift, capturedGhostScale, capturedShake, userColor]);
+  }, [cellSize, ghostScale, ringScale, ringOpacity, capturedGhostPos, capturedGhostLift, capturedGhostScale, capturedShake, userColor, addTimeout]);
 
-  // 2. Safe Cell: short glow (opacity 0 -> 0.6 -> 0, 400 ms) + tiny bounce
-  const runSafeCellEffect = React.useCallback(async (finalCoord) => {
+  // Safe Cell Effect
+  const runSafeCellEffect = useCallback(async (finalCoord) => {
     if (!isMountedRef.current || cellSize <= 0) return;
     const cellXY = {
       x: BOARD_BORDER + (finalCoord.c || 0) * cellSize,
@@ -477,9 +502,8 @@ export default function GameScreen({
     });
   }, [cellSize, ghostLift, safeGlowOpacity]);
 
-  // 3. Extra Turn on 6: floating badge "🎲 EXTRA TURN" at board center
-  // fade+scale in 200 ms, hold 700 ms, fade out 200 ms, pointerEvents="none"
-  const runExtraTurnBadge = React.useCallback(async () => {
+  // Extra Turn Badge
+  const runExtraTurnBadge = useCallback(async () => {
     if (!isMountedRef.current) return;
     extraTurnAnim.setValue(0);
     extraTurnScale.setValue(0.5);
@@ -524,8 +548,8 @@ export default function GameScreen({
     });
   }, [extraTurnAnim, extraTurnScale]);
 
-  // 5. Token Finished: bounce + 6-8 small circles flying outward and fading (fixed count: 8, 400 ms)
-  const runTokenFinishedEffect = React.useCallback(async (centerCoord, playerColor) => {
+  // Token Finished Effect
+  const runTokenFinishedEffect = useCallback(async (centerCoord, playerColor) => {
     if (!isMountedRef.current || cellSize <= 0) return;
     const landingXY = getCoordXY(centerCoord, cellSize);
     const tokenCenter = {
@@ -568,16 +592,7 @@ export default function GameScreen({
     });
   }, [cellSize, ghostLift, burstProgress]);
 
-  const userColor = gameState.userColor || gameOptions.userColor || 'red';
-
-  const PLAYER_HEX = {
-    red: '#EF4444',
-    green: '#10B981',
-    yellow: '#F59E0B',
-    blue: '#3B82F6',
-  };
-
-  const getPlayerLabel = React.useCallback((color) => {
+  const getPlayerLabel = useCallback((color) => {
     const isHuman = gameState.playerTypes?.[color] === 'human';
     if (gameState.isVsAi) {
       if (color === userColor) return 'You';
@@ -593,11 +608,32 @@ export default function GameScreen({
     return color.charAt(0).toUpperCase() + color.slice(1);
   }, [gameState.playerTypes, gameState.isVsAi, userColor]);
 
-  // Restart match fresh with thorough reset of all state & animations
-  const handleRestartGame = React.useCallback(() => {
+  // Persistent last rolled dice values per player
+  const [lastDiceValues, setLastDiceValues] = useState({});
+
+  useEffect(() => {
+    if (gameState.diceValue != null && gameState.diceValue >= 1 && gameState.diceValue <= 6) {
+      setLastDiceValues((prev) => ({
+        ...prev,
+        [gameState.currentTurn]: gameState.diceValue,
+      }));
+    }
+  }, [gameState.diceValue, gameState.currentTurn]);
+
+  const getPlayerDiceValue = useCallback((player) => {
+    if (gameState.currentTurn === player) {
+      if (rollingDiceValue != null) return rollingDiceValue;
+      if (gameState.diceValue) return gameState.diceValue;
+    }
+    return lastDiceValues[player] || 6;
+  }, [gameState.currentTurn, gameState.diceValue, rollingDiceValue, lastDiceValues]);
+
+  // Restart match
+  const handleRestartGame = useCallback(() => {
     hasShownWinnerRef.current = false;
     setShowWinnerOverlay(false);
     setWinnerData(null);
+    clearAllTimeouts();
 
     setGameState(createInitialState(gameOptions));
     setIsRolling(false);
@@ -611,20 +647,19 @@ export default function GameScreen({
     setFinishedBurst(null);
     setShowExtraTurn(false);
     isAnimatingRef.current = false;
-  }, [gameOptions]);
+  }, [gameOptions, clearAllTimeouts]);
 
-  // Exit back to home
-  const handleWinnerHome = React.useCallback(() => {
+  // Exit home
+  const handleWinnerHome = useCallback(() => {
     hasShownWinnerRef.current = false;
     setShowWinnerOverlay(false);
     setWinnerData(null);
-    if (onExitHome) {
-      onExitHome();
-    }
-  }, [onExitHome]);
+    clearAllTimeouts();
+    onExitHome?.();
+  }, [onExitHome, clearAllTimeouts]);
 
-  // Handle token selection with ghost hopping animation and Stage 3 effects
-  const handleSelectToken = React.useCallback(async (tokenId) => {
+  // Handle token selection
+  const handleSelectToken = useCallback(async (tokenId) => {
     if (isAnimatingRef.current) return;
     if (gameState.status !== 'WAITING_SELECT') return;
     if (!gameState.movableTokenIds.includes(tokenId)) {
@@ -645,9 +680,7 @@ export default function GameScreen({
       SoundManager.play('tokenSelect');
     } catch (_) { }
 
-    // 7-second safety timeout that force-releases lock if anything hangs
-    const safetyTimeout = setTimeout(() => {
-      console.warn('Animation safety timeout triggered (7s)');
+    const safetyTimeout = addTimeout(() => {
       if (isMountedRef.current) {
         setMovingToken(null);
         setCapturedAnimToken(null);
@@ -663,12 +696,10 @@ export default function GameScreen({
       const startStep = token.step;
       const diceVal = gameState.diceValue || 0;
 
-      // Calculate final state from engine (exact rules logic untouched)
       const finalState = moveToken(gameState, tokenId);
       const updatedToken = (finalState.tokens[player] || []).find((t) => t.id === tokenId);
       const finalStep = updatedToken ? updatedToken.step : (startStep === -1 ? 0 : startStep + diceVal);
 
-      // Build step-by-step sequence of cells
       const stepsPath = [];
       if (startStep === -1) {
         try {
@@ -691,14 +722,12 @@ export default function GameScreen({
 
           await animateMove(tokenId, player, cells, oldCoord);
         } catch (animErr) {
-          console.error('Hop animation error, falling back to instant move:', animErr);
+          // Hop animation fallback
         }
       }
 
-      // STAGE 3: EFFECTS (All run AFTER the hop finishes and BEFORE existing turn change code)
       const finalCoord = getTokenCoordinates({ player, step: finalStep, index: token.index });
 
-      // 1. Capture check
       let capturedToken = null;
       gameState.activePlayers.forEach((opp) => {
         if (opp !== player) {
@@ -711,14 +740,9 @@ export default function GameScreen({
         }
       });
 
-      // 2. Safe cell check
       const finalTrackIdx = (finalStep >= 0 && finalStep <= 50) ? getTrackIndex(player, finalStep) : -1;
       const isSafeCell = SAFE_INDICES.includes(finalTrackIdx) && !capturedToken;
-
-      // 3. Finished check
       const isFinished = updatedToken?.isHome || finalStep === HOME_STEP;
-
-      // 4. Extra turn on 6 check
       const isSix = diceVal === 6;
 
       try {
@@ -733,11 +757,8 @@ export default function GameScreen({
         if (isSix) {
           await runExtraTurnBadge();
         }
-      } catch (effectErr) {
-        console.error('Stage 3 effect error:', effectErr);
-      }
+      } catch (_) { }
 
-      // Apply the final calculated state (move, capture, extra turn, turn switch)
       if (isMountedRef.current) {
         setGameState(finalState);
 
@@ -745,9 +766,7 @@ export default function GameScreen({
           try {
             SoundManager.play('winner', { volume: 1.0 });
             SoundFX.victory();
-          } catch (soundErr) {
-            console.warn('Sound error:', soundErr);
-          }
+          } catch (_) { }
 
           recordGameResult({
             won: finalState.winners[0] === 'red',
@@ -755,15 +774,12 @@ export default function GameScreen({
             homeRuns: finalState.stats.red?.homeCount || 0,
           });
 
-          // Open premium celebration overlay exactly once per game
           if (!hasShownWinnerRef.current) {
             hasShownWinnerRef.current = true;
             const winnerColor = finalState.winners[0] || 'red';
             const winnerName = getPlayerLabel(winnerColor);
             const isUserWinner = winnerColor === userColor;
 
-            // Rankings list: only if game has 2nd/3rd/4th places in existing logic (more than 2 players)
-            // If the game ends at the first winner (2-player game), skip the list
             let rankings = [];
             if (finalState.activePlayers.length > 2) {
               const allRankedColors = [
@@ -788,9 +804,7 @@ export default function GameScreen({
             });
             setShowWinnerOverlay(true);
           }
-        } else if (finalState.lastEvent && finalState.lastEvent.includes('Captured')) {
-          // Capture sound already played on impact
-        } else {
+        } else if (!finalState.lastEvent || !finalState.lastEvent.includes('Captured')) {
           try {
             SoundManager.play('turnChange', { volume: 0.25 });
             SoundFX.turnSwitch();
@@ -798,7 +812,7 @@ export default function GameScreen({
         }
       }
     } catch (err) {
-      console.error('Error in handleSelectToken:', err);
+      // Handle error gracefully
     } finally {
       clearTimeout(safetyTimeout);
       if (isMountedRef.current) {
@@ -821,10 +835,11 @@ export default function GameScreen({
     runExtraTurnBadge,
     userColor,
     getPlayerLabel,
+    addTimeout,
   ]);
 
   // Handle dice roll
-  const triggerRoll = React.useCallback(() => {
+  const triggerRoll = useCallback(() => {
     if (isRolling || isAnimatingRef.current || gameState.status !== 'ROLLING') {
       return;
     }
@@ -841,8 +856,7 @@ export default function GameScreen({
     const rolledVal = nextState.diceValue;
     setRollingDiceValue(rolledVal);
 
-    // Roll animation delay (560ms rotate+shake, real value shown + pop spring)
-    setTimeout(() => {
+    addTimeout(() => {
       if (!isMountedRef.current) return;
       setGameState(nextState);
       setRollingDiceValue(null);
@@ -857,7 +871,7 @@ export default function GameScreen({
 
       if (nextState.status === 'NO_MOVES') {
         setRollNotice(`❌ Rolled ${rolledVal} — No moves! Passing turn...`);
-        setTimeout(() => {
+        addTimeout(() => {
           if (!isMountedRef.current) return;
           setRollNotice(null);
           setGameState((prev) => passTurn(prev));
@@ -867,10 +881,9 @@ export default function GameScreen({
           } catch (_) { }
         }, 1000);
       } else if (nextState.movableTokenIds.length === 1 && isBotTurn) {
-        // Auto-move single valid token only for BOT turns
         const singleTokenId = nextState.movableTokenIds[0];
         setRollNotice(`🎲 Rolled ${rolledVal}! Moving token...`);
-        setTimeout(() => {
+        addTimeout(() => {
           if (!isMountedRef.current) return;
           handleSelectToken(singleTokenId);
         }, 220);
@@ -882,7 +895,7 @@ export default function GameScreen({
         }
       }
     }, 600);
-  }, [isRolling, gameState, handleSelectToken]);
+  }, [isRolling, gameState, handleSelectToken, addTimeout]);
 
   // AI automation loop
   useEffect(() => {
@@ -913,50 +926,96 @@ export default function GameScreen({
     };
   }, [gameState, isAiTurn, isRolling, rollNotice, triggerRoll, handleSelectToken, settings.aiDifficulty]);
 
-  // Persistent last rolled dice values per player (stops reverting to 6 after flip/move)
-  const [lastDiceValues, setLastDiceValues] = useState({});
+  // Memoized token objects for overlays
+  const movingTokenData = useMemo(() => {
+    if (!movingToken) return null;
+    return { id: movingToken.tokenId, player: movingToken.color };
+  }, [movingToken]);
 
-  useEffect(() => {
-    if (gameState.diceValue != null && gameState.diceValue >= 1 && gameState.diceValue <= 6) {
-      setLastDiceValues((prev) => ({
-        ...prev,
-        [gameState.currentTurn]: gameState.diceValue,
-      }));
-    }
-  }, [gameState.diceValue, gameState.currentTurn]);
+  const capturedAnimTokenData = useMemo(() => {
+    if (!capturedAnimToken) return null;
+    return { id: capturedAnimToken.tokenId, player: capturedAnimToken.color };
+  }, [capturedAnimToken]);
 
-  const getPlayerDiceValue = (player) => {
-    if (gameState.currentTurn === player) {
-      if (rollingDiceValue != null) return rollingDiceValue;
-      if (gameState.diceValue) return gameState.diceValue;
-    }
-    return lastDiceValues[player] || 6;
-  };
-
-  const activeTurnColor = PLAYER_HEX[gameState.currentTurn] || '#EF4444';
-  const playerTurnName = getPlayerLabel(gameState.currentTurn || 'red').toUpperCase();
-
-  // Dock positioning: User at bottom, AI at top
   const is2Player = gameState.activePlayers.length === 2;
-  const topPlayers = gameState.activePlayers.filter((p) => p !== userColor);
+  const topPlayers = useMemo(() => gameState.activePlayers.filter((p) => p !== userColor), [gameState.activePlayers, userColor]);
+
+  // Pre-calculate particle burst interpolate configurations
+  const burstTransforms = useMemo(() => {
+    return BURST_ANGLES.map((angle) => {
+      const dist = cellSize * 1.25;
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist;
+      return {
+        dx,
+        dy,
+        translateX: burstProgress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, dx],
+        }),
+        translateY: burstProgress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, dy],
+        }),
+        opacity: burstProgress.interpolate({
+          inputRange: [0, 0.7, 1],
+          outputRange: [1, 0.8, 0],
+        }),
+        scale: burstProgress.interpolate({
+          inputRange: [0, 0.4, 1],
+          outputRange: [0.6, 1.3, 0.2],
+        }),
+      };
+    });
+  }, [cellSize, burstProgress]);
+
+  const handleBoardLayout = useCallback(({ nativeEvent }) => {
+    const { width, height } = nativeEvent.layout;
+    if (width > 0 && height > 0) {
+      setBoardArea((current) => {
+        if (Math.abs(current.width - width) < 3 && Math.abs(current.height - height) < 3) {
+          return current;
+        }
+        return { width, height };
+      });
+    }
+  }, []);
+
+  const handleBackPress = useCallback(() => {
+    try {
+      SoundManager.play('buttonTap');
+    } catch (_) { }
+    onExitHome?.();
+  }, [onExitHome]);
+
+  const handleSettingsPress = useCallback(() => {
+    try {
+      SoundManager.play('buttonTap');
+    } catch (_) { }
+    onOpenSettings?.();
+  }, [onOpenSettings]);
+
+  const handleFallbackGameOver = useCallback(() => {
+    if (winnerData) {
+      onGameOver?.({
+        winner: winnerData.winnerColor,
+        coinsWon: winnerData.coinsWon,
+        opponent: 'Player 3',
+      });
+    }
+  }, [winnerData, onGameOver]);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: bgColor }]}>
       <StatusBar barStyle="light-content" backgroundColor={bgColor} />
 
-      {/* Top Header Row with Back Button, Room Mode Badge, Speaker & Settings */}
+      {/* Header */}
       <View style={[styles.topHeader, { marginBottom: 15 }]}>
-
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() => {
-            try {
-              SoundManager.play('buttonTap');
-            } catch (_) { }
-            onExitHome?.();
-          }}
+          onPress={handleBackPress}
           style={styles.circleIconBtn}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          hitSlop={ICON_BTN_HIT_SLOP}
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
@@ -975,18 +1034,11 @@ export default function GameScreen({
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-
-
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => {
-              try {
-                SoundManager.play('buttonTap');
-              } catch (_) { }
-              onOpenSettings?.();
-            }}
+            onPress={handleSettingsPress}
             style={styles.circleIconBtn}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            hitSlop={ICON_BTN_HIT_SLOP}
             accessibilityRole="button"
             accessibilityLabel="Settings"
           >
@@ -995,7 +1047,7 @@ export default function GameScreen({
         </View>
       </View>
 
-      {/* Top Docks Row (AI / Opponents) */}
+      {/* Top Docks Row */}
       <View style={styles.topDocksRow}>
         {is2Player ? (
           <CornerPlayerDock
@@ -1042,24 +1094,8 @@ export default function GameScreen({
         )}
       </View>
 
-      {/* Floating Status & Event Notice Banner */}
-
-
       {/* Center Ludo Board */}
-      <View
-        style={styles.boardContainer}
-        onLayout={({ nativeEvent }) => {
-          const { width, height } = nativeEvent.layout;
-          if (width > 0 && height > 0) {
-            setBoardArea((current) => {
-              if (Math.abs(current.width - width) < 3 && Math.abs(current.height - height) < 3) {
-                return current;
-              }
-              return { width, height };
-            });
-          }
-        }}
-      >
+      <View style={styles.boardContainer} onLayout={handleBoardLayout}>
         <View style={[styles.boardWrapperRelative, { width: boardSize, height: boardSize }]}>
           <LudoBoardExact
             state={displayedState}
@@ -1106,7 +1142,7 @@ export default function GameScreen({
           )}
 
           {/* Ghost Moving Token Overlay */}
-          {movingToken && (
+          {movingTokenData && (
             <Animated.View
               pointerEvents="none"
               style={[
@@ -1124,7 +1160,7 @@ export default function GameScreen({
               ]}
             >
               <PinToken3D
-                token={{ id: movingToken.tokenId, player: movingToken.color }}
+                token={movingTokenData}
                 size={cellSize * 0.72}
                 isMovable={false}
               />
@@ -1132,7 +1168,7 @@ export default function GameScreen({
           )}
 
           {/* Captured Ghost Token Overlay */}
-          {capturedAnimToken && (
+          {capturedAnimTokenData && (
             <Animated.View
               pointerEvents="none"
               style={[
@@ -1152,14 +1188,14 @@ export default function GameScreen({
               ]}
             >
               <PinToken3D
-                token={{ id: capturedAnimToken.tokenId, player: capturedAnimToken.color }}
+                token={capturedAnimTokenData}
                 size={cellSize * 0.72}
                 isMovable={false}
               />
             </Animated.View>
           )}
 
-          {/* Token Finished Particle Burst (8 small circles) */}
+          {/* Token Finished Particle Burst */}
           {finishedBurst && (
             <View
               pointerEvents="none"
@@ -1171,50 +1207,27 @@ export default function GameScreen({
                 },
               ]}
             >
-              {BURST_ANGLES.map((angle, idx) => {
-                const dist = cellSize * 1.25;
-                const dx = Math.cos(angle) * dist;
-                const dy = Math.sin(angle) * dist;
-                return (
-                  <Animated.View
-                    key={`burst_${idx}`}
-                    style={[
-                      styles.burstCircle,
-                      {
-                        backgroundColor: idx % 2 === 0 ? '#FACC15' : '#38BDF8',
-                        opacity: burstProgress.interpolate({
-                          inputRange: [0, 0.7, 1],
-                          outputRange: [1, 0.8, 0],
-                        }),
-                        transform: [
-                          {
-                            translateX: burstProgress.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [0, dx],
-                            }),
-                          },
-                          {
-                            translateY: burstProgress.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [0, dy],
-                            }),
-                          },
-                          {
-                            scale: burstProgress.interpolate({
-                              inputRange: [0, 0.4, 1],
-                              outputRange: [0.6, 1.3, 0.2],
-                            }),
-                          },
-                        ],
-                      },
-                    ]}
-                  />
-                );
-              })}
+              {burstTransforms.map((t, idx) => (
+                <Animated.View
+                  key={`burst_${idx}`}
+                  style={[
+                    styles.burstCircle,
+                    {
+                      backgroundColor: idx % 2 === 0 ? '#FACC15' : '#38BDF8',
+                      opacity: t.opacity,
+                      transform: [
+                        { translateX: t.translateX },
+                        { translateY: t.translateY },
+                        { scale: t.scale },
+                      ],
+                    },
+                  ]}
+                />
+              ))}
             </View>
           )}
 
-          {/* Extra Turn on 6 Floating Badge at Board Center */}
+          {/* Extra Turn Floating Badge */}
           {showExtraTurn && (
             <Animated.View
               pointerEvents="none"
@@ -1234,7 +1247,7 @@ export default function GameScreen({
         </View>
       </View>
 
-      {/* Bottom Docks Row (User at bottom left, opponent at bottom right if 4P) */}
+      {/* Bottom Docks Row */}
       <View style={styles.bottomDocksRow}>
         {gameState.activePlayers.includes(userColor) ? (
           <CornerPlayerDock
@@ -1277,16 +1290,10 @@ export default function GameScreen({
         ) : <View />}
       </View>
 
-      {/* Premium Winner Celebration Overlay */}
+      {/* Winner Celebration Overlay */}
       {showWinnerOverlay && winnerData && (
         <WinnerErrorBoundary
-          fallbackOnGameOver={() => {
-            onGameOver?.({
-              winner: winnerData.winnerColor,
-              coinsWon: winnerData.coinsWon,
-              opponent: 'Player 3',
-            });
-          }}
+          fallbackOnGameOver={handleFallbackGameOver}
           onPlayAgain={handleRestartGame}
         >
           <WinnerOverlay
@@ -1305,7 +1312,6 @@ export default function GameScreen({
     </SafeAreaView>
   );
 }
-
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -1513,10 +1519,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 6,
     gap: 12,
-
   },
   diceRollControlActive: {
-
     shadowOpacity: 0.8,
   },
   arrowIcon: {
@@ -1548,3 +1552,4 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 });
+
