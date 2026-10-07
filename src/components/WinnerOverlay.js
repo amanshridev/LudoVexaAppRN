@@ -104,6 +104,8 @@ function WinnerOverlayComponent({
   const titleOpacity = useRef(new Animated.Value(0)).current;
   const trophyFloat = useRef(new Animated.Value(0)).current;
   const trophyLoopRef = useRef(null);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseLoopRef = useRef(null);
 
   // 4. Confetti pieces (~32 items with fixed deterministic values)
   const confettiPieces = useRef(
@@ -309,6 +311,25 @@ function WinnerOverlayComponent({
       ])
     );
     trophyLoopRef.current.start();
+
+    // Pulse animation loop for avatar aura
+    pulseLoopRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.14,
+          duration: 1100,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1100,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulseLoopRef.current.start();
 
     // 4. Confetti pieces fall
     const confettiAnimations = confettiPieces.map((p) =>
@@ -546,45 +567,8 @@ function WinnerOverlayComponent({
               },
             ]}
           >
-            {/* Top Star Burst Effect behind Avatar */}
-            <View style={styles.starBurstCenter} pointerEvents="none">
-              {starBursts.map((s) => {
-                const tx = starBurst.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, s.dx],
-                });
-                const ty = starBurst.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, s.dy],
-                });
-                const sOpacity = starBurst.interpolate({
-                  inputRange: [0, 0.2, 0.7, 1],
-                  outputRange: [0, 1, 0.8, 0],
-                });
-                const sScale = starBurst.interpolate({
-                  inputRange: [0, 0.4, 1],
-                  outputRange: [0.3, 1.3, 0.4],
-                });
-                return (
-                  <Animated.Text
-                    key={`star_${s.id}`}
-                    style={[
-                      styles.sparkleStar,
-                      {
-                        opacity: sOpacity,
-                        transform: [
-                          { translateX: tx },
-                          { translateY: ty },
-                          { scale: sScale },
-                        ],
-                      },
-                    ]}
-                  >
-                    ✨
-                  </Animated.Text>
-                );
-              })}
-            </View>
+            {/* Top Celebration Header Badge */}
+
 
             {/* Avatar & Crown Section */}
             <View style={styles.avatarSection}>
@@ -598,10 +582,10 @@ function WinnerOverlayComponent({
                   },
                 ]}
               >
-                <CrownIcon size={46} color="#FDE047" />
+                <CrownIcon size={44} color="#FDE047" />
               </Animated.View>
 
-              {/* Big Avatar Circle in Winner Color */}
+              {/* Avatar Circle in Winner Color */}
               <View
                 style={[
                   styles.avatarOuterCircle,
@@ -610,7 +594,7 @@ function WinnerOverlayComponent({
                     height: avatarSize,
                     borderRadius: avatarSize / 2,
                     backgroundColor: themeHex,
-                    borderColor: '#FFFFFF',
+                    borderColor: '#FFD700',
                     shadowColor: themeHex,
                   },
                 ]}
@@ -644,83 +628,87 @@ function WinnerOverlayComponent({
                 🏆 {winnerName.toUpperCase()} WINS!
               </Text>
               <Text style={styles.congratsSubtitle}>
-                {isUserWinner ? 'Congratulations! Brilliant Victory!' : 'Match Finished! Better luck next time!'}
+                {isUserWinner
+                  ? '🎉 Outstanding Victory! You won the match!'
+                  : '🎮 Match Finished! Better luck next time!'}
               </Text>
             </Animated.View>
 
-            {/* Floating Trophy Icon with Gentle Floating Loop */}
-            <Animated.View
-              style={[
-                styles.trophyFloatWrap,
-                {
-                  transform: [{ translateY: trophyFloat }],
-                },
-              ]}
-            >
-              <TrophyIcon size={38} color="#F59E0B" />
-              {isUserWinner && coinsWon > 0 && (
+            {/* Coins Reward Card */}
+            {/* {coinsWon ? (
+              <Animated.View
+                style={[
+                  styles.rewardCardWrap,
+                  {
+                    transform: [{ translateY: trophyFloat }],
+                  },
+                ]}
+              >
                 <View style={styles.rewardPill}>
-                  <Text style={styles.rewardText}>+{coinsWon} COINS</Text>
+                  <Text style={styles.rewardText}>🪙 +{coinsWon} REWARD COINS</Text>
                 </View>
-              )}
-            </Animated.View>
+              </Animated.View>
+            ) : null} */}
 
-            {/* 6. Ranking list (shown if game has multiple ranked players) */}
-            {rankings && rankings.length > 1 && (
+            {/* Rankings Standings Card */}
+            {Array.isArray(rankings) && rankings.length > 0 && (
               <View style={styles.rankingContainer}>
-                <Text style={styles.rankingsHeaderTitle}>FINAL STANDINGS</Text>
+                <View style={styles.rankingsHeaderRow}>
+                  <Text style={styles.rankingsHeaderTitle}>MATCH STANDINGS</Text>
+                </View>
                 {rankings.slice(0, 4).map((item, idx) => {
-                  const anim = rankRowsAnim[idx] || new Animated.Value(1);
-                  const translateY = anim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [24, 0],
-                  });
-                  const rowTheme = PLAYER_HEX[item.color] || '#EF4444';
-                  const medal = MEDAL_EMOJIS[idx] || '🏅';
+                  const animVal = rankRowsAnim[idx] || new Animated.Value(1);
+                  const isWinnerRow = typeof item === 'object' ? (item.isWinner || idx === 0) : idx === 0;
+                  const itemColor = typeof item === 'object' ? (PLAYER_HEX[item.color] || item.color || '#3B82F6') : '#3B82F6';
+                  const itemName = typeof item === 'object' ? item.name : String(item);
+
+                  const rankBadges = ['WINNER', '2ND', '3RD', '4TH'];
 
                   return (
                     <Animated.View
-                      key={`rank_${item.color}_${idx}`}
+                      key={typeof item === 'object' ? (item.id || item.name || idx) : idx}
                       style={[
                         styles.rankRow,
                         {
-                          opacity: anim,
-                          transform: [{ translateY }],
-                          backgroundColor: item.isWinner
-                            ? 'rgba(245, 158, 11, 0.16)'
-                            : 'rgba(255, 255, 255, 0.05)',
-                          borderColor: item.isWinner
-                            ? 'rgba(245, 158, 11, 0.45)'
-                            : 'rgba(255, 255, 255, 0.08)',
+                          borderColor: isWinnerRow ? 'rgba(245, 158, 11, 0.5)' : 'rgba(255, 255, 255, 0.08)',
+                          backgroundColor: isWinnerRow ? 'rgba(245, 158, 11, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                          opacity: animVal,
+                          transform: [
+                            {
+                              translateY: animVal.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [15, 0],
+                              }),
+                            },
+                          ],
                         },
                       ]}
                     >
                       <View style={styles.rankLeft}>
-                        <Text style={styles.rankMedal}>{medal}</Text>
-                        <View
-                          style={[
-                            styles.rankColorDot,
-                            { backgroundColor: rowTheme },
-                          ]}
-                        />
+                        <View style={[styles.rankNumberBadge, isWinnerRow && styles.rankNumberBadgeWinner]}>
+                          <Text style={[styles.rankNumberText, isWinnerRow && styles.rankNumberTextWinner]}>
+                            #{idx + 1}
+                          </Text>
+                        </View>
+                        <View style={[styles.rankColorDot, { backgroundColor: itemColor }]} />
                         <Text
                           style={[
                             styles.rankPlayerName,
-                            item.isWinner && styles.rankWinnerName,
+                            isWinnerRow && styles.rankWinnerName,
                           ]}
                           numberOfLines={1}
                         >
-                          {item.name}
+                          {itemName || `Player ${idx + 1}`}
                         </Text>
                       </View>
                       <View style={styles.rankRight}>
                         <Text
                           style={[
                             styles.rankStatusBadge,
-                            item.isWinner ? styles.rankStatusWinner : styles.rankStatusFinished,
+                            isWinnerRow ? styles.rankStatusWinner : styles.rankStatusFinished,
                           ]}
                         >
-                          {item.isWinner ? 'CHAMPION' : `#${idx + 1}`}
+                          {rankBadges[idx] || `#${idx + 1}`}
                         </Text>
                       </View>
                     </Animated.View>
@@ -729,7 +717,7 @@ function WinnerOverlayComponent({
               </View>
             )}
 
-            {/* 7. Action Buttons (Play Again & Home) */}
+            {/* Action Buttons (Play Again & Home) */}
             <Animated.View
               style={[
                 styles.buttonsRow,
@@ -746,7 +734,7 @@ function WinnerOverlayComponent({
                 accessibilityRole="button"
                 accessibilityLabel="Play Again"
               >
-                <Text style={styles.playAgainText}>🔄 PLAY AGAIN</Text>
+                <Text style={styles.playAgainText}>PLAY AGAIN</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -756,7 +744,7 @@ function WinnerOverlayComponent({
                 accessibilityRole="button"
                 accessibilityLabel="Home"
               >
-                <Text style={styles.homeText}>🏠 HOME</Text>
+                <Text style={styles.homeText}>HOME</Text>
               </TouchableOpacity>
             </Animated.View>
           </Animated.View>
@@ -806,17 +794,30 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     paddingHorizontal: 20,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 215, 0, 0.35)',
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.45,
-    shadowRadius: 28,
-    elevation: 20,
+
+  },
+  headerBadgeContainer: {
+    marginTop: 2,
+    marginBottom: 4,
+    alignItems: 'center',
+  },
+  headerBadgePill: {
+    backgroundColor: 'rgba(253, 224, 71, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(253, 224, 71, 0.4)',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 3,
+  },
+  headerBadgeText: {
+    color: '#FDE047',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1.2,
   },
   starBurstCenter: {
     position: 'absolute',
-    top: 48,
+    top: 54,
     alignSelf: 'center',
     width: 1,
     height: 1,
@@ -830,28 +831,27 @@ const styles = StyleSheet.create({
   },
   avatarSection: {
     alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 10,
+    marginTop: 10,
+    marginBottom: 8,
+    justifyContent: 'center',
+
   },
   crownWrapper: {
-    marginBottom: -8,
-    zIndex: 20,
+    marginBottom: -10,
+    zIndex: 30,
   },
   avatarOuterCircle: {
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 16,
-    elevation: 12,
+    borderWidth: 3.5,
+
   },
   avatarInnerCircle: {
-    backgroundColor: 'rgba(0, 0, 0, 0.22)',
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
   avatarInitial: {
     color: '#FFFFFF',
@@ -861,7 +861,7 @@ const styles = StyleSheet.create({
   titleWrapper: {
     alignItems: 'center',
     marginTop: 4,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   winnerText: {
     color: '#FDE047',
@@ -880,67 +880,90 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  trophyFloatWrap: {
+  rewardCardWrap: {
     alignItems: 'center',
-    marginVertical: 6,
+    marginVertical: 4,
   },
   rewardPill: {
     backgroundColor: 'rgba(245, 158, 11, 0.18)',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#F59E0B',
     borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 3,
-    marginTop: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 5,
+    marginTop: 4,
+
   },
   rewardText: {
     color: '#FDE047',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
   rankingContainer: {
     width: '100%',
     marginTop: 10,
     marginBottom: 6,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
     borderRadius: 14,
-    padding: 8,
+    padding: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  rankingsHeaderRow: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    paddingBottom: 6,
+    marginBottom: 6,
   },
   rankingsHeaderTitle: {
-    color: '#64748B',
+    color: '#94A3B8',
     fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 1,
-    marginBottom: 6,
-    marginLeft: 4,
+    letterSpacing: 1.2,
+    marginLeft: 2,
   },
   rankRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 6,
+    paddingVertical: 7,
     paddingHorizontal: 10,
     borderRadius: 8,
     borderWidth: 1,
-    marginBottom: 4,
+    marginBottom: 5,
   },
   rankLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  rankMedal: {
-    fontSize: 15,
-    marginRight: 6,
+  rankNumberBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  rankNumberBadgeWinner: {
+    backgroundColor: 'rgba(245, 158, 11, 0.3)',
+  },
+  rankNumberText: {
+    color: '#94A3B8',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  rankNumberTextWinner: {
+    color: '#FDE047',
   },
   rankColorDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 11,
+    height: 11,
+    borderRadius: 5.5,
     marginRight: 8,
+
   },
   rankPlayerName: {
     color: '#E2E8F0',
@@ -950,24 +973,25 @@ const styles = StyleSheet.create({
   },
   rankWinnerName: {
     color: '#FDE047',
-    fontWeight: '800',
+    fontWeight: '900',
   },
   rankRight: {
     marginLeft: 8,
   },
   rankStatusBadge: {
-    fontSize: 11,
-    fontWeight: '700',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    fontSize: 10,
+    fontWeight: '800',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    letterSpacing: 0.4,
   },
   rankStatusWinner: {
     backgroundColor: '#F59E0B',
     color: '#000000',
   },
   rankStatusFinished: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     color: '#94A3B8',
   },
   buttonsRow: {
@@ -988,11 +1012,7 @@ const styles = StyleSheet.create({
   },
   playAgainBtn: {
     backgroundColor: '#10B981',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
+
   },
   playAgainText: {
     color: '#FFFFFF',

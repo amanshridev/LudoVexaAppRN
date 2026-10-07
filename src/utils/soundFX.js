@@ -154,6 +154,54 @@ class SoundController {
 
         osc.start(now);
         osc.stop(now + 0.2);
+      } else if (type === 'victory') {
+        // Royal Triumphant Victory Fanfare
+        const arpeggio = [
+          { f: 523.25, t: 0 },
+          { f: 659.25, t: 0.09 },
+          { f: 783.99, t: 0.18 },
+          { f: 1046.50, t: 0.27 },
+          { f: 1318.51, t: 0.36 },
+          { f: 1567.98, t: 0.45 }
+        ];
+        arpeggio.forEach(item => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(item.f, now + item.t);
+          gain.gain.setValueAtTime(0.35, now + item.t);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + item.t + 0.22);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + item.t);
+          osc.stop(now + item.t + 0.22);
+        });
+
+        const chordStart = 0.55;
+        const chordNotes = [523.25, 783.99, 1046.50, 1318.51];
+        chordNotes.forEach(freq => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, now + chordStart);
+          gain.gain.setValueAtTime(0.18, now + chordStart);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + chordStart + 1.2);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + chordStart);
+          osc.stop(now + chordStart + 1.2);
+
+          const osc2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(freq / 2, now + chordStart);
+          gain2.gain.setValueAtTime(0.25, now + chordStart);
+          gain2.gain.exponentialRampToValueAtTime(0.001, now + chordStart + 1.2);
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          osc2.start(now + chordStart);
+          osc2.stop(now + chordStart + 1.2);
+        });
       }
     } catch {
       // Ignore audio synth errors

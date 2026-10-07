@@ -20,6 +20,7 @@ import {
 } from '../components/ui/AppIcons';
 import { useTheme } from '../context/ThemeContext';
 import SoundManager from '../utils/SoundManager';
+import WinnerOverlay from '../components/WinnerOverlay';
 
 export default function WelcomeLoginScreen({
   onPlayNow,
@@ -317,6 +318,7 @@ export default function WelcomeLoginScreen({
           </TouchableOpacity>
         </View>
       </ScrollView>
+
     </SafeAreaView>
   );
 }

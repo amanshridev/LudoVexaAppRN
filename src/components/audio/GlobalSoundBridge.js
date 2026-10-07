@@ -161,20 +161,56 @@ export default function GlobalSoundBridge() {
         osc.start(now);
         osc.stop(now + 0.25);
       } else if (type === 'victory') {
-        // Fanfare chord: C5, E5, G5, C6
-        var notes = [523.25, 659.25, 783.99, 1046.50];
-        notes.forEach(function(freq, idx) {
-          var delay = idx * 0.1;
+        // Royal Triumphant Victory Fanfare
+        // Phase 1: Rapid ascending melody (C5, E5, G5, C6, E6, G6)
+        var arpeggio = [
+          { f: 523.25, t: 0 },
+          { f: 659.25, t: 0.09 },
+          { f: 783.99, t: 0.18 },
+          { f: 1046.50, t: 0.27 },
+          { f: 1318.51, t: 0.36 },
+          { f: 1567.98, t: 0.45 }
+        ];
+        arpeggio.forEach(function(item) {
           var osc = ctx.createOscillator();
           var gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, now + delay);
-          gain.gain.setValueAtTime(0.3, now + delay);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.3);
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(item.f, now + item.t);
+          gain.gain.setValueAtTime(0.35, now + item.t);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + item.t + 0.22);
           osc.connect(gain);
           gain.connect(ctx.destination);
-          osc.start(now + delay);
-          osc.stop(now + delay + 0.3);
+          osc.start(now + item.t);
+          osc.stop(now + item.t + 0.22);
+        });
+
+        // Phase 2: Grand Sustained Triumph Chord (C5, G5, C6, E6) at 0.55s
+        var chordStart = 0.55;
+        var chordNotes = [523.25, 783.99, 1046.50, 1318.51];
+        chordNotes.forEach(function(freq) {
+          // Brass oscillator (sawtooth)
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, now + chordStart);
+          gain.gain.setValueAtTime(0.18, now + chordStart);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + chordStart + 1.2);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + chordStart);
+          osc.stop(now + chordStart + 1.2);
+
+          // Warm body oscillator (sine)
+          var osc2 = ctx.createOscillator();
+          var gain2 = ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(freq / 2, now + chordStart);
+          gain2.gain.setValueAtTime(0.25, now + chordStart);
+          gain2.gain.exponentialRampToValueAtTime(0.001, now + chordStart + 1.2);
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          osc2.start(now + chordStart);
+          osc2.stop(now + chordStart + 1.2);
         });
       } else if (type === 'turn') {
         // Turn switch chime
