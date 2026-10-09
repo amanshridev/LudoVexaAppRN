@@ -311,33 +311,33 @@ export default function GameScreen({
         Animated.parallel([
           Animated.timing(ghostPos, {
             toValue: targetXY,
-            duration: 75,
+            duration: 115,
             easing: Easing.out(Easing.quad),
             useNativeDriver: true,
           }),
           Animated.sequence([
             Animated.timing(ghostLift, {
               toValue: -cellSize * 0.35,
-              duration: 38,
+              duration: 58,
               easing: Easing.out(Easing.quad),
               useNativeDriver: true,
             }),
             Animated.timing(ghostLift, {
               toValue: 0,
-              duration: 37,
+              duration: 57,
               easing: Easing.in(Easing.quad),
               useNativeDriver: true,
             }),
           ]),
           Animated.sequence([
             Animated.timing(ghostScale, {
-              toValue: isLast ? 1.2 : 1.1,
-              duration: 38,
+              toValue: isLast ? 1.22 : 1.12,
+              duration: 58,
               useNativeDriver: true,
             }),
             Animated.timing(ghostScale, {
               toValue: 1.0,
-              duration: 37,
+              duration: 57,
               useNativeDriver: true,
             }),
           ]),
@@ -909,7 +909,7 @@ export default function GameScreen({
             if (!isMountedRef.current) return;
             isAnimatingRef.current = false;
             handleSelectToken(singleTokenId, nextState);
-          }, 150);
+          }, 250);
         } else {
           if (isSix) {
             setRollNotice('🎉 Rolled a 6! Tap a token to move!');
