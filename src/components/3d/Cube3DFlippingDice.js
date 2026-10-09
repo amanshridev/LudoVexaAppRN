@@ -95,44 +95,40 @@ function Cube3DFlippingDice({
 
       const runRoll = async () => {
         try {
-          // Scale to 0.9
+          // Quick scale to 0.9
           await new Promise((res) => {
             Animated.timing(scaleAnim, {
               toValue: 0.9,
-              duration: 60,
+              duration: 40,
               useNativeDriver: true,
             }).start(() => res());
           });
 
           if (isCancelled || !isMountedRef.current) return;
 
-          // ONE setInterval changing shown number every 80 ms
+          // Rapid face flicker every 45ms
           intervalRef.current = setInterval(() => {
             setDisplayValue(Math.floor(Math.random() * 6) + 1);
-          }, 80);
+          }, 45);
 
           rotAnim.setValue(0);
           shakeAnim.setValue(0);
 
-          // 10 steps of 50ms = 500ms shake
+          // Punchy 6-step shake (180ms total)
           const shakeSequence = Animated.sequence([
-            Animated.timing(shakeAnim, { toValue: -5, duration: 50, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: 5, duration: 50, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: -4, duration: 50, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: 4, duration: 50, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: -3, duration: 50, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: 3, duration: 50, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: -2, duration: 50, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: 2, duration: 50, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: -1, duration: 50, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+            Animated.timing(shakeAnim, { toValue: -5, duration: 30, useNativeDriver: true }),
+            Animated.timing(shakeAnim, { toValue: 5, duration: 30, useNativeDriver: true }),
+            Animated.timing(shakeAnim, { toValue: -4, duration: 30, useNativeDriver: true }),
+            Animated.timing(shakeAnim, { toValue: 4, duration: 30, useNativeDriver: true }),
+            Animated.timing(shakeAnim, { toValue: -2, duration: 30, useNativeDriver: true }),
+            Animated.timing(shakeAnim, { toValue: 0, duration: 30, useNativeDriver: true }),
           ]);
 
-          // Rotate 360 deg over 500ms
+          // Fast 360 deg rotate tumble over 280ms
           const rotateTiming = Animated.timing(rotAnim, {
             toValue: 360,
-            duration: 500,
-            easing: Easing.linear,
+            duration: 280,
+            easing: Easing.out(Easing.quad),
             useNativeDriver: true,
           });
 
@@ -140,7 +136,7 @@ function Cube3DFlippingDice({
             Animated.parallel([shakeSequence, rotateTiming]).start(() => res());
           });
         } finally {
-          // ONE setInterval, cleared in finally and on unmount
+          // Clear interval immediately
           if (intervalRef.current) {
             clearInterval(intervalRef.current);
             intervalRef.current = null;
@@ -154,19 +150,19 @@ function Cube3DFlippingDice({
           setDisplayValue(targetValue);
         }
 
-        // Pop: scale 1 -> 1.3 -> 1 spring
+        // Crisp pop settle: scale 1 -> 1.25 -> 1 spring
         scaleAnim.setValue(1.0);
         Animated.sequence([
           Animated.timing(scaleAnim, {
-            toValue: 1.3,
-            duration: 100,
+            toValue: 1.25,
+            duration: 60,
             easing: Easing.out(Easing.quad),
             useNativeDriver: true,
           }),
           Animated.spring(scaleAnim, {
             toValue: 1.0,
-            friction: 4,
-            tension: 40,
+            friction: 5,
+            tension: 60,
             useNativeDriver: true,
           }),
         ]).start();

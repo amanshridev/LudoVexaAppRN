@@ -437,6 +437,7 @@ function WinnerOverlayComponent({
     rankings,
     onWinnerSound,
     skipToEnd,
+    pulseAnim,
   ]);
 
   // Handle Play Again button press with thorough cleanup

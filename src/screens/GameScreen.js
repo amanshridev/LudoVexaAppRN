@@ -72,6 +72,8 @@ export default function GameScreen({
 }) {
   const { appTheme } = useTheme();
   const [gameState, setGameState] = useState(() => createInitialState(gameOptions));
+  const gameStateRef = useRef(gameState);
+  gameStateRef.current = gameState;
   const [isRolling, setIsRolling] = useState(false);
   const [rollingDiceValue, setRollingDiceValue] = useState(null);
   const [rollNotice, setRollNotice] = useState(null);
@@ -275,6 +277,7 @@ export default function GameScreen({
   }, [gameState, movingToken, capturedAnimToken]);
 
   // Animate ghost token hopping cell-by-cell along path
+  // Animate ghost token hopping cell-by-cell along path (Snappy 75ms hop)
   const animateMove = useCallback(async (tokenId, color, cells, oldCoord) => {
     if (!isMountedRef.current || cells.length === 0) return;
 
@@ -285,16 +288,15 @@ export default function GameScreen({
 
     setMovingToken({ tokenId, color });
 
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await new Promise((resolve) => setTimeout(resolve, 15));
 
     for (let i = 0; i < cells.length; i++) {
       if (!isMountedRef.current) break;
 
       const cell = cells[i];
       try {
-        const stepRate = Math.min(1.5, 1.0 + i * 0.05);
+        const stepRate = Math.min(1.5, 1.0 + i * 0.06);
         SoundManager.play('step', { volume: 0.35, rate: stepRate });
-        SoundFX.hop();
       } catch (_) { }
 
       const isLast = i === cells.length - 1;
@@ -309,33 +311,33 @@ export default function GameScreen({
         Animated.parallel([
           Animated.timing(ghostPos, {
             toValue: targetXY,
-            duration: 120,
+            duration: 75,
             easing: Easing.out(Easing.quad),
             useNativeDriver: true,
           }),
           Animated.sequence([
             Animated.timing(ghostLift, {
               toValue: -cellSize * 0.35,
-              duration: 60,
+              duration: 38,
               easing: Easing.out(Easing.quad),
               useNativeDriver: true,
             }),
             Animated.timing(ghostLift, {
               toValue: 0,
-              duration: 60,
+              duration: 37,
               easing: Easing.in(Easing.quad),
               useNativeDriver: true,
             }),
           ]),
           Animated.sequence([
             Animated.timing(ghostScale, {
-              toValue: isLast ? 1.25 : 1.12,
-              duration: 60,
+              toValue: isLast ? 1.2 : 1.1,
+              duration: 38,
               useNativeDriver: true,
             }),
             Animated.timing(ghostScale, {
               toValue: 1.0,
-              duration: 60,
+              duration: 37,
               useNativeDriver: true,
             }),
           ]),
@@ -472,25 +474,25 @@ export default function GameScreen({
         Animated.sequence([
           Animated.timing(safeGlowOpacity, {
             toValue: 0.6,
-            duration: 200,
+            duration: 130,
             useNativeDriver: true,
           }),
           Animated.timing(safeGlowOpacity, {
             toValue: 0,
-            duration: 200,
+            duration: 130,
             useNativeDriver: true,
           }),
         ]),
         Animated.sequence([
           Animated.timing(ghostLift, {
             toValue: -cellSize * 0.18,
-            duration: 200,
+            duration: 130,
             easing: Easing.out(Easing.quad),
             useNativeDriver: true,
           }),
           Animated.timing(ghostLift, {
             toValue: 0,
-            duration: 200,
+            duration: 130,
             easing: Easing.in(Easing.quad),
             useNativeDriver: true,
           }),
@@ -517,27 +519,27 @@ export default function GameScreen({
         Animated.parallel([
           Animated.timing(extraTurnAnim, {
             toValue: 1,
-            duration: 200,
+            duration: 160,
             easing: Easing.out(Easing.back(1.5)),
             useNativeDriver: true,
           }),
           Animated.timing(extraTurnScale, {
             toValue: 1,
-            duration: 200,
+            duration: 160,
             easing: Easing.out(Easing.back(1.5)),
             useNativeDriver: true,
           }),
         ]),
-        Animated.delay(700),
+        Animated.delay(300),
         Animated.parallel([
           Animated.timing(extraTurnAnim, {
             toValue: 0,
-            duration: 200,
+            duration: 160,
             useNativeDriver: true,
           }),
           Animated.timing(extraTurnScale, {
             toValue: 0.8,
-            duration: 200,
+            duration: 160,
             useNativeDriver: true,
           }),
         ]),
@@ -596,6 +598,7 @@ export default function GameScreen({
     const isHuman = gameState.playerTypes?.[color] === 'human';
     if (gameState.isVsAi) {
       if (color === userColor) return 'You';
+      if (gameState.activePlayers?.length === 2) return isHuman ? color.charAt(0).toUpperCase() + color.slice(1) : 'Computer';
       if (color === 'green') return isHuman ? 'Green' : 'Computer 2';
       if (color === 'yellow') return isHuman ? 'Yellow' : 'Computer 3';
       if (color === 'blue') return isHuman ? 'Blue' : 'Computer 4';
@@ -606,7 +609,7 @@ export default function GameScreen({
     if (color === 'yellow') return 'Player 3';
     if (color === 'blue') return 'Player 4';
     return color.charAt(0).toUpperCase() + color.slice(1);
-  }, [gameState.playerTypes, gameState.isVsAi, userColor]);
+  }, [gameState.playerTypes, gameState.isVsAi, gameState.activePlayers, userColor]);
 
   // Persistent last rolled dice values per player
   const [lastDiceValues, setLastDiceValues] = useState({});
@@ -659,18 +662,19 @@ export default function GameScreen({
   }, [onExitHome, clearAllTimeouts]);
 
   // Handle token selection
-  const handleSelectToken = useCallback(async (tokenId) => {
+  const handleSelectToken = useCallback(async (tokenId, stateOverride = null) => {
     if (isAnimatingRef.current) return;
-    if (gameState.status !== 'WAITING_SELECT') return;
-    if (!gameState.movableTokenIds.includes(tokenId)) {
+    const currentState = stateOverride || gameStateRef.current;
+    if (currentState.status !== 'WAITING_SELECT') return;
+    if (!currentState.movableTokenIds.includes(tokenId)) {
       try {
         SoundManager.play('invalid');
       } catch (_) { }
       return;
     }
 
-    const player = gameState.currentTurn;
-    const playerTokens = gameState.tokens[player] || [];
+    const player = currentState.currentTurn;
+    const playerTokens = currentState.tokens[player] || [];
     const token = playerTokens.find((t) => t.id === tokenId);
     if (!token) return;
 
@@ -694,9 +698,10 @@ export default function GameScreen({
 
     try {
       const startStep = token.step;
-      const diceVal = gameState.diceValue || 0;
+      const diceVal = currentState.diceValue || 0;
 
-      const finalState = moveToken(gameState, tokenId);
+      const finalState = moveToken(currentState, tokenId);
+      gameStateRef.current = finalState;
       const updatedToken = (finalState.tokens[player] || []).find((t) => t.id === tokenId);
       const finalStep = updatedToken ? updatedToken.step : (startStep === -1 ? 0 : startStep + diceVal);
 
@@ -729,9 +734,9 @@ export default function GameScreen({
       const finalCoord = getTokenCoordinates({ player, step: finalStep, index: token.index });
 
       let capturedToken = null;
-      gameState.activePlayers.forEach((opp) => {
+      currentState.activePlayers.forEach((opp) => {
         if (opp !== player) {
-          (gameState.tokens[opp] || []).forEach((tOld) => {
+          (currentState.tokens[opp] || []).forEach((tOld) => {
             const tNew = (finalState.tokens[opp] || []).find((t) => t.id === tOld.id);
             if (tOld.step >= 0 && tNew && tNew.step === -1) {
               capturedToken = tOld;
@@ -761,6 +766,7 @@ export default function GameScreen({
 
       if (isMountedRef.current) {
         setGameState(finalState);
+        gameStateRef.current = finalState;
 
         if (finalState.status === 'GAME_OVER') {
           try {
@@ -826,7 +832,6 @@ export default function GameScreen({
       isAnimatingRef.current = false;
     }
   }, [
-    gameState,
     cellSize,
     animateMove,
     runCaptureEffect,
@@ -840,7 +845,8 @@ export default function GameScreen({
 
   // Handle dice roll
   const triggerRoll = useCallback(() => {
-    if (isRolling || isAnimatingRef.current || gameState.status !== 'ROLLING') {
+    const currentState = gameStateRef.current;
+    if (isRolling || isAnimatingRef.current || currentState.status !== 'ROLLING') {
       return;
     }
 
@@ -852,13 +858,14 @@ export default function GameScreen({
       SoundFX.dice();
     } catch (_) { }
 
-    const nextState = rollDice(gameState);
+    const nextState = rollDice(currentState);
     const rolledVal = nextState.diceValue;
     setRollingDiceValue(rolledVal);
 
     addTimeout(() => {
       if (!isMountedRef.current) return;
       setGameState(nextState);
+      gameStateRef.current = nextState;
       setRollingDiceValue(null);
       setIsRolling(false);
       isAnimatingRef.current = false;
@@ -867,37 +874,54 @@ export default function GameScreen({
       } catch (_) { }
 
       const isSix = rolledVal === 6;
-      const isBotTurn = nextState.playerTypes?.[nextState.currentTurn] === 'bot';
 
       if (nextState.status === 'NO_MOVES') {
         setRollNotice(`❌ Rolled ${rolledVal} — No moves! Passing turn...`);
         addTimeout(() => {
           if (!isMountedRef.current) return;
           setRollNotice(null);
-          setGameState((prev) => passTurn(prev));
+          setGameState((prev) => {
+            const passed = passTurn(prev);
+            gameStateRef.current = passed;
+            return passed;
+          });
           try {
             SoundManager.play('turnChange');
             SoundFX.turnSwitch();
           } catch (_) { }
-        }, 1000);
-      } else if (nextState.movableTokenIds.length === 1 && isBotTurn) {
-        const singleTokenId = nextState.movableTokenIds[0];
-        setRollNotice(`🎲 Rolled ${rolledVal}! Moving token...`);
-        addTimeout(() => {
-          if (!isMountedRef.current) return;
-          handleSelectToken(singleTokenId);
-        }, 220);
+        }, 450);
       } else {
-        if (isSix) {
-          setRollNotice('🎉 Rolled a 6! Tap a token to move!');
+        const playerTokens = nextState.tokens[nextState.currentTurn] || [];
+        const movableTokens = playerTokens.filter((t) => nextState.movableTokenIds.includes(t.id));
+
+        // Auto-move if only 1 distinct choice:
+        // 1) Exactly 1 token can legally move
+        // 2) OR all movable tokens are in the base (-1) so opening any of them produces the exact same action
+        const hasOnlyOneChoice =
+          nextState.movableTokenIds.length === 1 ||
+          (movableTokens.length > 0 && movableTokens.every((t) => t.step === -1));
+
+        if (hasOnlyOneChoice) {
+          const singleTokenId = nextState.movableTokenIds[0];
+          setRollNotice(`🎲 Rolled ${rolledVal}! Moving token...`);
+          isAnimatingRef.current = true;
+          addTimeout(() => {
+            if (!isMountedRef.current) return;
+            isAnimatingRef.current = false;
+            handleSelectToken(singleTokenId, nextState);
+          }, 150);
         } else {
-          setRollNotice(`🎲 Rolled ${rolledVal}! Tap a token to move`);
+          if (isSix) {
+            setRollNotice('🎉 Rolled a 6! Tap a token to move!');
+          } else {
+            setRollNotice(`🎲 Rolled ${rolledVal}! Tap a token to move`);
+          }
         }
       }
-    }, 600);
-  }, [isRolling, gameState, handleSelectToken, addTimeout]);
+    }, 340);
+  }, [isRolling, handleSelectToken, addTimeout]);
 
-  // AI automation loop
+  // AI automation loop (Fast 200ms decisions)
   useEffect(() => {
     let timer = null;
 
@@ -905,17 +929,17 @@ export default function GameScreen({
       if (gameState.status === 'ROLLING' && !isRolling && !rollNotice) {
         timer = setTimeout(() => {
           triggerRoll();
-        }, 450);
+        }, 200);
       } else if (gameState.status === 'WAITING_SELECT' && !isRolling) {
         timer = setTimeout(() => {
           const bestTokenId = chooseBestTokenToMove(
-            gameState,
+            gameStateRef.current,
             settings.aiDifficulty || 'medium'
           );
           if (bestTokenId) {
-            handleSelectToken(bestTokenId);
+            handleSelectToken(bestTokenId, gameStateRef.current);
           }
-        }, 450);
+        }, 200);
       }
     }
 
@@ -924,7 +948,22 @@ export default function GameScreen({
         clearTimeout(timer);
       }
     };
-  }, [gameState, isAiTurn, isRolling, rollNotice, triggerRoll, handleSelectToken, settings.aiDifficulty]);
+  }, [gameState.status, isAiTurn, isRolling, rollNotice, triggerRoll, handleSelectToken, settings.aiDifficulty]);
+
+  // Auto-roll dice for human player if enabled in gameplay settings
+  useEffect(() => {
+    let timer = null;
+    if (!isAiTurn && settings?.autoRoll && !isAnimatingRef.current) {
+      if (gameState.status === 'ROLLING' && !isRolling && !rollNotice) {
+        timer = setTimeout(() => {
+          triggerRoll();
+        }, 200);
+      }
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [gameState.status, isAiTurn, settings?.autoRoll, isRolling, rollNotice, triggerRoll]);
 
   // Memoized token objects for overlays
   const movingTokenData = useMemo(() => {
@@ -1050,17 +1089,21 @@ export default function GameScreen({
       {/* Top Docks Row */}
       <View style={styles.topDocksRow}>
         {is2Player ? (
-          <CornerPlayerDock
-            player={topPlayers[0] || 'yellow'}
-            playerName={getPlayerLabel(topPlayers[0] || 'yellow')}
-            diceValue={getPlayerDiceValue(topPlayers[0] || 'yellow')}
-            isTurn={gameState.currentTurn === (topPlayers[0] || 'yellow')}
-            isRolling={isRolling && gameState.currentTurn === (topPlayers[0] || 'yellow')}
-            onRoll={triggerRoll}
-            canRoll={canRoll && gameState.currentTurn === (topPlayers[0] || 'yellow')}
-            isBot={gameState.playerTypes?.[topPlayers[0] || 'yellow'] === 'bot'}
-            layout="left-badge"
-          />
+          <>
+            {topPlayers[0] !== 'green' && <View />}
+            <CornerPlayerDock
+              player={topPlayers[0] || 'yellow'}
+              playerName={getPlayerLabel(topPlayers[0] || 'yellow')}
+              diceValue={getPlayerDiceValue(topPlayers[0] || 'yellow')}
+              isTurn={gameState.currentTurn === (topPlayers[0] || 'yellow')}
+              isRolling={isRolling && gameState.currentTurn === (topPlayers[0] || 'yellow')}
+              onRoll={triggerRoll}
+              canRoll={canRoll && gameState.currentTurn === (topPlayers[0] || 'yellow')}
+              isBot={gameState.playerTypes?.[topPlayers[0] || 'yellow'] === 'bot'}
+              layout={topPlayers[0] === 'green' ? 'left-badge' : 'right-badge'}
+            />
+            {topPlayers[0] === 'green' && <View />}
+          </>
         ) : (
           <>
             {gameState.activePlayers.includes('green') ? (

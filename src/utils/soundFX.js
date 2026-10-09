@@ -211,13 +211,11 @@ class SoundController {
   play(type) {
     if (!this.soundEnabled) return;
 
-    // Haptic feedback
+    // Haptic feedback (only on major events like roll, capture, victory — not every cell hop)
     try {
       if (type === 'dice' || type === 'diceFlip') Vibration.vibrate([0, 15, 20, 15, 20]);
       else if (type === 'capture') Vibration.vibrate([0, 50, 40, 60]);
       else if (type === 'victory') Vibration.vibrate([0, 80, 50, 80, 50, 100]);
-      else if (type === 'hop' || type === 'move') Vibration.vibrate(12);
-      else Vibration.vibrate(10);
     } catch {
       // Ignore vibration error on unsupported platforms
     }

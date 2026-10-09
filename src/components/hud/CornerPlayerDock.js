@@ -103,7 +103,7 @@ function CornerPlayerDock({
     }
   }, [isTurn, avatarPulseAnim]);
 
-  // 3. 15-second Turn Timer countdown
+  // 3. 15-second Turn Timer countdown with Native Driver (Zero JS thread overhead)
   useEffect(() => {
     if (isTurn) {
       timerAnim.setValue(1);
@@ -111,7 +111,7 @@ function CornerPlayerDock({
         toValue: 0,
         duration: 15000,
         easing: Easing.linear,
-        useNativeDriver: false,
+        useNativeDriver: true,
       });
       timerAnimation.start();
       return () => timerAnimation.stop();
@@ -162,21 +162,21 @@ function CornerPlayerDock({
           </View>
         ) : null}
 
-        {/* Turn Countdown Timer Bar at bottom edge of avatar box */}
+        {/* Turn Countdown Timer Bar at bottom edge of avatar box — 100% Native Driver */}
         {isTurn && (
           <View style={styles.timerTrack}>
             <Animated.View
               style={[
                 styles.timerFill,
                 {
-                  width: timerAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0%', '100%'],
-                  }),
-                  backgroundColor: timerAnim.interpolate({
-                    inputRange: [0, 0.25, 0.5, 1],
-                    outputRange: ['#EF4444', '#F59E0B', '#10B981', '#10B981'],
-                  }),
+                  transform: [
+                    {
+                      translateX: timerAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-boxSize, 0],
+                      }),
+                    },
+                  ],
                 },
               ]}
             />
@@ -188,7 +188,7 @@ function CornerPlayerDock({
       <View
         style={[
           styles.nameRibbon,
-          { width: ribbonWidth },
+          { minWidth: ribbonWidth, maxWidth: ribbonWidth + 18, paddingHorizontal: 4 },
           isTurn && styles.nameRibbonActive,
         ]}
       >
@@ -348,10 +348,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 3,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    overflow: 'hidden',
   },
   timerFill: {
+    width: '100%',
     height: '100%',
+    backgroundColor: '#10B981',
   },
 
   // Name Ribbon Plate (Directly attached under Avatar Box)

@@ -126,34 +126,34 @@ const PinToken3D = React.memo(function PinToken3D({
     if (disabled) return;
 
     if (isMovable) {
-      // Tap on valid token: quick squish (1 -> 0.85 -> 1.2 -> 1), then hop starts
+      // Tap on valid token: immediate response! Zero touch delay
       pulseAnim.stopAnimation();
       pulseAnim.setValue(1.0);
 
+      if (isMountedRef.current && onPress) {
+        onPress(token.id);
+      }
+
       Animated.sequence([
         Animated.timing(scaleAnim, {
-          toValue: 0.85,
-          duration: 50,
+          toValue: 0.88,
+          duration: 35,
           easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
         Animated.timing(scaleAnim, {
-          toValue: 1.2,
-          duration: 70,
+          toValue: 1.15,
+          duration: 45,
           easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
         Animated.timing(scaleAnim, {
           toValue: 1.0,
-          duration: 60,
+          duration: 40,
           easing: Easing.in(Easing.quad),
           useNativeDriver: true,
         }),
-      ]).start(() => {
-        if (isMountedRef.current && onPress) {
-          onPress(token.id);
-        }
-      });
+      ]).start();
     } else {
       // Tap on invalid token: small shake
       shakeAnim.setValue(0);

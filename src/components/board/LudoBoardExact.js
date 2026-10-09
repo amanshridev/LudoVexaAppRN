@@ -315,24 +315,30 @@ function LudoBoardExact({
   const palette = THEME_PALETTES[theme] || THEME_PALETTES.classic;
   const tokensDisabled = isAnimating || state.status !== 'WAITING_SELECT';
 
-  const tokensByCell = {};
-  state.activePlayers.forEach((player) => {
-    (state.tokens[player] || []).forEach((token) => {
-      const coords = getTokenCoordinates(token);
-      const key = `${coords.r}_${coords.c}`;
-      if (!tokensByCell[key]) tokensByCell[key] = [];
-      tokensByCell[key].push(token);
+  const tokensByCell = React.useMemo(() => {
+    const map = {};
+    (state.activePlayers || []).forEach((player) => {
+      (state.tokens[player] || []).forEach((token) => {
+        const coords = getTokenCoordinates(token);
+        const key = `${coords.r}_${coords.c}`;
+        if (!map[key]) map[key] = [];
+        map[key].push(token);
+      });
     });
-  });
+    return map;
+  }, [state.activePlayers, state.tokens]);
 
-  const getBaseLabel = (player) => {
+  const getBaseLabel = React.useCallback((player) => {
+    if (!state.activePlayers.includes(player)) return '';
     if (player === state.userColor && state.isVsAi) return 'You';
-    const playerNum = state.activePlayers.indexOf(player) + 1;
     if (state.isVsAi) {
+      if (state.activePlayers.length === 2) return 'Computer';
+      const playerNum = state.activePlayers.indexOf(player) + 1;
       return `Computer ${playerNum}`;
     }
+    const playerNum = state.activePlayers.indexOf(player) + 1;
     return `Player ${playerNum}`;
-  };
+  }, [state.activePlayers, state.userColor, state.isVsAi]);
 
   // Memoize static grid cells so 72 views are not recreated on every state change
   const gridCells = React.useMemo(() => {
@@ -497,10 +503,22 @@ function LudoBoardExact({
 
   const centerSize = cellSize * 3;
 
-  const greenTokensInBase = (state.tokens.green || []).filter((t) => t.step === -1);
-  const yellowTokensInBase = (state.tokens.yellow || []).filter((t) => t.step === -1);
-  const blueTokensInBase = (state.tokens.blue || []).filter((t) => t.step === -1);
-  const redTokensInBase = (state.tokens.red || []).filter((t) => t.step === -1);
+  const greenTokensInBase = React.useMemo(
+    () => (state.tokens.green || []).filter((t) => t.step === -1),
+    [state.tokens.green]
+  );
+  const yellowTokensInBase = React.useMemo(
+    () => (state.tokens.yellow || []).filter((t) => t.step === -1),
+    [state.tokens.yellow]
+  );
+  const blueTokensInBase = React.useMemo(
+    () => (state.tokens.blue || []).filter((t) => t.step === -1),
+    [state.tokens.blue]
+  );
+  const redTokensInBase = React.useMemo(
+    () => (state.tokens.red || []).filter((t) => t.step === -1),
+    [state.tokens.red]
+  );
 
   return (
     <View
