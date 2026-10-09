@@ -876,7 +876,15 @@ export default function GameScreen({
       const isSix = rolledVal === 6;
 
       if (nextState.status === 'NO_MOVES') {
-        setRollNotice(`❌ Rolled ${rolledVal} — No moves! Passing turn...`);
+        const isBotTurn = nextState.playerTypes
+          ? nextState.playerTypes[nextState.currentTurn] === 'bot'
+          : nextState.isVsAi && nextState.currentTurn !== userColor;
+
+        setRollNotice(
+          isBotTurn
+            ? `🤖 ${getPlayerLabel(nextState.currentTurn)} rolled ${rolledVal}`
+            : `❌ Rolled ${rolledVal} — No moves! Passing turn...`
+        );
         addTimeout(() => {
           if (!isMountedRef.current) return;
           setRollNotice(null);
@@ -889,7 +897,7 @@ export default function GameScreen({
             SoundManager.play('turnChange');
             SoundFX.turnSwitch();
           } catch (_) { }
-        }, 450);
+        }, isBotTurn ? 280 : 420);
       } else {
         const playerTokens = nextState.tokens[nextState.currentTurn] || [];
         const movableTokens = playerTokens.filter((t) => nextState.movableTokenIds.includes(t.id));

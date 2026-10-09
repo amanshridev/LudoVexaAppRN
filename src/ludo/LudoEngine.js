@@ -71,6 +71,18 @@ export function createInitialState(options = {}) {
     winners: [],
     status: 'ROLLING', // 'ROLLING' | 'WAITING_SELECT' | 'GAME_OVER'
     lastEvent: 'Game started. Roll the 3D dice to begin!',
+    rollsWithoutSix: {
+      red: 0,
+      green: 0,
+      yellow: 0,
+      blue: 0,
+    },
+    turnCounts: {
+      red: 0,
+      green: 0,
+      yellow: 0,
+      blue: 0,
+    },
     stats: {
       red: { captures: 0, homeCount: 0 },
       green: { captures: 0, homeCount: 0 },
@@ -80,14 +92,101 @@ export function createInitialState(options = {}) {
   };
 }
 
+/**
+ * Smart dynamic dice generator with opening pity protection and drought prevention.
+ * Solves the issue in 4-player matches where players get stuck for many turns waiting for 6.
+ */
+export function generateFairDiceValue(state, player) {
+  const playerTokens = (state.tokens && state.tokens[player]) || [];
+  const inBaseCount = playerTokens.filter((t) => t.step === -1).length;
+  const inPlayCount = playerTokens.filter((t) => t.step >= 0 && !t.isHome).length;
+  const drought = (state.rollsWithoutSix && state.rollsWithoutSix[player]) || 0;
+  const isHuman = state.playerTypes ? state.playerTypes[player] === 'human' : player === state.userColor;
+  const consecutiveSixes = state.consecutiveSixes || 0;
+
+  // 1. If player already rolled 2 consecutive sixes, keep 3rd six probability low (6%) to avoid penalty
+  if (consecutiveSixes >= 2) {
+    if (Math.random() < 0.06) return 6;
+    const others = [1, 2, 3, 4, 5];
+    return others[Math.floor(Math.random() * others.length)];
+  }
+
+  // 2. If player just rolled a six, standard chance of rolling a second consecutive six (~16%)
+  if (consecutiveSixes === 1) {
+    if (Math.random() < 0.16) return 6;
+    const others = [1, 2, 3, 4, 5];
+    return others[Math.floor(Math.random() * others.length)];
+  }
+
+  // 3. Dynamic bad-luck protection & opening curve
+  let pSix = 0.1667; // baseline 1/6
+
+  if (inPlayCount === 0 && inBaseCount > 0) {
+    // CRITICAL: Player has NO tokens on the board (all remaining tokens locked in yard).
+    // In a 4-player game, sitting for multiple rounds with 0 moves feels terrible.
+    // Pity curve guarantees unlocking within 3-4 turns max.
+    if (drought === 0) {
+      pSix = isHuman ? 0.42 : 0.36; // High chance on opening turn so matches start immediately
+    } else if (drought === 1) {
+      pSix = isHuman ? 0.65 : 0.55; // 2nd turn
+    } else if (drought === 2) {
+      pSix = isHuman ? 0.85 : 0.80; // 3rd turn
+    } else {
+      pSix = 1.0; // 4th turn: 100% GUARANTEED 6
+    }
+  } else if (inBaseCount > 0) {
+    // Player has pieces in play, but also pieces waiting in yard
+    if (drought < 3) {
+      pSix = 0.22; // Slightly boosted to keep game lively
+    } else if (drought < 5) {
+      pSix = 0.35;
+    } else if (drought < 7) {
+      pSix = 0.55;
+    } else if (drought === 7) {
+      pSix = 0.80;
+    } else {
+      pSix = 1.0; // Guaranteed 6 on 8th attempt without a six
+    }
+  } else {
+    // All tokens are already on the board/finished
+    if (drought < 4) {
+      pSix = 0.18;
+    } else if (drought < 6) {
+      pSix = 0.32;
+    } else if (drought < 8) {
+      pSix = 0.55;
+    } else {
+      pSix = 1.0; // Guaranteed
+    }
+  }
+
+  if (Math.random() < pSix) {
+    return 6;
+  }
+
+  const pool = [1, 2, 3, 4, 5];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 export function rollDice(state, forcedValue = null) {
   if (state.hasRolled && state.movableTokenIds.length > 0) {
     return state; // Must move token first
   }
 
-  const diceVal = forcedValue || Math.floor(Math.random() * 6) + 1;
   const player = state.currentTurn;
-  let consecutiveSixes = diceVal === 6 ? state.consecutiveSixes + 1 : 0;
+  const diceVal = forcedValue || generateFairDiceValue(state, player);
+  let consecutiveSixes = diceVal === 6 ? (state.consecutiveSixes || 0) + 1 : 0;
+
+  const currentDrought = (state.rollsWithoutSix && state.rollsWithoutSix[player]) || 0;
+  const updatedDrought = diceVal === 6 ? 0 : currentDrought + 1;
+  const updatedRollsWithoutSix = {
+    ...(state.rollsWithoutSix || {}),
+    [player]: updatedDrought,
+  };
+  const updatedTurnCounts = {
+    ...(state.turnCounts || {}),
+    [player]: ((state.turnCounts && state.turnCounts[player]) || 0) + 1,
+  };
 
   // Penalty rule for 3 consecutive sixes
   if (consecutiveSixes === 3) {
@@ -101,6 +200,8 @@ export function rollDice(state, forcedValue = null) {
       currentTurn: nextPlayer,
       currentTurnIndex: state.activePlayers.indexOf(nextPlayer),
       status: 'ROLLING',
+      rollsWithoutSix: updatedRollsWithoutSix,
+      turnCounts: updatedTurnCounts,
       lastEvent: `⚠️ 3 consecutive sixes! ${capitalize(player)} lost turn.`,
     };
   }
@@ -117,6 +218,8 @@ export function rollDice(state, forcedValue = null) {
       consecutiveSixes: 0,
       movableTokenIds: [],
       status: 'NO_MOVES',
+      rollsWithoutSix: updatedRollsWithoutSix,
+      turnCounts: updatedTurnCounts,
       lastEvent: `${capitalize(player)} rolled a ${diceVal} (No legal moves)`,
     };
   }
@@ -128,6 +231,8 @@ export function rollDice(state, forcedValue = null) {
     consecutiveSixes,
     movableTokenIds,
     status: 'WAITING_SELECT',
+    rollsWithoutSix: updatedRollsWithoutSix,
+    turnCounts: updatedTurnCounts,
     lastEvent: `${capitalize(player)} rolled a ${diceVal}! Select a token to move.`,
   };
 }
