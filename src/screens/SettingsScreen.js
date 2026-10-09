@@ -380,16 +380,33 @@ export default function SettingsScreen({ onNavigate, onBack }) {
     } catch (_) { }
   };
 
+  const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.LudoVexaApp';
+
   const handleShareApp = async () => {
     try {
       if (isSoundOn) {
         SoundManager.play('buttonTap');
       }
+      if (isHapticsOn) {
+        Vibration.vibrate(30);
+      }
       await Share.share({
-        title: 'Ludo Vexa',
-        message:
-          '🎲 Play Ludo Vexa - The ultimate offline & online Ludo board game experience! Custom themes, smooth dice, and intelligent bots: https://amanshridev.github.io/ludo-offline/',
+        title: 'Play Ludo Vexa!',
+        message: `🎲 Hey! Let's play Ludo together on Ludo Vexa! Download now on Google Play Store:\n${PLAY_STORE_URL}`,
+        url: PLAY_STORE_URL,
       });
+    } catch (_) { }
+  };
+
+  const handleOpenPlayStore = async () => {
+    try {
+      if (isSoundOn) {
+        SoundManager.play('buttonTap');
+      }
+      if (isHapticsOn) {
+        Vibration.vibrate(30);
+      }
+      await Linking.openURL(PLAY_STORE_URL);
     } catch (_) { }
   };
 
@@ -657,14 +674,89 @@ export default function SettingsScreen({ onNavigate, onBack }) {
         </View>
 
         {/* ============================================================== */}
-        {/* 4. GAMEPLAY & BOT SETTINGS SECTION */}
+        {/* 4. SHARE & COMMUNITY SECTION */}
         {/* ============================================================== */}
+        <View style={styles.sectionContainer}>
+          <Text style={[styles.sectionHeaderTitle, { color: appTheme.colors.secondaryText }]}>
+            SHARE & COMMUNITY
+          </Text>
 
+          <View
+            style={[
+              styles.sectionCard,
+              {
+                backgroundColor: appTheme.colors.surface,
+                borderColor: 'rgba(255, 255, 255, 0.07)',
+              },
+            ]}
+          >
+            {/* SHARE APP */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.rowItem}
+              onPress={handleShareApp}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: 'rgba(56, 189, 248, 0.12)' }]}>
+                  <ShareLinkIcon size={20} color="#38BDF8" />
+                </View>
+                <View style={styles.textContainer}>
+                  <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
+                    Share Ludo Vexa
+                  </Text>
+                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
+                    Invite friends & family via Google Play Store link
+                  </Text>
+                </View>
+              </View>
 
+              <View style={styles.rowRight}>
+                <View
+                  style={[
+                    styles.sharePill,
+                    {
+                      backgroundColor: 'rgba(56, 189, 248, 0.14)',
+                      borderColor: 'rgba(56, 189, 248, 0.35)',
+                    },
+                  ]}
+                >
+                  <Text style={[styles.sharePillText, { color: '#38BDF8' }]}>Share 🚀</Text>
+                </View>
+                <ChevronRightIcon size={18} color={appTheme.colors.primaryLight} />
+              </View>
+            </TouchableOpacity>
 
+            <View style={styles.rowDivider} />
+
+            {/* RATE ON PLAY STORE */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.rowItem}
+              onPress={handleOpenPlayStore}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: 'rgba(251, 191, 36, 0.12)' }]}>
+                  <SafeSpotStarIcon size={20} color="#FBBF24" />
+                </View>
+                <View style={styles.textContainer}>
+                  <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
+                    Rate on Google Play
+                  </Text>
+                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
+                    Love Ludo Vexa? Support us with a 5-star review!
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.rowRight}>
+                <ExternalWebIcon size={18} color={appTheme.colors.primaryLight} />
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* ============================================================== */}
-        {/* 6. RESET TO DEFAULTS BUTTON */}
+        {/* 5. RESET TO DEFAULTS BUTTON */}
         {/* ============================================================== */}
         <TouchableOpacity
           activeOpacity={0.8}
@@ -905,6 +997,20 @@ const styles = StyleSheet.create({
   },
   segmentBtnText: {
     fontSize: 12,
+    letterSpacing: 0.3,
+  },
+
+  // Share Badge Pill
+  sharePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginRight: 4,
+  },
+  sharePillText: {
+    fontSize: 12,
+    fontWeight: '800',
     letterSpacing: 0.3,
   },
 
