@@ -9,8 +9,9 @@ import {
   Easing,
   useWindowDimensions,
 } from 'react-native';
-import { CrownIcon, TrophyIcon } from './ui/AppIcons.js';
+import { CrownIcon, TrophyIcon, CloseIcon, ReplayIcon, BottomNavHomeIcon } from './ui/AppIcons.js';
 import { SoundFX } from '../utils/soundFX.js';
+import SoundManager from '../utils/SoundManager.js';
 
 const PLAYER_HEX = {
   red: '#EF4444',
@@ -74,6 +75,7 @@ function WinnerOverlayComponent({
   coinsWon = 200,
   onPlayAgain,
   onHome,
+  onClose,
   onWinnerSound,
 }) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -368,31 +370,31 @@ function WinnerOverlayComponent({
       ]).start();
     }
 
-    // 7. Buttons fade in
-    const buttonsDelay = rankings && rankings.length > 1 ? 1300 : 750;
+    // 7. Buttons fade in (quick entrance so user is never stuck)
+    const buttonsDelay = rankings && rankings.length > 1 ? 500 : 320;
     Animated.sequence([
       Animated.delay(buttonsDelay),
       Animated.parallel([
         Animated.timing(buttonsOpacity, {
           toValue: 1,
-          duration: 380,
+          duration: 280,
           useNativeDriver: true,
         }),
         Animated.timing(buttonsTranslateY, {
           toValue: 0,
-          duration: 380,
+          duration: 280,
           easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
       ]),
     ]).start();
 
-    // Safety timeout: buttons must appear within 5 seconds even if an animation fails
+    // Safety timeout: buttons must appear within 2.5 seconds even if an animation fails
     safetyTimeoutRef.current = setTimeout(() => {
       if (isMountedRef.current && !hasSkippedRef.current) {
         skipToEnd();
       }
-    }, 4500);
+    }, 2500);
 
     return () => {
       isMountedRef.current = false;
@@ -440,6 +442,25 @@ function WinnerOverlayComponent({
     pulseAnim,
   ]);
 
+  // Handle Close (✕) or backdrop dismiss
+  const handleClosePress = useCallback(() => {
+    if (safetyTimeoutRef.current) {
+      clearTimeout(safetyTimeoutRef.current);
+    }
+    if (raysLoopRef.current) raysLoopRef.current.stop();
+    if (trophyLoopRef.current) trophyLoopRef.current.stop();
+    if (pulseLoopRef.current) pulseLoopRef.current.stop();
+    try {
+      SoundManager.play('buttonTap');
+      SoundFX.button();
+    } catch (_) { }
+    if (typeof onClose === 'function') {
+      onClose();
+    } else {
+      onHome?.();
+    }
+  }, [onClose, onHome]);
+
   // Handle Play Again button press with thorough cleanup
   const handlePlayAgainPress = useCallback(() => {
     if (safetyTimeoutRef.current) {
@@ -447,6 +468,11 @@ function WinnerOverlayComponent({
     }
     if (raysLoopRef.current) raysLoopRef.current.stop();
     if (trophyLoopRef.current) trophyLoopRef.current.stop();
+    if (pulseLoopRef.current) pulseLoopRef.current.stop();
+    try {
+      SoundManager.play('buttonTap');
+      SoundFX.button();
+    } catch (_) { }
     onPlayAgain?.();
   }, [onPlayAgain]);
 
@@ -457,6 +483,11 @@ function WinnerOverlayComponent({
     }
     if (raysLoopRef.current) raysLoopRef.current.stop();
     if (trophyLoopRef.current) trophyLoopRef.current.stop();
+    if (pulseLoopRef.current) pulseLoopRef.current.stop();
+    try {
+      SoundManager.play('buttonTap');
+      SoundFX.button();
+    } catch (_) { }
     onHome?.();
   }, [onHome]);
 
@@ -469,10 +500,16 @@ function WinnerOverlayComponent({
 
   return (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
-      {/* 1. Backdrop (blocks touches to the board behind it) */}
+      {/* 1. Backdrop (blocks touches to the board behind it; tap skips anim or dismisses) */}
       <Pressable
         style={StyleSheet.absoluteFillObject}
-        onPress={skipToEnd}
+        onPress={() => {
+          if (!hasSkippedRef.current) {
+            skipToEnd();
+          } else {
+            handleClosePress();
+          }
+        }}
       >
         <Animated.View
           style={[
@@ -556,200 +593,193 @@ function WinnerOverlayComponent({
 
       {/* 3. Center Content Card & Interactions */}
       <View style={styles.centerContainer} pointerEvents="box-none">
-        <Pressable onPress={skipToEnd} pointerEvents="box-none">
+        <Animated.View
+          style={[
+            styles.cardBox,
+            {
+              width: cardWidth,
+              opacity: cardOpacity,
+              transform: [{ scale: cardScale }],
+              paddingVertical: isTabletOrTall ? 28 : 22,
+            },
+          ]}
+        >
+          {/* Top-Right Close Button (✕) */}
+          <TouchableOpacity
+            style={styles.closeBtn}
+            onPress={handleClosePress}
+            activeOpacity={0.7}
+            hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+            accessibilityRole="button"
+            accessibilityLabel="Close Winner Screen"
+          >
+            <CloseIcon size={18} color="#CBD5E1" />
+          </TouchableOpacity>
+
+          {/* Avatar & Crown Section */}
+          <View style={styles.avatarSection}>
+            {/* Golden Crown with bounce drop */}
+            <Animated.View
+              style={[
+                styles.crownWrapper,
+                {
+                  opacity: crownOpacity,
+                  transform: [{ translateY: crownDrop }],
+                },
+              ]}
+            >
+              <CrownIcon size={44} color="#FDE047" />
+            </Animated.View>
+
+            {/* Avatar Circle in Winner Color */}
+            <View
+              style={[
+                styles.avatarOuterCircle,
+                {
+                  width: avatarSize,
+                  height: avatarSize,
+                  borderRadius: avatarSize / 2,
+                  backgroundColor: themeHex,
+                  borderColor: '#FFD700',
+                  shadowColor: themeHex,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.avatarInnerCircle,
+                  {
+                    width: avatarSize - 8,
+                    height: avatarSize - 8,
+                    borderRadius: (avatarSize - 8) / 2,
+                  },
+                ]}
+              >
+                <Text style={styles.avatarInitial}>{winnerInitial}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Winner Text with Scale Pop */}
           <Animated.View
             style={[
-              styles.cardBox,
+              styles.titleWrapper,
               {
-                width: cardWidth,
-                opacity: cardOpacity,
-                transform: [{ scale: cardScale }],
-                paddingVertical: isTabletOrTall ? 28 : 22,
+                opacity: titleOpacity,
+                transform: [{ scale: titleScale }],
               },
             ]}
           >
-            {/* Top Celebration Header Badge */}
-
-
-            {/* Avatar & Crown Section */}
-            <View style={styles.avatarSection}>
-              {/* Golden Crown with bounce drop */}
-              <Animated.View
-                style={[
-                  styles.crownWrapper,
-                  {
-                    opacity: crownOpacity,
-                    transform: [{ translateY: crownDrop }],
-                  },
-                ]}
-              >
-                <CrownIcon size={44} color="#FDE047" />
-              </Animated.View>
-
-              {/* Avatar Circle in Winner Color */}
-              <View
-                style={[
-                  styles.avatarOuterCircle,
-                  {
-                    width: avatarSize,
-                    height: avatarSize,
-                    borderRadius: avatarSize / 2,
-                    backgroundColor: themeHex,
-                    borderColor: '#FFD700',
-                    shadowColor: themeHex,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.avatarInnerCircle,
-                    {
-                      width: avatarSize - 8,
-                      height: avatarSize - 8,
-                      borderRadius: (avatarSize - 8) / 2,
-                    },
-                  ]}
-                >
-                  <Text style={styles.avatarInitial}>{winnerInitial}</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Winner Text with Scale Pop */}
-            <Animated.View
-              style={[
-                styles.titleWrapper,
-                {
-                  opacity: titleOpacity,
-                  transform: [{ scale: titleScale }],
-                },
-              ]}
-            >
-              <Text style={styles.winnerText}>
-                🏆 {winnerName.toUpperCase()} WINS!
-              </Text>
-              <Text style={styles.congratsSubtitle}>
-                {isUserWinner
-                  ? '🎉 Outstanding Victory! You won the match!'
-                  : '🎮 Match Finished! Better luck next time!'}
-              </Text>
-            </Animated.View>
-
-            {/* Coins Reward Card */}
-            {/* {coinsWon ? (
-              <Animated.View
-                style={[
-                  styles.rewardCardWrap,
-                  {
-                    transform: [{ translateY: trophyFloat }],
-                  },
-                ]}
-              >
-                <View style={styles.rewardPill}>
-                  <Text style={styles.rewardText}>🪙 +{coinsWon} REWARD COINS</Text>
-                </View>
-              </Animated.View>
-            ) : null} */}
-
-            {/* Rankings Standings Card */}
-            {Array.isArray(rankings) && rankings.length > 0 && (
-              <View style={styles.rankingContainer}>
-                <View style={styles.rankingsHeaderRow}>
-                  <Text style={styles.rankingsHeaderTitle}>MATCH STANDINGS</Text>
-                </View>
-                {rankings.slice(0, 4).map((item, idx) => {
-                  const animVal = rankRowsAnim[idx] || new Animated.Value(1);
-                  const isWinnerRow = typeof item === 'object' ? (item.isWinner || idx === 0) : idx === 0;
-                  const itemColor = typeof item === 'object' ? (PLAYER_HEX[item.color] || item.color || '#3B82F6') : '#3B82F6';
-                  const itemName = typeof item === 'object' ? item.name : String(item);
-
-                  const rankBadges = ['WINNER', '2ND', '3RD', '4TH'];
-
-                  return (
-                    <Animated.View
-                      key={typeof item === 'object' ? (item.id || item.name || idx) : idx}
-                      style={[
-                        styles.rankRow,
-                        {
-                          borderColor: isWinnerRow ? 'rgba(245, 158, 11, 0.5)' : 'rgba(255, 255, 255, 0.08)',
-                          backgroundColor: isWinnerRow ? 'rgba(245, 158, 11, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                          opacity: animVal,
-                          transform: [
-                            {
-                              translateY: animVal.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [15, 0],
-                              }),
-                            },
-                          ],
-                        },
-                      ]}
-                    >
-                      <View style={styles.rankLeft}>
-                        <View style={[styles.rankNumberBadge, isWinnerRow && styles.rankNumberBadgeWinner]}>
-                          <Text style={[styles.rankNumberText, isWinnerRow && styles.rankNumberTextWinner]}>
-                            #{idx + 1}
-                          </Text>
-                        </View>
-                        <View style={[styles.rankColorDot, { backgroundColor: itemColor }]} />
-                        <Text
-                          style={[
-                            styles.rankPlayerName,
-                            isWinnerRow && styles.rankWinnerName,
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {itemName || `Player ${idx + 1}`}
-                        </Text>
-                      </View>
-                      <View style={styles.rankRight}>
-                        <Text
-                          style={[
-                            styles.rankStatusBadge,
-                            isWinnerRow ? styles.rankStatusWinner : styles.rankStatusFinished,
-                          ]}
-                        >
-                          {rankBadges[idx] || `#${idx + 1}`}
-                        </Text>
-                      </View>
-                    </Animated.View>
-                  );
-                })}
-              </View>
-            )}
-
-            {/* Action Buttons (Play Again & Home) */}
-            <Animated.View
-              style={[
-                styles.buttonsRow,
-                {
-                  opacity: buttonsOpacity,
-                  transform: [{ translateY: buttonsTranslateY }],
-                },
-              ]}
-            >
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.playAgainBtn]}
-                onPress={handlePlayAgainPress}
-                activeOpacity={0.82}
-                accessibilityRole="button"
-                accessibilityLabel="Play Again"
-              >
-                <Text style={styles.playAgainText}>PLAY AGAIN</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.homeBtn]}
-                onPress={handleHomePress}
-                activeOpacity={0.82}
-                accessibilityRole="button"
-                accessibilityLabel="Home"
-              >
-                <Text style={styles.homeText}>HOME</Text>
-              </TouchableOpacity>
-            </Animated.View>
+            <Text style={styles.winnerText}>
+              🏆 {winnerName.toUpperCase()} WINS!
+            </Text>
+            <Text style={styles.congratsSubtitle}>
+              {isUserWinner
+                ? '🎉 Outstanding Victory! You won the match!'
+                : '🎮 Match Finished! Better luck next time!'}
+            </Text>
           </Animated.View>
-        </Pressable>
+
+          {/* Rankings Standings Card */}
+          {Array.isArray(rankings) && rankings.length > 0 && (
+            <View style={styles.rankingContainer}>
+              <View style={styles.rankingsHeaderRow}>
+                <Text style={styles.rankingsHeaderTitle}>MATCH STANDINGS</Text>
+              </View>
+              {rankings.slice(0, 4).map((item, idx) => {
+                const animVal = rankRowsAnim[idx] || new Animated.Value(1);
+                const isWinnerRow = typeof item === 'object' ? (item.isWinner || idx === 0) : idx === 0;
+                const itemColor = typeof item === 'object' ? (PLAYER_HEX[item.color] || item.color || '#3B82F6') : '#3B82F6';
+                const itemName = typeof item === 'object' ? item.name : String(item);
+
+                const rankBadges = ['WINNER', '2ND', '3RD', '4TH'];
+
+                return (
+                  <Animated.View
+                    key={typeof item === 'object' ? (item.id || item.name || idx) : idx}
+                    style={[
+                      styles.rankRow,
+                      {
+                        borderColor: isWinnerRow ? 'rgba(245, 158, 11, 0.5)' : 'rgba(255, 255, 255, 0.08)',
+                        backgroundColor: isWinnerRow ? 'rgba(245, 158, 11, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                        opacity: animVal,
+                        transform: [
+                          {
+                            translateY: animVal.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [15, 0],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    <View style={styles.rankLeft}>
+                      <View style={[styles.rankNumberBadge, isWinnerRow && styles.rankNumberBadgeWinner]}>
+                        <Text style={[styles.rankNumberText, isWinnerRow && styles.rankNumberTextWinner]}>
+                          #{idx + 1}
+                        </Text>
+                      </View>
+                      <View style={[styles.rankColorDot, { backgroundColor: itemColor }]} />
+                      <Text
+                        style={[
+                          styles.rankPlayerName,
+                          isWinnerRow && styles.rankWinnerName,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {itemName || `Player ${idx + 1}`}
+                      </Text>
+                    </View>
+                    <View style={styles.rankRight}>
+                      <Text
+                        style={[
+                          styles.rankStatusBadge,
+                          isWinnerRow ? styles.rankStatusWinner : styles.rankStatusFinished,
+                        ]}
+                      >
+                        {rankBadges[idx] || `#${idx + 1}`}
+                      </Text>
+                    </View>
+                  </Animated.View>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Action Buttons (Play Again & Home) */}
+          <Animated.View
+            style={[
+              styles.buttonsRow,
+              {
+                opacity: buttonsOpacity,
+                transform: [{ translateY: buttonsTranslateY }],
+              },
+            ]}
+          >
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.playAgainBtn]}
+              onPress={handlePlayAgainPress}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Play Again"
+            >
+              <ReplayIcon size={18} color="#FFFFFF" />
+              <Text style={styles.playAgainText}>PLAY AGAIN</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.homeBtn]}
+              onPress={handleHomePress}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Home"
+            >
+              <BottomNavHomeIcon size={18} color="#FFFFFF" />
+              <Text style={styles.homeText}>HOME</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </Animated.View>
       </View>
     </View>
   );
@@ -995,25 +1025,47 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     color: '#94A3B8',
   },
+  closeBtn: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.22)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 50,
+  },
   buttonsRow: {
     flexDirection: 'row',
     width: '100%',
     justifyContent: 'space-between',
-    marginTop: 16,
-    gap: 10,
+    marginTop: 18,
+    gap: 12,
   },
   actionBtn: {
     flex: 1,
-    minHeight: 46,
-    borderRadius: 12,
+    flexDirection: 'row',
+    gap: 8,
+    minHeight: 48,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 10,
+    elevation: 3,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
   },
   playAgainBtn: {
     backgroundColor: '#10B981',
-
+    borderWidth: 1,
+    borderColor: '#34D399',
   },
   playAgainText: {
     color: '#FFFFFF',

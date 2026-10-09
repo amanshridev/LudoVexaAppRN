@@ -33,6 +33,9 @@ import {
   FriendsIcon,
   RobotIcon,
   SettingsGearIcon,
+  ReplayIcon,
+  TrophyIcon,
+  BottomNavHomeIcon,
 } from '../components/ui/AppIcons.js';
 import WinnerOverlay, { WinnerErrorBoundary } from '../components/WinnerOverlay.js';
 
@@ -636,6 +639,11 @@ export default function GameScreen({
     return lastDiceValues[player] || 6;
   }, [gameState.currentTurn, gameState.diceValue, rollingDiceValue, lastDiceValues]);
 
+  // Close winner modal (allows reviewing board while keeping rematch options available)
+  const handleCloseWinnerOverlay = useCallback(() => {
+    setShowWinnerOverlay(false);
+  }, []);
+
   // Restart match
   const handleRestartGame = useCallback(() => {
     hasShownWinnerRef.current = false;
@@ -643,7 +651,14 @@ export default function GameScreen({
     setWinnerData(null);
     clearAllTimeouts();
 
-    setGameState(createInitialState(gameOptions));
+    try {
+      SoundManager.play('buttonTap');
+      SoundFX.dice();
+    } catch (_) { }
+
+    const freshState = createInitialState(gameOptions);
+    gameStateRef.current = freshState;
+    setGameState(freshState);
     setIsRolling(false);
     setRollingDiceValue(null);
     setRollNotice(null);
@@ -663,6 +678,10 @@ export default function GameScreen({
     setShowWinnerOverlay(false);
     setWinnerData(null);
     clearAllTimeouts();
+    try {
+      SoundManager.play('buttonTap');
+      SoundFX.button();
+    } catch (_) { }
     onExitHome?.();
   }, [onExitHome, clearAllTimeouts]);
 
@@ -1349,6 +1368,48 @@ export default function GameScreen({
         ) : <View />}
       </View>
 
+      {/* Match Concluded Floating Action Bar (visible when winner modal is closed so players can rematch or go home) */}
+      {gameState.status === 'GAME_OVER' && !showWinnerOverlay && (
+        <View style={styles.gameOverFloatingBar}>
+          <View style={styles.gameOverInfoCol}>
+            <Text style={styles.gameOverTitleText}>🏆 MATCH CONCLUDED</Text>
+            <Text style={styles.gameOverWinnerText} numberOfLines={1}>
+              {winnerData?.winnerName ? `${winnerData.winnerName} Won!` : 'Game Over'}
+            </Text>
+          </View>
+          <View style={styles.gameOverButtonsRow}>
+            <TouchableOpacity
+              style={styles.gameOverPlayAgainBtn}
+              onPress={handleRestartGame}
+              activeOpacity={0.8}
+            >
+              <ReplayIcon size={15} color="#FFFFFF" />
+              <Text style={styles.gameOverBtnText}>PLAY AGAIN</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.gameOverHomeBtn}
+              onPress={handleWinnerHome}
+              activeOpacity={0.8}
+            >
+              <BottomNavHomeIcon size={15} color="#FFFFFF" />
+              <Text style={styles.gameOverBtnText}>HOME</Text>
+            </TouchableOpacity>
+
+            {winnerData && (
+              <TouchableOpacity
+                style={styles.gameOverTrophyBtn}
+                onPress={() => setShowWinnerOverlay(true)}
+                activeOpacity={0.8}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <TrophyIcon size={18} color="#FDE047" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
+
       {/* Winner Celebration Overlay */}
       {showWinnerOverlay && winnerData && (
         <WinnerErrorBoundary
@@ -1364,6 +1425,7 @@ export default function GameScreen({
             coinsWon={winnerData.coinsWon}
             onPlayAgain={handleRestartGame}
             onHome={handleWinnerHome}
+            onClose={handleCloseWinnerOverlay}
           />
         </WinnerErrorBoundary>
       )}
@@ -1609,6 +1671,84 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: '#FFFFFF',
     fontWeight: '900',
+  },
+  gameOverFloatingBar: {
+    position: 'absolute',
+    bottom: 20,
+    left: 14,
+    right: 14,
+    backgroundColor: '#0F172A',
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: 'rgba(245, 158, 11, 0.45)',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    elevation: 25,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    zIndex: 999,
+  },
+  gameOverInfoCol: {
+    flex: 1,
+    marginRight: 10,
+  },
+  gameOverTitleText: {
+    color: '#FDE047',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+  },
+  gameOverWinnerText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+  gameOverButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  gameOverPlayAgainBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#10B981',
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  gameOverHomeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: 9,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+  },
+  gameOverBtnText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  gameOverTrophyBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
