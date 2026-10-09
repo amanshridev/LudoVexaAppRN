@@ -44,21 +44,25 @@ export default function GlobalSoundBridge() {
   document.addEventListener('touchstart', getAudioContext, { once: true });
   document.addEventListener('click', getAudioContext, { once: true });
 
-  window.playSound = function(type) {
+  window.playSound = function(type, opts) {
     try {
       var ctx = getAudioContext();
       if (!ctx) return;
       var now = ctx.currentTime;
 
-      if (type === 'move' || type === 'hop') {
-        // Chess piece tap: Solid wood-on-wood thud with brief resonance
+      if (type === 'move' || type === 'hop' || type === 'step') {
+        // Classic Ludo King wooden pawn step tap:
+        // Punchy wood knock + tone body + crisp surface snap with pitch scaling per step
+        var step = (opts && typeof opts.step === 'number') ? opts.step : 0;
+        var pitch = Math.min(1.5, 1.0 + step * 0.08);
+
         // Low-frequency knock
         var knock = ctx.createOscillator();
         var knockGain = ctx.createGain();
         knock.type = 'sine';
-        knock.frequency.setValueAtTime(180, now);
-        knock.frequency.exponentialRampToValueAtTime(80, now + 0.06);
-        knockGain.gain.setValueAtTime(0.5, now);
+        knock.frequency.setValueAtTime(220 * pitch, now);
+        knock.frequency.exponentialRampToValueAtTime(75 * pitch, now + 0.07);
+        knockGain.gain.setValueAtTime(0.75, now);
         knockGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
         knock.connect(knockGain);
         knockGain.connect(ctx.destination);
@@ -69,27 +73,115 @@ export default function GlobalSoundBridge() {
         var body = ctx.createOscillator();
         var bodyGain = ctx.createGain();
         body.type = 'triangle';
-        body.frequency.setValueAtTime(320, now);
-        body.frequency.exponentialRampToValueAtTime(150, now + 0.05);
-        bodyGain.gain.setValueAtTime(0.22, now);
+        body.frequency.setValueAtTime(420 * pitch, now);
+        body.frequency.exponentialRampToValueAtTime(180 * pitch, now + 0.06);
+        bodyGain.gain.setValueAtTime(0.35, now);
         bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
         body.connect(bodyGain);
         bodyGain.connect(ctx.destination);
         body.start(now);
         body.stop(now + 0.07);
 
-        // High-frequency surface click
+        // High-frequency surface click / snap
         var click = ctx.createOscillator();
         var clickGain = ctx.createGain();
         click.type = 'square';
-        click.frequency.setValueAtTime(2400, now);
-        click.frequency.exponentialRampToValueAtTime(800, now + 0.015);
-        clickGain.gain.setValueAtTime(0.1, now);
+        click.frequency.setValueAtTime(2800 * pitch, now);
+        click.frequency.exponentialRampToValueAtTime(900 * pitch, now + 0.018);
+        clickGain.gain.setValueAtTime(0.2, now);
         clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
         click.connect(clickGain);
         clickGain.connect(ctx.destination);
         click.start(now);
         click.stop(now + 0.02);
+      } else if (type === 'tokenSelect') {
+        // Bubble pop when token is tapped to select
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(1050, now + 0.09);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      } else if (type === 'tokenEnter') {
+        // Upbeat launch jingle when token exits base (C5 -> E5 -> G5)
+        var notes = [523.25, 659.25, 783.99];
+        notes.forEach(function(freq, idx) {
+          var tOffset = idx * 0.07;
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + tOffset);
+          gain.gain.setValueAtTime(0.4, now + tOffset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + tOffset + 0.1);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + tOffset);
+          osc.stop(now + tOffset + 0.1);
+        });
+      } else if (type === 'safe') {
+        // Magical sparkle chime on star safe cell
+        var stars = [1318.51, 1567.98, 2093.00];
+        stars.forEach(function(freq, idx) {
+          var tOffset = idx * 0.05;
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + tOffset);
+          gain.gain.setValueAtTime(0.3, now + tOffset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + tOffset + 0.22);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + tOffset);
+          osc.stop(now + tOffset + 0.22);
+        });
+      } else if (type === 'extraTurn') {
+        // Cheerful double chime
+        [659.25, 880.00].forEach(function(freq, idx) {
+          var tOffset = idx * 0.11;
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + tOffset);
+          gain.gain.setValueAtTime(0.35, now + tOffset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + tOffset + 0.16);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + tOffset);
+          osc.stop(now + tOffset + 0.16);
+        });
+      } else if (type === 'buttonTap') {
+        // Short clean UI click
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1100, now);
+        osc.frequency.exponentialRampToValueAtTime(450, now + 0.035);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.04);
+      } else if (type === 'invalid') {
+        // Low double thud
+        [160, 130].forEach(function(freq, idx) {
+          var tOffset = idx * 0.08;
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + tOffset);
+          gain.gain.setValueAtTime(0.35, now + tOffset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + tOffset + 0.06);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + tOffset);
+          osc.stop(now + tOffset + 0.06);
+        });
       } else if (type === 'dice' || type === 'diceFlip') {
         // Classic board game dice: Shaking in cup then rolling out
         // Phase 1: Rapid rattling in cup (8 fast noise bursts)

@@ -208,7 +208,7 @@ class SoundController {
     }
   }
 
-  play(type) {
+  play(type, opts = {}) {
     if (!this.soundEnabled) return;
 
     // Haptic feedback (only on major events like roll, capture, victory — not every cell hop)
@@ -220,15 +220,16 @@ class SoundController {
       // Ignore vibration error on unsupported platforms
     }
 
-    // Web Audio Synthesizer
+    // Web Audio Synthesizer fallback
     this._playAudioEffect(type);
 
     // Audio bridge message (GlobalSoundBridge WebView)
     if (this.audioBridge) {
+      const optsJson = JSON.stringify(opts || {});
       if (typeof this.audioBridge.injectJavaScript === 'function') {
-        this.audioBridge.injectJavaScript(`if (window.playSound) { window.playSound('${type}'); } true;`);
+        this.audioBridge.injectJavaScript(`if (window.playSound) { window.playSound('${type}', ${optsJson}); } true;`);
       } else if (typeof this.audioBridge.postMessage === 'function') {
-        this.audioBridge.postMessage(JSON.stringify({ type: 'PLAY_SOUND', sound: type }));
+        this.audioBridge.postMessage(JSON.stringify({ type: 'PLAY_SOUND', sound: type, opts }));
       }
     }
   }
@@ -241,12 +242,20 @@ class SoundController {
     this.play('diceFlip');
   }
 
-  hop() {
-    this.play('move');
+  hop(stepIndex = 0) {
+    this.play('hop', { step: stepIndex });
   }
 
-  move() {
-    this.play('move');
+  move(stepIndex = 0) {
+    this.play('move', { step: stepIndex });
+  }
+
+  tokenSelect() {
+    this.play('tokenSelect');
+  }
+
+  tokenEnter() {
+    this.play('tokenEnter');
   }
 
   capture() {
@@ -255,6 +264,18 @@ class SoundController {
 
   safeStar() {
     this.play('safe');
+  }
+
+  extraTurn() {
+    this.play('extraTurn');
+  }
+
+  buttonTap() {
+    this.play('buttonTap');
+  }
+
+  invalid() {
+    this.play('invalid');
   }
 
   powerUp() {
@@ -271,4 +292,6 @@ class SoundController {
 }
 
 export const SoundFX = new SoundController();
+export const playSound = (type, opts) => SoundFX.play(type, opts);
+export default SoundFX;
 

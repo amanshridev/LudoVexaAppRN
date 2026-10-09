@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import Sound from 'react-native-sound';
 
 // Enable playback in silence mode
@@ -77,8 +78,10 @@ class SoundManagerClass {
     } catch (_) {}
 
     const loadSoundKey = (key) => {
-      const file = SOUND_REQUIRE_MAP[key];
-      if (!file) return;
+      const rawFile = SOUND_REQUIRE_MAP[key];
+      if (!rawFile) return;
+      // On Android, raw resource identifier must not have file extension
+      const file = Platform.OS === 'android' ? rawFile.replace(/\.[^/.]+$/, '') : rawFile;
 
       if (POOLED_SOUNDS.includes(key)) {
         if (!this.pools[key]) {

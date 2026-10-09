@@ -460,16 +460,26 @@ function LudoBoardExact({
 
       tokensHere.forEach((token, offsetIdx) => {
         const isMovable = state.movableTokenIds.includes(token.id);
+        const count = tokensHere.length;
 
         let offsetX = 0;
         let offsetY = 0;
-        if (tokensHere.length > 1) {
-          const angle = (offsetIdx * 2 * Math.PI) / tokensHere.length;
+        let tokenScale = 1;
+
+        if (count === 2) {
+          // Two tokens sharing cell (e.g. safe star): clean staggered placement centered in cell
+          tokenScale = 0.84;
+          offsetX = (offsetIdx === 0 ? -1 : 1) * (cellSize * 0.13);
+          offsetY = (offsetIdx === 0 ? 1 : -1) * (cellSize * 0.05);
+        } else if (count > 2) {
+          // Three or four tokens sharing cell: clustered evenly around cell center
+          tokenScale = 0.72;
+          const angle = (offsetIdx * 2 * Math.PI) / count - Math.PI / 4;
           offsetX = Math.cos(angle) * (cellSize * 0.16);
-          offsetY = Math.sin(angle) * (cellSize * 0.16);
+          offsetY = Math.sin(angle) * (cellSize * 0.12);
         }
 
-        const tokenSize = cellSize * 0.72;
+        const tokenSize = cellSize * 0.86 * tokenScale;
         const tokenHeight = tokenSize * 1.3;
 
         rendered.push(
@@ -478,11 +488,11 @@ function LudoBoardExact({
             style={[
               styles.trackTokenWrap,
               {
-                top: BOARD_BORDER + r * cellSize + 0.52 * cellSize - 0.8308 * tokenHeight + offsetY,
+                top: BOARD_BORDER + r * cellSize + 0.5 * (cellSize - tokenHeight) + offsetY,
                 left: BOARD_BORDER + c * cellSize + 0.5 * (cellSize - tokenSize) + offsetX,
                 width: tokenSize,
                 height: tokenHeight,
-                zIndex: isMovable ? 50 : 20 + r,
+                zIndex: isMovable ? 50 : 20 + r + (offsetIdx || 0),
               },
             ]}
           >

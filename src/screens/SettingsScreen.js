@@ -291,8 +291,8 @@ export default function SettingsScreen({ onNavigate, onBack }) {
 
   // Currently active app color object
   const currentAppColor =
-    themesList?.find((t) => t.id === (settings.appColor || appColor || 'emerald')) ||
-    themesList?.[0] || { name: 'Emerald Green', primary: '#10B981' };
+    themesList?.find((t) => t.id === (settings.appColor || appColor || 'slate')) ||
+    themesList?.[0] || { name: 'Gunmetal Slate', primary: '#64748B' };
 
   // Currently active ludo theme object
   const currentLudoTheme =
@@ -413,7 +413,7 @@ export default function SettingsScreen({ onNavigate, onBack }) {
               showMovementHints: true,
               showSafeSpots: true,
               ludoTheme: 'classic',
-              appColor: 'emerald',
+              appColor: 'slate',
             });
             SoundManager.setMuted(false);
             SoundManager.play('buttonTap');

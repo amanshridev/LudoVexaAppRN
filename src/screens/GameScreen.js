@@ -52,13 +52,15 @@ const ICON_BTN_HIT_SLOP = Object.freeze({ top: 10, bottom: 10, left: 10, right: 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const INITIAL_BOARD_SIZE = Math.max(0, Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.52, 360));
 
+const TOKEN_CELL_RATIO = 0.86;
+
 const getCoordXY = (coords, currentCellSize) => {
   if (!coords) return { x: 0, y: 0 };
-  const currentTokenSize = currentCellSize * 0.72;
+  const currentTokenSize = currentCellSize * TOKEN_CELL_RATIO;
   const currentTokenHeight = currentTokenSize * 1.3;
   return {
     x: BOARD_BORDER + (coords.c || 0) * currentCellSize + 0.5 * (currentCellSize - currentTokenSize),
-    y: BOARD_BORDER + (coords.r || 0) * currentCellSize + 0.52 * currentCellSize - 0.8308 * currentTokenHeight,
+    y: BOARD_BORDER + (coords.r || 0) * currentCellSize + 0.5 * (currentCellSize - currentTokenHeight),
   };
 };
 
@@ -296,7 +298,8 @@ export default function GameScreen({
       const cell = cells[i];
       try {
         const stepRate = Math.min(1.5, 1.0 + i * 0.06);
-        SoundManager.play('step', { volume: 0.35, rate: stepRate });
+        SoundManager.play('step', { volume: 0.65, rate: stepRate });
+        SoundFX.hop(i);
       } catch (_) { }
 
       const isLast = i === cells.length - 1;
@@ -467,6 +470,7 @@ export default function GameScreen({
     setSafeGlow(cellXY);
     try {
       SoundManager.play('safe', { volume: 0.7 });
+      SoundFX.safeStar();
     } catch (_) { }
 
     await new Promise((res) => {
@@ -512,6 +516,7 @@ export default function GameScreen({
     setShowExtraTurn(true);
     try {
       SoundManager.play('extraTurn', { volume: 0.85 });
+      SoundFX.extraTurn();
     } catch (_) { }
 
     await new Promise((res) => {
@@ -669,6 +674,7 @@ export default function GameScreen({
     if (!currentState.movableTokenIds.includes(tokenId)) {
       try {
         SoundManager.play('invalid');
+        SoundFX.invalid();
       } catch (_) { }
       return;
     }
@@ -682,6 +688,7 @@ export default function GameScreen({
     setRollNotice(null);
     try {
       SoundManager.play('tokenSelect');
+      SoundFX.tokenSelect();
     } catch (_) { }
 
     const safetyTimeout = addTimeout(() => {
@@ -709,6 +716,7 @@ export default function GameScreen({
       if (startStep === -1) {
         try {
           SoundManager.play('tokenEnter', { volume: 0.85 });
+          SoundFX.tokenEnter();
         } catch (_) { }
         stepsPath.push(0);
       } else {
@@ -882,8 +890,8 @@ export default function GameScreen({
 
         setRollNotice(
           isBotTurn
-            ? `🤖 ${getPlayerLabel(nextState.currentTurn)} rolled ${rolledVal}`
-            : `❌ Rolled ${rolledVal} — No moves! Passing turn...`
+            ? `${getPlayerLabel(nextState.currentTurn)} rolled ${rolledVal}`
+            : `Rolled ${rolledVal} — No moves! Passing turn...`
         );
         addTimeout(() => {
           if (!isMountedRef.current) return;
@@ -927,7 +935,7 @@ export default function GameScreen({
         }
       }
     }, 340);
-  }, [isRolling, handleSelectToken, addTimeout]);
+  }, [isRolling, handleSelectToken, addTimeout, getPlayerLabel, userColor]);
 
   // AI automation loop (Fast 200ms decisions)
   useEffect(() => {
@@ -1199,8 +1207,8 @@ export default function GameScreen({
               style={[
                 styles.ghostToken,
                 {
-                  width: cellSize * 0.72,
-                  height: cellSize * 0.72 * 1.3,
+                  width: cellSize * TOKEN_CELL_RATIO,
+                  height: cellSize * TOKEN_CELL_RATIO * 1.3,
                   transform: [
                     { translateX: ghostPos.x },
                     { translateY: ghostPos.y },
@@ -1212,7 +1220,7 @@ export default function GameScreen({
             >
               <PinToken3D
                 token={movingTokenData}
-                size={cellSize * 0.72}
+                size={cellSize * TOKEN_CELL_RATIO}
                 isMovable={false}
               />
             </Animated.View>
@@ -1225,8 +1233,8 @@ export default function GameScreen({
               style={[
                 styles.ghostToken,
                 {
-                  width: cellSize * 0.72,
-                  height: cellSize * 0.72 * 1.3,
+                  width: cellSize * TOKEN_CELL_RATIO,
+                  height: cellSize * TOKEN_CELL_RATIO * 1.3,
                   zIndex: 80,
                   transform: [
                     { translateX: capturedGhostPos.x },
@@ -1240,7 +1248,7 @@ export default function GameScreen({
             >
               <PinToken3D
                 token={capturedAnimTokenData}
-                size={cellSize * 0.72}
+                size={cellSize * TOKEN_CELL_RATIO}
                 isMovable={false}
               />
             </Animated.View>

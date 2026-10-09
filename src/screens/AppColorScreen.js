@@ -14,7 +14,7 @@ import { useTheme } from '../context/ThemeContext';
 
 export default function AppColorScreen({ onBack }) {
   const { appTheme, appColor, setAppColor, themesList } = useTheme();
-  const [selectedColorId, setSelectedColorId] = useState(appColor || 'emerald');
+  const [selectedColorId, setSelectedColorId] = useState(appColor || 'slate');
   const [saveToast, setSaveToast] = useState(null);
 
   const handleSelectColorCard = (colorId) => {

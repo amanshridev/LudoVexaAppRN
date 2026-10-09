@@ -1,4 +1,119 @@
 export const THEME_LIST = [
+  // ── Executive Metallic / Stealth Themes (Slate Category) ────────────────────
+  {
+    id: 'slate',
+    name: 'Gunmetal Slate',
+    primary: '#64748B',
+    primaryLight: '#94A3B8',
+    primaryDark: '#334155',
+    onPrimary: '#FFFFFF',
+    background: '#0F172A',
+    surface: '#151C28',
+    card: '#1F2A3E',
+    elevated: '#2A3954',
+    text: '#FFFFFF',
+    secondaryText: '#CBD5E1',
+    mutedText: '#94A3B8',
+    border: 'rgba(100, 116, 139, 0.45)',
+  },
+  {
+    id: 'titanium',
+    name: 'Titanium Silver',
+    primary: '#94A3B8',
+    primaryLight: '#CBD5E1',
+    primaryDark: '#475569',
+    onPrimary: '#0F172A',
+    background: '#0B0F19',
+    surface: '#131B2B',
+    card: '#1B253B',
+    elevated: '#24324E',
+    text: '#F8FAFC',
+    secondaryText: '#CBD5E1',
+    mutedText: '#64748B',
+    border: 'rgba(148, 163, 184, 0.45)',
+  },
+  {
+    id: 'obsidian',
+    name: 'Obsidian Onyx',
+    primary: '#475569',
+    primaryLight: '#64748B',
+    primaryDark: '#1E293B',
+    onPrimary: '#FFFFFF',
+    background: '#080C14',
+    surface: '#0F1522',
+    card: '#161F30',
+    elevated: '#202C42',
+    text: '#FFFFFF',
+    secondaryText: '#94A3B8',
+    mutedText: '#64748B',
+    border: 'rgba(71, 85, 105, 0.5)',
+  },
+  {
+    id: 'carbon',
+    name: 'Carbon Steel',
+    primary: '#71717A',
+    primaryLight: '#A1A1AA',
+    primaryDark: '#3F3F46',
+    onPrimary: '#FFFFFF',
+    background: '#09090B',
+    surface: '#18181B',
+    card: '#27272A',
+    elevated: '#3F3F46',
+    text: '#FAFAFA',
+    secondaryText: '#D4D4D8',
+    mutedText: '#71717A',
+    border: 'rgba(113, 113, 122, 0.45)',
+  },
+  {
+    id: 'midnight-stealth',
+    name: 'Midnight Stealth',
+    primary: '#4F6B94',
+    primaryLight: '#7895C2',
+    primaryDark: '#2E4466',
+    onPrimary: '#FFFFFF',
+    background: '#0A0F18',
+    surface: '#101827',
+    card: '#18243A',
+    elevated: '#223250',
+    text: '#FFFFFF',
+    secondaryText: '#CBD5E1',
+    mutedText: '#7895C2',
+    border: 'rgba(79, 107, 148, 0.45)',
+  },
+  {
+    id: 'tungsten',
+    name: 'Dark Tungsten',
+    primary: '#78716C',
+    primaryLight: '#A8A29E',
+    primaryDark: '#44403C',
+    onPrimary: '#FFFFFF',
+    background: '#0C0A09',
+    surface: '#1C1917',
+    card: '#292524',
+    elevated: '#44403C',
+    text: '#FAFAF9',
+    secondaryText: '#D6D3D1',
+    mutedText: '#78716C',
+    border: 'rgba(120, 113, 108, 0.45)',
+  },
+  {
+    id: 'platinum',
+    name: 'Platinum Frost',
+    primary: '#A0AEC0',
+    primaryLight: '#E2E8F0',
+    primaryDark: '#4A5568',
+    onPrimary: '#1A202C',
+    background: '#0D1117',
+    surface: '#161B22',
+    card: '#21262D',
+    elevated: '#30363D',
+    text: '#F0F6FC',
+    secondaryText: '#C9D1D9',
+    mutedText: '#8B949E',
+    border: 'rgba(160, 174, 192, 0.45)',
+  },
+
+  // ── Vibrant Gemstone & Core Themes ──────────────────────────────────────────
   {
     id: 'emerald',
     name: 'Emerald Green',
@@ -127,24 +242,8 @@ export const THEME_LIST = [
     mutedText: '#94A3B8',
     border: 'rgba(99, 102, 241, 0.45)',
   },
-  {
-    id: 'slate',
-    name: 'Gunmetal Slate',
-    primary: '#64748B',
-    primaryLight: '#94A3B8',
-    primaryDark: '#334155',
-    onPrimary: '#FFFFFF',
-    background: '#0F172A',
-    surface: '#151C28',
-    card: '#1F2A3E',
-    elevated: '#2A3954',
-    text: '#FFFFFF',
-    secondaryText: '#CBD5E1',
-    mutedText: '#94A3B8',
-    border: 'rgba(100, 116, 139, 0.45)',
-  },
 
-  // ── Ludo Themes ────────────────────────────────────────────────────────────
+  // ── Ludo Board Accent Themes ────────────────────────────────────────────────
   {
     id: 'ludo-red',
     name: 'Ludo Red',
@@ -161,8 +260,6 @@ export const THEME_LIST = [
     mutedText: '#94A3B8',
     border: 'rgba(229, 57, 53, 0.45)',
   },
-
-
   {
     id: 'ludo-blue',
     name: 'Ludo Blue',
@@ -179,11 +276,10 @@ export const THEME_LIST = [
     mutedText: '#94A3B8',
     border: 'rgba(30, 136, 229, 0.45)',
   },
-
 ];
 
-export function buildSemanticTheme(themeId = 'emerald') {
-  const found = THEME_LIST.find((t) => t.id === themeId) || THEME_LIST.find((t) => t.id === 'emerald');
+export function buildSemanticTheme(themeId = 'slate') {
+  const found = THEME_LIST.find((t) => t.id === themeId) || THEME_LIST.find((t) => t.id === 'slate') || THEME_LIST[0];
 
   return {
     id: found.id,

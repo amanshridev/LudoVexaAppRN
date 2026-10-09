@@ -4,8 +4,8 @@ import { LUDO_THEMES_LIST } from '../theme/colors';
 import { loadSettings, saveSettings, DEFAULT_SETTINGS } from '../utils/storage';
 
 const ThemeContext = createContext({
-  appTheme: buildSemanticTheme('emerald'),
-  appColor: 'emerald',
+  appTheme: buildSemanticTheme('slate'),
+  appColor: 'slate',
   ludoTheme: LUDO_THEMES_LIST[0], // classic
   ludoThemeId: 'classic',
   settings: DEFAULT_SETTINGS,
@@ -63,7 +63,7 @@ export function ThemeProvider({ children }) {
   }, [updateSettings]);
 
   const appTheme = useMemo(
-    () => buildSemanticTheme(settings.appColor || 'emerald'),
+    () => buildSemanticTheme(settings.appColor || 'slate'),
     [settings.appColor]
   );
 
@@ -77,7 +77,7 @@ export function ThemeProvider({ children }) {
   const contextValue = useMemo(
     () => ({
       appTheme,
-      appColor: settings.appColor || 'emerald',
+      appColor: settings.appColor || 'slate',
       ludoTheme: ludoThemeObj,
       ludoThemeId: settings.ludoTheme || 'classic',
       settings,
