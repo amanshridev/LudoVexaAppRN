@@ -238,9 +238,31 @@ export default function LudoBoard3D({
       if (isBaseCell) return;
 
       const tokensHere = tokensByCell[cellKey];
+      const movableTokenInCell = tokensHere.find((t) =>
+        state.movableTokenIds?.includes(t.id)
+      );
+
+      if (movableTokenInCell) {
+        rendered.push(
+          <TouchableOpacity
+            key={`box_click_${cellKey}`}
+            activeOpacity={0.7}
+            onPress={() => onSelectToken(movableTokenInCell.id)}
+            style={[
+              styles.cellBoxClickTarget,
+              {
+                top: r * cellSize,
+                left: c * cellSize,
+                width: cellSize,
+                height: cellSize,
+              },
+            ]}
+          />
+        );
+      }
 
       tokensHere.forEach((token, offsetIdx) => {
-        const isMovable = state.movableTokenIds.includes(token.id);
+        const isMovable = state.movableTokenIds?.includes(token.id);
 
         let offsetX = 0;
         let offsetY = 0;
@@ -270,6 +292,11 @@ export default function LudoBoard3D({
               token={token}
               isMovable={isMovable}
               onPress={onSelectToken}
+              onAlternatePress={
+                movableTokenInCell
+                  ? () => onSelectToken(movableTokenInCell.id)
+                  : undefined
+              }
               size={tokenSize}
             />
           </View>
@@ -410,5 +437,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  cellBoxClickTarget: {
+    position: 'absolute',
+    zIndex: 48,
   },
 });

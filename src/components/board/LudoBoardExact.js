@@ -17,6 +17,7 @@ import {
   SAFE_INDICES,
 } from '../../ludo/LudoConstants.js';
 import { getTokenCoordinates } from '../../ludo/LudoEngine.js';
+import { LUDO_THEMES_LIST } from '../../theme/colors.js';
 
 import CenterHome3D from './CenterHome3D.js';
 import PinToken3D from '../3d/PinToken3D.js';
@@ -64,7 +65,107 @@ export const THEME_PALETTES = {
     yellow: { base: '#F59E0B', dark: '#B45309', path: '#F59E0B', token: '#F59E0B', goldRing: '#3B82F6' },
     blue: { base: '#3B82F6', dark: '#1D4ED8', path: '#3B82F6', token: '#3B82F6', goldRing: '#F59E0B' },
   },
+  gold: {
+    boardBg: '#1A140E',
+    red: { base: '#D4AF37', dark: '#92400E', path: '#D4AF37', token: '#D4AF37', goldRing: '#F59E0B' },
+    green: { base: '#10B981', dark: '#047857', path: '#10B981', token: '#10B981', goldRing: '#D4AF37' },
+    yellow: { base: '#F59E0B', dark: '#B45309', path: '#F59E0B', token: '#F59E0B', goldRing: '#D4AF37' },
+    blue: { base: '#3B82F6', dark: '#1D4ED8', path: '#3B82F6', token: '#3B82F6', goldRing: '#D4AF37' },
+  },
+  sakura: {
+    boardBg: '#FFF1F2',
+    red: { base: '#F472B6', dark: '#BE185D', path: '#F472B6', token: '#F472B6', goldRing: '#34D399' },
+    green: { base: '#34D399', dark: '#059669', path: '#34D399', token: '#34D399', goldRing: '#F472B6' },
+    yellow: { base: '#FDE047', dark: '#CA8A04', path: '#FDE047', token: '#FDE047', goldRing: '#60A5FA' },
+    blue: { base: '#60A5FA', dark: '#2563EB', path: '#60A5FA', token: '#60A5FA', goldRing: '#F472B6' },
+  },
+  amethyst: {
+    boardBg: '#130B24',
+    red: { base: '#C084FC', dark: '#7E22CE', path: '#C084FC', token: '#C084FC', goldRing: '#06B6D4' },
+    green: { base: '#06B6D4', dark: '#0E7490', path: '#06B6D4', token: '#06B6D4', goldRing: '#FBBF24' },
+    yellow: { base: '#FBBF24', dark: '#B45309', path: '#FBBF24', token: '#FBBF24', goldRing: '#C084FC' },
+    blue: { base: '#818CF8', dark: '#4338CA', path: '#818CF8', token: '#818CF8', goldRing: '#C084FC' },
+  },
+  dragon: {
+    boardBg: '#180A0A',
+    red: { base: '#EF4444', dark: '#991B1B', path: '#EF4444', token: '#EF4444', goldRing: '#FBBF24' },
+    green: { base: '#22C55E', dark: '#15803D', path: '#22C55E', token: '#22C55E', goldRing: '#EF4444' },
+    yellow: { base: '#FBBF24', dark: '#B45309', path: '#FBBF24', token: '#FBBF24', goldRing: '#EF4444' },
+    blue: { base: '#3B82F6', dark: '#1D4ED8', path: '#3B82F6', token: '#3B82F6', goldRing: '#FBBF24' },
+  },
+  storm: {
+    boardBg: '#070F1E',
+    red: { base: '#EC4899', dark: '#9D174D', path: '#EC4899', token: '#EC4899', goldRing: '#FDE047' },
+    green: { base: '#14B8A6', dark: '#0F766E', path: '#14B8A6', token: '#14B8A6', goldRing: '#2563EB' },
+    yellow: { base: '#FDE047', dark: '#CA8A04', path: '#FDE047', token: '#FDE047', goldRing: '#EC4899' },
+    blue: { base: '#2563EB', dark: '#1E40AF', path: '#2563EB', token: '#2563EB', goldRing: '#FDE047' },
+  },
+  jungle: {
+    boardBg: '#F0FDF4',
+    red: { base: '#DC2626', dark: '#991B1B', path: '#DC2626', token: '#DC2626', goldRing: '#EAB308' },
+    green: { base: '#16A34A', dark: '#166534', path: '#16A34A', token: '#16A34A', goldRing: '#EAB308' },
+    yellow: { base: '#EAB308', dark: '#A16207', path: '#EAB308', token: '#EAB308', goldRing: '#16A34A' },
+    blue: { base: '#0284C7', dark: '#075985', path: '#0284C7', token: '#0284C7', goldRing: '#EAB308' },
+  },
+  vintage: {
+    boardBg: '#FEFCE8',
+    red: { base: '#B91C1C', dark: '#7F1D1D', path: '#B91C1C', token: '#B91C1C', goldRing: '#CA8A04' },
+    green: { base: '#15803D', dark: '#14532D', path: '#15803D', token: '#15803D', goldRing: '#CA8A04' },
+    yellow: { base: '#CA8A04', dark: '#854D0E', path: '#CA8A04', token: '#CA8A04', goldRing: '#B91C1C' },
+    blue: { base: '#1E40AF', dark: '#1E3A8A', path: '#1E40AF', token: '#1E40AF', goldRing: '#CA8A04' },
+  },
+  stealth: {
+    boardBg: '#0B0F19',
+    red: { base: '#F43F5E', dark: '#9F1239', path: '#F43F5E', token: '#F43F5E', goldRing: '#38BDF8' },
+    green: { base: '#10B981', dark: '#047857', path: '#10B981', token: '#10B981', goldRing: '#F59E0B' },
+    yellow: { base: '#F59E0B', dark: '#B45309', path: '#F59E0B', token: '#F59E0B', goldRing: '#F43F5E' },
+    blue: { base: '#38BDF8', dark: '#0284C7', path: '#38BDF8', token: '#38BDF8', goldRing: '#F59E0B' },
+  },
+  rainbow: {
+    boardBg: '#F8FAFC',
+    red: { base: '#EF4444', dark: '#B91C1C', path: '#EF4444', token: '#EF4444', goldRing: '#F59E0B' },
+    green: { base: '#10B981', dark: '#047857', path: '#10B981', token: '#10B981', goldRing: '#3B82F6' },
+    yellow: { base: '#F59E0B', dark: '#B45309', path: '#F59E0B', token: '#F59E0B', goldRing: '#10B981' },
+    blue: { base: '#3B82F6', dark: '#1D4ED8', path: '#3B82F6', token: '#3B82F6', goldRing: '#EF4444' },
+  },
+  arctic: {
+    boardBg: '#F0F9FF',
+    red: { base: '#FB7185', dark: '#E11D48', path: '#FB7185', token: '#FB7185', goldRing: '#0284C7' },
+    green: { base: '#06B6D4', dark: '#0891B2', path: '#06B6D4', token: '#06B6D4', goldRing: '#FBBF24' },
+    yellow: { base: '#FBBF24', dark: '#D97706', path: '#FBBF24', token: '#FBBF24', goldRing: '#0284C7' },
+    blue: { base: '#0284C7', dark: '#0369A1', path: '#0284C7', token: '#0284C7', goldRing: '#FB7185' },
+  },
+  ruby: {
+    boardBg: '#17060D',
+    red: { base: '#E11D48', dark: '#881337', path: '#E11D48', token: '#E11D48', goldRing: '#FBBF24' },
+    green: { base: '#10B981', dark: '#047857', path: '#10B981', token: '#10B981', goldRing: '#E11D48' },
+    yellow: { base: '#FBBF24', dark: '#B45309', path: '#FBBF24', token: '#FBBF24', goldRing: '#E11D48' },
+    blue: { base: '#4F46E5', dark: '#312E81', path: '#4F46E5', token: '#4F46E5', goldRing: '#FBBF24' },
+  },
+  nebula: {
+    boardBg: '#090514',
+    red: { base: '#E879F9', dark: '#A21CAF', path: '#E879F9', token: '#E879F9', goldRing: '#FACC15' },
+    green: { base: '#2DD4BF', dark: '#0F766E', path: '#2DD4BF', token: '#2DD4BF', goldRing: '#6366F1' },
+    yellow: { base: '#FACC15', dark: '#A16207', path: '#FACC15', token: '#FACC15', goldRing: '#E879F9' },
+    blue: { base: '#6366F1', dark: '#4338CA', path: '#6366F1', token: '#6366F1', goldRing: '#2DD4BF' },
+  },
 };
+
+export function getThemePalette(themeId) {
+  if (THEME_PALETTES[themeId]) return THEME_PALETTES[themeId];
+  const found = (LUDO_THEMES_LIST || []).find((t) => t.id === themeId);
+  if (found && found.colors && found.colors.length >= 4) {
+    const [cGreen, cYellow, cBlue, cRed] = found.colors;
+    return {
+      boardBg: found.boardBg || '#FFFFFF',
+      green: { base: cGreen, dark: cGreen, path: cGreen, token: cGreen, goldRing: '#F59E0B' },
+      yellow: { base: cYellow, dark: cYellow, path: cYellow, token: cYellow, goldRing: '#3B82F6' },
+      blue: { base: cBlue, dark: cBlue, path: cBlue, token: cBlue, goldRing: '#F59E0B' },
+      red: { base: cRed, dark: cRed, path: cRed, token: cRed, goldRing: '#10B981' },
+    };
+  }
+  return THEME_PALETTES.classic;
+}
 
 export const EXACT_COLORS = THEME_PALETTES.classic;
 
@@ -312,7 +413,7 @@ function LudoBoardExact({
 }) {
   const BOARD_BORDER = 4;
   const cellSize = boardSize > 0 ? (boardSize - BOARD_BORDER * 2) / 15 : 0;
-  const palette = THEME_PALETTES[theme] || THEME_PALETTES.classic;
+  const palette = getThemePalette(theme);
   const tokensDisabled = isAnimating || state.status !== 'WAITING_SELECT';
 
   const tokensByCell = React.useMemo(() => {
@@ -457,6 +558,30 @@ function LudoBoardExact({
       if (isBaseCell) return;
 
       const tokensHere = tokensByCell[cellKey];
+      const movableTokenInCell = tokensHere.find((t) =>
+        state.movableTokenIds.includes(t.id)
+      );
+
+      // If cell contains a movable token, make the entire cell box clickable
+      // so clicking anywhere in the box moves the user's token even when sharing cells!
+      if (movableTokenInCell && !tokensDisabled) {
+        rendered.push(
+          <TouchableOpacity
+            key={`box_click_${cellKey}`}
+            activeOpacity={0.7}
+            onPress={() => onSelectToken(movableTokenInCell.id)}
+            style={[
+              styles.cellBoxClickTarget,
+              {
+                top: BOARD_BORDER + r * cellSize,
+                left: BOARD_BORDER + c * cellSize,
+                width: cellSize,
+                height: cellSize,
+              },
+            ]}
+          />
+        );
+      }
 
       tokensHere.forEach((token, offsetIdx) => {
         const isMovable = state.movableTokenIds.includes(token.id);
@@ -501,6 +626,11 @@ function LudoBoardExact({
               size={tokenSize}
               isMovable={isMovable}
               onPress={() => onSelectToken(token.id)}
+              onAlternatePress={
+                movableTokenInCell
+                  ? () => onSelectToken(movableTokenInCell.id)
+                  : undefined
+              }
               disabled={tokensDisabled}
             />
           </View>
@@ -824,5 +954,9 @@ const styles = StyleSheet.create({
   },
   trackTokenWrap: {
     position: 'absolute',
+  },
+  cellBoxClickTarget: {
+    position: 'absolute',
+    zIndex: 48,
   },
 });

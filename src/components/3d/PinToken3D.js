@@ -31,6 +31,7 @@ const PinToken3D = React.memo(function PinToken3D({
   token,
   isMovable = false,
   onPress,
+  onAlternatePress,
   size = 28,
   disabled = false,
 }) {
@@ -154,6 +155,11 @@ const PinToken3D = React.memo(function PinToken3D({
           useNativeDriver: true,
         }),
       ]).start();
+    } else if (onAlternatePress) {
+      // If sharing cell with movable token, tapping this token triggers the movable token
+      if (isMountedRef.current) {
+        onAlternatePress();
+      }
     } else {
       // Tap on invalid token: small shake
       shakeAnim.setValue(0);

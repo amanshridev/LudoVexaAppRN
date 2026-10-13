@@ -151,14 +151,14 @@ function CornerPlayerDock({
           <PinToken3D token={{ player }} size={pinSize} />
         </View>
 
-        {/* Role Badge (👑 Crown for You, 🤖 Bot for Computer) */}
+        {/* Role Badge (👤 User for You, 🤖 Bot for Computer) */}
         {isBot ? (
           <View style={styles.roleBadge}>
             <Text style={styles.roleBadgeText}>🤖</Text>
           </View>
         ) : isYou ? (
-          <View style={[styles.roleBadge, styles.crownBadge]}>
-            <Text style={styles.roleBadgeText}>👑</Text>
+          <View style={[styles.roleBadge, styles.userBadge]}>
+            <Text style={styles.roleBadgeText}>👤</Text>
           </View>
         ) : null}
 
@@ -336,6 +336,9 @@ const styles = StyleSheet.create({
   },
   crownBadge: {
     backgroundColor: '#D97706',
+  },
+  userBadge: {
+    backgroundColor: '#2563EB',
   },
   roleBadgeText: {
     fontSize: 7.5,
