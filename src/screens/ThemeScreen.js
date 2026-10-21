@@ -15,7 +15,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function ThemeScreen({ onBack, onSelectTheme }) {
   const { appTheme, ludoThemeId, setLudoTheme, ludoThemesList } = useTheme();
 
-  const [selectedThemeId, setSelectedThemeId] = useState(ludoThemeId || 'classic');
+  const [selectedThemeId, setSelectedThemeId] = useState(
+    ludoThemeId && ludoThemeId !== 'classic' && ludoThemeId !== 'ocean' ? ludoThemeId : 'emerald'
+  );
   const [activeCategory, setActiveCategory] = useState('all');
   const [saveToast, setSaveToast] = useState(null);
 
@@ -48,7 +50,10 @@ export default function ThemeScreen({ onBack, onSelectTheme }) {
     }, 800);
   };
 
-  const activeThemeObj = ludoThemesList.find((t) => t.id === selectedThemeId) || ludoThemesList[0];
+  const activeThemeObj =
+    ludoThemesList.find((t) => t.id === selectedThemeId) ||
+    ludoThemesList.find((t) => t.id === 'emerald') ||
+    ludoThemesList[0];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: appTheme.colors.background }]}>
