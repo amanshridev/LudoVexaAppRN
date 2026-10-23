@@ -9,6 +9,7 @@ import {
   Easing,
   AppState,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -1067,7 +1068,19 @@ export default function GameScreen({
     try {
       SoundManager.play('buttonTap');
     } catch (_) { }
-    onExitHome?.();
+    Alert.alert(
+      'Leave Game',
+      'Are you sure you want to quit the current match?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Exit',
+          style: 'destructive',
+          onPress: () => onExitHome?.(),
+        },
+      ],
+      { cancelable: true }
+    );
   }, [onExitHome]);
 
   const handleSettingsPress = useCallback(() => {

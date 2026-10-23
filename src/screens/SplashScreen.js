@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -17,9 +17,26 @@ export default function SplashScreen({ onFinish }) {
   const spinAnim = useRef(new Animated.Value(0)).current;
   const [percent, setPercent] = useState(0);
 
+  const hasFinishedRef = useRef(false);
+  const finishTimerRef = useRef(null);
+  const animRef = useRef(null);
+
+  const handleFinish = useCallback(() => {
+    if (hasFinishedRef.current) return;
+    hasFinishedRef.current = true;
+    if (finishTimerRef.current) {
+      clearTimeout(finishTimerRef.current);
+      finishTimerRef.current = null;
+    }
+    if (animRef.current) {
+      animRef.current.stop();
+    }
+    onFinish?.();
+  }, [onFinish]);
+
   useEffect(() => {
     // 1. Subtle rhythmic logo breathing
-    Animated.loop(
+    const pulseLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
           toValue: 1.05,
@@ -34,10 +51,11 @@ export default function SplashScreen({ onFinish }) {
           useNativeDriver: true,
         }),
       ])
-    ).start();
+    );
+    pulseLoop.start();
 
     // 2. Gentle levitation / floating effect
-    Animated.loop(
+    const floatLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(floatAnim, {
           toValue: -8,
@@ -52,28 +70,32 @@ export default function SplashScreen({ onFinish }) {
           useNativeDriver: true,
         }),
       ])
-    ).start();
+    );
+    floatLoop.start();
 
     // 3. Mini spinning dice animation
-    Animated.loop(
+    const spinLoop = Animated.loop(
       Animated.timing(spinAnim, {
         toValue: 1,
         duration: 2500,
         easing: Easing.linear,
         useNativeDriver: true,
       })
-    ).start();
+    );
+    spinLoop.start();
 
-    // 4. Exact 5-second smooth loading progress
-    Animated.timing(progressAnim, {
+    // 4. Snappy 2.2-second smooth loading progress
+    animRef.current = Animated.timing(progressAnim, {
       toValue: 1,
-      duration: 5000,
+      duration: 2200,
       easing: Easing.inOut(Easing.quad),
       useNativeDriver: false,
-    }).start(() => {
-      setTimeout(() => {
-        onFinish?.();
-      }, 3000);
+    });
+
+    animRef.current.start(() => {
+      finishTimerRef.current = setTimeout(() => {
+        handleFinish();
+      }, 250);
     });
 
     const listener = progressAnim.addListener(({ value }) => {
@@ -82,8 +104,22 @@ export default function SplashScreen({ onFinish }) {
 
     return () => {
       progressAnim.removeListener(listener);
+      if (finishTimerRef.current) {
+        clearTimeout(finishTimerRef.current);
+        finishTimerRef.current = null;
+      }
+      pulseLoop.stop();
+      floatLoop.stop();
+      spinLoop.stop();
+      if (animRef.current) {
+        animRef.current.stop();
+      }
+      pulseAnim.stopAnimation();
+      floatAnim.stopAnimation();
+      spinAnim.stopAnimation();
+      progressAnim.stopAnimation();
     };
-  }, [progressAnim, pulseAnim, floatAnim, spinAnim, onFinish]);
+  }, [progressAnim, pulseAnim, floatAnim, spinAnim, handleFinish]);
 
   const progressWidth = progressAnim.interpolate({
     inputRange: [0, 1],
@@ -112,7 +148,7 @@ export default function SplashScreen({ onFinish }) {
   return (
     <TouchableOpacity
       activeOpacity={1}
-      onPress={onFinish}
+      onPress={handleFinish}
       style={styles.container}
     >
       <StatusBar barStyle="light-content" backgroundColor="#050B1A" />

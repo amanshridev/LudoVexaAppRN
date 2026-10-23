@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, BackHandler } from 'react-native';
+import { View, StyleSheet, BackHandler, Alert } from 'react-native';
 
 // Storage & Utils
 import { loadSettings } from '../utils/storage';
@@ -85,6 +85,22 @@ export default function AppNavigator() {
   // Hardware back button handler on Android
   useEffect(() => {
     const onBackPress = () => {
+      if (currentScreen === 'home') {
+        Alert.alert(
+          'Leave Game',
+          'Are you sure you want to quit the current match?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Exit',
+              style: 'destructive',
+              onPress: () => reset('welcome'),
+            },
+          ],
+          { cancelable: true }
+        );
+        return true;
+      }
       if (screenStack.length > 1) {
         goBack();
         return true;
@@ -97,7 +113,7 @@ export default function AppNavigator() {
       onBackPress
     );
     return () => subscription.remove();
-  }, [screenStack, goBack]);
+  }, [screenStack, currentScreen, goBack, reset]);
 
   // Log screen views to Firebase Analytics automatically when currentScreen changes
   useEffect(() => {
@@ -145,7 +161,13 @@ export default function AppNavigator() {
   const renderScreen = () => {
     switch (currentScreen) {
       case 'splash':
-        return <SplashScreen onFinish={() => reset('welcome')} />;
+        return (
+          <SplashScreen
+            onFinish={() => {
+              setScreenStack((prev) => (prev[prev.length - 1] === 'splash' ? ['welcome'] : prev));
+            }}
+          />
+        );
 
       case 'welcome':
         return (
@@ -157,7 +179,7 @@ export default function AppNavigator() {
                 players: options?.playerCount || 4,
                 type: 'play_now',
               });
-              reset('home');
+              setScreenStack(['welcome', 'home']);
             }}
             onContinueGuest={(options) => {
               if (options) setGameOptions(options);
@@ -166,7 +188,7 @@ export default function AppNavigator() {
                 players: options?.playerCount || 4,
                 type: 'guest',
               });
-              reset('home');
+              setScreenStack(['welcome', 'home']);
             }}
             onOpenSettings={() => navigate('settings')}
           />
@@ -204,7 +226,9 @@ export default function AppNavigator() {
             gameOptions={gameOptions}
             settings={settings}
             isDarkMode={settings.theme === 'dark' || settings.theme === 'neon'}
-            onExitHome={() => reset('welcome')}
+            onExitHome={() => {
+              setScreenStack(['welcome']);
+            }}
             onOpenSettings={() => navigate('settings')}
             onGameOver={handleGameOver}
           />
