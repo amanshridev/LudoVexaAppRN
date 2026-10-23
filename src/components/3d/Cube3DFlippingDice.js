@@ -49,12 +49,18 @@ function Cube3DFlippingDice({
     };
   }, [scaleAnim, rotAnim, shakeAnim, pulseAnim]);
 
-  // Sync display value when valid targetValue changes while not rolling
+  // Sync display value and guarantee clean centered resting state when not rolling
   useEffect(() => {
-    if (!isRolling && targetValue != null && targetValue >= 1 && targetValue <= 6) {
-      setDisplayValue(targetValue);
+    if (!isRolling) {
+      shakeAnim.stopAnimation();
+      shakeAnim.setValue(0);
+      rotAnim.stopAnimation();
+      rotAnim.setValue(0);
+      if (targetValue != null && targetValue >= 1 && targetValue <= 6) {
+        setDisplayValue(targetValue);
+      }
     }
-  }, [targetValue, isRolling]);
+  }, [targetValue, isRolling, shakeAnim, rotAnim]);
 
   // Slow pulse loop when it is the player's turn to roll (stop it otherwise)
   useEffect(() => {
@@ -62,7 +68,7 @@ function Cube3DFlippingDice({
       const pulse = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
-            toValue: 1.08,
+            toValue: 1.06,
             duration: 600,
             easing: Easing.inOut(Easing.quad),
             useNativeDriver: true,
@@ -85,98 +91,85 @@ function Cube3DFlippingDice({
     }
   }, [disabled, isRolling, pulseAnim]);
 
-  // Roll animation: scale to 0.9, ~500ms rotate + shake with 80ms interval, then real value + pop spring
+  // Roll animation: fast flicker + rotate & shake, then clean spring settle
   useEffect(() => {
     if (isRolling) {
       pulseAnim.stopAnimation();
       pulseAnim.setValue(1.0);
 
-      let isCancelled = false;
+      // Rapid face flicker during roll
+      intervalRef.current = setInterval(() => {
+        setDisplayValue(Math.floor(Math.random() * 6) + 1);
+      }, 45);
 
-      const runRoll = async () => {
-        try {
-          // Quick scale to 0.9
-          await new Promise((res) => {
-            Animated.timing(scaleAnim, {
-              toValue: 0.9,
-              duration: 40,
-              useNativeDriver: true,
-            }).start(() => res());
-          });
+      rotAnim.setValue(0);
+      shakeAnim.setValue(0);
 
-          if (isCancelled || !isMountedRef.current) return;
-
-          // Rapid face flicker every 45ms
-          intervalRef.current = setInterval(() => {
-            setDisplayValue(Math.floor(Math.random() * 6) + 1);
-          }, 45);
-
-          rotAnim.setValue(0);
-          shakeAnim.setValue(0);
-
-          // Punchy 6-step shake (180ms total)
-          const shakeSequence = Animated.sequence([
-            Animated.timing(shakeAnim, { toValue: -5, duration: 30, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: 5, duration: 30, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: -4, duration: 30, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: 4, duration: 30, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: -2, duration: 30, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: 0, duration: 30, useNativeDriver: true }),
-          ]);
-
-          // Fast 360 deg rotate tumble over 280ms
-          const rotateTiming = Animated.timing(rotAnim, {
-            toValue: 360,
-            duration: 280,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
-          });
-
-          await new Promise((res) => {
-            Animated.parallel([shakeSequence, rotateTiming]).start(() => res());
-          });
-        } finally {
-          // Clear interval immediately
-          if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-          }
-        }
-
-        if (isCancelled || !isMountedRef.current) return;
-
-        // Show the REAL value from existing dice logic
-        if (targetValue != null && targetValue >= 1 && targetValue <= 6) {
-          setDisplayValue(targetValue);
-        }
-
-        // Crisp pop settle: scale 1 -> 1.25 -> 1 spring
-        scaleAnim.setValue(1.0);
+      // Fast rotation & shake parallel animation
+      const rollAnim = Animated.parallel([
         Animated.sequence([
-          Animated.timing(scaleAnim, {
-            toValue: 1.25,
-            duration: 60,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
-          }),
-          Animated.spring(scaleAnim, {
-            toValue: 1.0,
-            friction: 5,
-            tension: 60,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      };
+          Animated.timing(scaleAnim, { toValue: 0.88, duration: 40, useNativeDriver: true }),
+          Animated.timing(scaleAnim, { toValue: 1.0, duration: 240, useNativeDriver: true }),
+        ]),
+        Animated.sequence([
+          Animated.timing(shakeAnim, { toValue: -4, duration: 35, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: 4, duration: 35, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: -3, duration: 35, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: 3, duration: 35, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: -1, duration: 35, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: 0, duration: 35, useNativeDriver: true }),
+        ]),
+        Animated.timing(rotAnim, {
+          toValue: 360,
+          duration: 250,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]);
 
-      runRoll();
+      rollAnim.start();
 
       return () => {
-        isCancelled = true;
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;
         }
+        rollAnim.stop();
+        shakeAnim.stopAnimation();
+        shakeAnim.setValue(0);
+        rotAnim.stopAnimation();
+        rotAnim.setValue(0);
       };
+    } else {
+      // Stopped rolling: snap cleanly to center, show targetValue, and pop settle
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      shakeAnim.stopAnimation();
+      shakeAnim.setValue(0);
+      rotAnim.stopAnimation();
+      rotAnim.setValue(0);
+
+      if (targetValue != null && targetValue >= 1 && targetValue <= 6) {
+        setDisplayValue(targetValue);
+      }
+
+      // Settle spring pop (scale 1.0 -> 1.15 -> 1.0)
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.15,
+          duration: 65,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1.0,
+          friction: 6,
+          tension: 80,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
   }, [isRolling, targetValue, scaleAnim, rotAnim, shakeAnim, pulseAnim]);
 
@@ -186,7 +179,7 @@ function Cube3DFlippingDice({
   });
 
   const handlePress = () => {
-    if (disabled || isRolling) return;
+    if (disabled || isRolling) {return;}
     Animated.timing(scaleAnim, {
       toValue: 0.9,
       duration: 50,
@@ -205,16 +198,16 @@ function Cube3DFlippingDice({
         activeOpacity={disabled || isRolling ? 1 : 0.75}
         onPress={handlePress}
         disabled={disabled || isRolling}
-        style={[styles.container, { width: size + 16, height: size + 16 }]}
+        style={[styles.container, { width: size, height: size }]}
       >
-        {/* Dynamic Floor Shadow */}
+        {/* Dynamic Floor Shadow beneath cube */}
         <View
           style={[
             styles.floorShadow,
             {
-              width: size * 0.9,
-              height: size * 0.28,
-              bottom: 2,
+              width: size * 0.85,
+              height: 4,
+              bottom: -1,
             },
           ]}
         />
@@ -251,12 +244,8 @@ function Cube3DFlippingDice({
   );
 }
 
-function CubeFacePips({ val = 6, size }) {
-  const isOne = val === 1;
-  const pipSize = isOne ? size * 0.28 : size * 0.18;
-  const pipColor = isOne ? '#DC2626' : '#1E293B';
-
-  const Pip = () => (
+function DicePipDot({ pipSize, pipColor }) {
+  return (
     <View
       style={[
         styles.pip,
@@ -280,50 +269,76 @@ function CubeFacePips({ val = 6, size }) {
       />
     </View>
   );
+}
+
+function CubeFacePips({ val = 6, size }) {
+  const isOne = val === 1;
+  const pipSize = isOne ? size * 0.28 : size * 0.18;
+  const pipColor = isOne ? '#DC2626' : '#1E293B';
 
   switch (val) {
     case 1:
       return (
         <View style={styles.centerWrap}>
-          <Pip />
+          <DicePipDot pipSize={pipSize} pipColor={pipColor} />
         </View>
       );
     case 2:
       return (
         <View style={styles.diagonalTwo}>
-          <View style={styles.topRight}><Pip /></View>
-          <View style={styles.bottomLeft}><Pip /></View>
+          <View style={styles.topRight}><DicePipDot pipSize={pipSize} pipColor={pipColor} /></View>
+          <View style={styles.bottomLeft}><DicePipDot pipSize={pipSize} pipColor={pipColor} /></View>
         </View>
       );
     case 3:
       return (
         <View style={styles.diagonalThree}>
-          <View style={styles.topRight}><Pip /></View>
-          <View style={styles.centerItem}><Pip /></View>
-          <View style={styles.bottomLeft}><Pip /></View>
+          <View style={styles.topRight}><DicePipDot pipSize={pipSize} pipColor={pipColor} /></View>
+          <View style={styles.centerItem}><DicePipDot pipSize={pipSize} pipColor={pipColor} /></View>
+          <View style={styles.bottomLeft}><DicePipDot pipSize={pipSize} pipColor={pipColor} /></View>
         </View>
       );
     case 4:
       return (
         <View style={styles.gridFour}>
-          <View style={styles.row}><Pip /><Pip /></View>
-          <View style={styles.row}><Pip /><Pip /></View>
+          <View style={styles.row}>
+            <DicePipDot pipSize={pipSize} pipColor={pipColor} />
+            <DicePipDot pipSize={pipSize} pipColor={pipColor} />
+          </View>
+          <View style={styles.row}>
+            <DicePipDot pipSize={pipSize} pipColor={pipColor} />
+            <DicePipDot pipSize={pipSize} pipColor={pipColor} />
+          </View>
         </View>
       );
     case 5:
       return (
         <View style={styles.gridFive}>
-          <View style={styles.row}><Pip /><Pip /></View>
-          <View style={styles.centerItem}><Pip /></View>
-          <View style={styles.row}><Pip /><Pip /></View>
+          <View style={styles.row}>
+            <DicePipDot pipSize={pipSize} pipColor={pipColor} />
+            <DicePipDot pipSize={pipSize} pipColor={pipColor} />
+          </View>
+          <View style={styles.centerItem}><DicePipDot pipSize={pipSize} pipColor={pipColor} /></View>
+          <View style={styles.row}>
+            <DicePipDot pipSize={pipSize} pipColor={pipColor} />
+            <DicePipDot pipSize={pipSize} pipColor={pipColor} />
+          </View>
         </View>
       );
     case 6:
     default:
       return (
         <View style={styles.gridSix}>
-          <View style={styles.col}><Pip /><Pip /><Pip /></View>
-          <View style={styles.col}><Pip /><Pip /><Pip /></View>
+          <View style={styles.col}>
+            <DicePipDot pipSize={pipSize} pipColor={pipColor} />
+            <DicePipDot pipSize={pipSize} pipColor={pipColor} />
+            <DicePipDot pipSize={pipSize} pipColor={pipColor} />
+          </View>
+          <View style={styles.col}>
+            <DicePipDot pipSize={pipSize} pipColor={pipColor} />
+            <DicePipDot pipSize={pipSize} pipColor={pipColor} />
+            <DicePipDot pipSize={pipSize} pipColor={pipColor} />
+          </View>
         </View>
       );
   }
