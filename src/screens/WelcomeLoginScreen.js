@@ -74,7 +74,7 @@ export default function WelcomeLoginScreen({
   const handleStartGame = () => {
     try {
       if (settings?.sound !== false) {
-        SoundManager.play('diceRoll');
+        SoundManager.play('buttonTap');
       }
       if (settings?.haptics !== false) {
         Vibration.vibrate(40);

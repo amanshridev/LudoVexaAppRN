@@ -9,18 +9,189 @@ import {
   Easing,
   useWindowDimensions,
 } from 'react-native';
-import { CrownIcon, TrophyIcon, CloseIcon, ReplayIcon, BottomNavHomeIcon } from './ui/AppIcons.js';
+import Svg, {
+  Path,
+  Circle,
+  Rect,
+  Defs,
+  LinearGradient,
+  Stop,
+  Polygon,
+} from 'react-native-svg';
+import { CloseIcon, BottomNavHomeIcon } from './ui/AppIcons.js';
 import { SoundFX } from '../utils/soundFX.js';
 import SoundManager from '../utils/SoundManager.js';
 
 const PLAYER_HEX = {
   red: '#EF4444',
-  green: '#10B981',
-  yellow: '#F59E0B',
   blue: '#3B82F6',
+  yellow: '#EAB308',
+  green: '#10B981',
 };
 
-const MEDAL_EMOJIS = ['🥇', '🥈', '🥉', '🏅'];
+const ALL_COLORS = ['red', 'blue', 'yellow', 'green'];
+
+/**
+ * 1. Champion Golden Trophy Graphic (matches reference image)
+ */
+const GoldenTrophyGraphic = ({ size = 114 }) => {
+  const height = size * 0.95;
+  return (
+    <Svg width={size} height={height} viewBox="0 0 120 114" fill="none">
+      <Defs>
+        <LinearGradient id="trophyGold" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0%" stopColor="#FFF9C4" />
+          <Stop offset="30%" stopColor="#FFD54F" />
+          <Stop offset="65%" stopColor="#FFA000" />
+          <Stop offset="100%" stopColor="#E65100" />
+        </LinearGradient>
+        <LinearGradient id="handleGrad" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0%" stopColor="#FFF9C4" />
+          <Stop offset="50%" stopColor="#FFB300" />
+          <Stop offset="100%" stopColor="#D97706" />
+        </LinearGradient>
+        <LinearGradient id="baseGrad" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0%" stopColor="#D97706" />
+          <Stop offset="35%" stopColor="#FFD54F" />
+          <Stop offset="70%" stopColor="#FFA000" />
+          <Stop offset="100%" stopColor="#B45309" />
+        </LinearGradient>
+        <LinearGradient id="stemGrad" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0%" stopColor="#FFD54F" />
+          <Stop offset="100%" stopColor="#D97706" />
+        </LinearGradient>
+      </Defs>
+
+      {/* Left Handle */}
+      <Path
+        d="M36 28 C14 28 10 52 32 68 C37 71 42 68 40 62 C33 55 29 42 38 36 Z"
+        fill="url(#handleGrad)"
+        stroke="#D97706"
+        strokeWidth="1.5"
+      />
+
+      {/* Right Handle */}
+      <Path
+        d="M84 28 C106 28 110 52 88 68 C83 71 78 68 80 62 C87 55 91 42 82 36 Z"
+        fill="url(#handleGrad)"
+        stroke="#D97706"
+        strokeWidth="1.5"
+      />
+
+      {/* Cup Body */}
+      <Path
+        d="M34 22 C34 22 38 70 60 74 C82 70 86 22 86 22 Z"
+        fill="url(#trophyGold)"
+      />
+
+      {/* Cup Top Lip / Rim */}
+      <Path
+        d="M34 22 C34 17 86 17 86 22 C86 26 34 26 34 22 Z"
+        fill="#FFFDE7"
+      />
+
+      {/* Center 5-Point Star on Cup */}
+      <Polygon
+        points="60,34 63.8,43.2 73.8,43.8 66,50.2 68.8,60 60,54.5 51.2,60 54,50.2 46.2,43.8 56.2,43.2"
+        fill="#FFFFFF"
+        opacity="0.95"
+      />
+
+      {/* Trophy Stem */}
+      <Rect x="54" y="73" width="12" height="15" rx="3" fill="url(#stemGrad)" />
+      <Circle cx="60" cy="76" r="6" fill="#FFD54F" />
+
+      {/* Pedestal Top Step */}
+      <Rect x="44" y="86" width="32" height="6" rx="3" fill="url(#trophyGold)" />
+
+      {/* Pedestal Bottom Base */}
+      <Rect
+        x="34"
+        y="92"
+        width="52"
+        height="15"
+        rx="4"
+        fill="url(#baseGrad)"
+        stroke="#B45309"
+        strokeWidth="1"
+      />
+      {/* Base Golden Highlight */}
+      <Rect x="40" y="94" width="40" height="3" rx="1.5" fill="#FFF9C4" opacity="0.8" />
+    </Svg>
+  );
+};
+
+/**
+ * 2. Winner Avatar Golden Crown
+ */
+const AvatarCrownGraphic = ({ size = 36 }) => {
+  const height = size * 0.75;
+  return (
+    <Svg width={size} height={height} viewBox="0 0 36 27" fill="none">
+      <Defs>
+        <LinearGradient id="avatarCrownGrad" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0%" stopColor="#FFF9C4" />
+          <Stop offset="35%" stopColor="#FFD54F" />
+          <Stop offset="75%" stopColor="#FFA000" />
+          <Stop offset="100%" stopColor="#E65100" />
+        </LinearGradient>
+      </Defs>
+      {/* Base Band */}
+      <Rect x="4" y="21" width="28" height="5" rx="2" fill="#B45309" />
+      <Rect x="5" y="21" width="26" height="3" rx="1.5" fill="url(#avatarCrownGrad)" />
+
+      {/* Crown Spikes */}
+      <Path
+        d="M5 21 L7 8 L13 15 L18 4 L23 15 L29 8 L31 21 Z"
+        fill="url(#avatarCrownGrad)"
+        stroke="#D97706"
+        strokeWidth="0.8"
+      />
+
+      {/* Jewel Pearls */}
+      <Circle cx="7" cy="8" r="2.2" fill="#FFFDE7" stroke="#D97706" strokeWidth="0.6" />
+      <Circle cx="18" cy="4" r="2.8" fill="#FFFDE7" stroke="#D97706" strokeWidth="0.6" />
+      <Circle cx="29" cy="8" r="2.2" fill="#FFFDE7" stroke="#D97706" strokeWidth="0.6" />
+    </Svg>
+  );
+};
+
+/**
+ * 3. User Silhouette for Avatar Centers
+ */
+const UserSilhouette = ({ size = 26, color = '#FFFFFF' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+      fill={color}
+    />
+  </Svg>
+);
+
+/**
+ * 4. Coin Icon Badge for "+500 Coins"
+ */
+const GoldCoinBadge = ({ size = 20 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Defs>
+      <LinearGradient id="coinGrad" x1="0" y1="0" x2="1" y2="1">
+        <Stop offset="0%" stopColor="#FFF9C4" />
+        <Stop offset="40%" stopColor="#FFD54F" />
+        <Stop offset="80%" stopColor="#FFA000" />
+        <Stop offset="100%" stopColor="#D97706" />
+      </LinearGradient>
+    </Defs>
+    <Circle cx="12" cy="12" r="11" fill="url(#coinGrad)" stroke="#FFE082" strokeWidth="1" />
+    <Circle cx="12" cy="12" r="8.5" fill="#FFB300" stroke="#D97706" strokeWidth="0.8" />
+    {/* Dollar Sign */}
+    <Path
+      d="M12 6.5v11M14.5 9.5c0-1.2-1-1.7-2.5-1.7-1.4 0-2.3.6-2.3 1.6 0 1.1 1 1.5 2.6 1.8 1.7.3 2.7.9 2.7 2 0 1.2-1 1.8-2.5 1.8-1.5 0-2.5-.7-2.5-1.8"
+      stroke="#78350F"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    />
+  </Svg>
+);
 
 /**
  * Fallback Error Boundary to ensure game never crashes on winner screen
@@ -72,7 +243,7 @@ function WinnerOverlayComponent({
   winnerName = 'Player 1',
   isUserWinner = false,
   rankings = [],
-  coinsWon = 200,
+  coinsWon = 500,
   onPlayAgain,
   onHome,
   onClose,
@@ -83,48 +254,34 @@ function WinnerOverlayComponent({
   const hasSkippedRef = useRef(false);
   const safetyTimeoutRef = useRef(null);
 
-  const themeHex = PLAYER_HEX[winnerColor] || '#EF4444';
+  const cardWidth = Math.min(windowWidth * 0.86, 330);
 
-  // Responsive dimensions
-  const cardWidth = Math.min(windowWidth * 0.88, 380);
-  const avatarSize = Math.min(windowWidth * 0.22, 88);
-  const isTabletOrTall = windowHeight > 800;
-
-  // 1. Background fade animation (0 -> 0.85 in 250ms)
+  // Animations
   const bgOpacity = useRef(new Animated.Value(0)).current;
-
-  // 2. Rotating sunburst rays behind card (slow continuous loop)
-  const raysRotate = useRef(new Animated.Value(0)).current;
-  const raysLoopRef = useRef(null);
-
-  // 3. Card spring & elements
-  const cardScale = useRef(new Animated.Value(0.6)).current;
+  const cardScale = useRef(new Animated.Value(0.75)).current;
   const cardOpacity = useRef(new Animated.Value(0)).current;
-  const crownDrop = useRef(new Animated.Value(-60)).current;
-  const crownOpacity = useRef(new Animated.Value(0)).current;
-  const titleScale = useRef(new Animated.Value(0.5)).current;
-  const titleOpacity = useRef(new Animated.Value(0)).current;
   const trophyFloat = useRef(new Animated.Value(0)).current;
   const trophyLoopRef = useRef(null);
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const pulseLoopRef = useRef(null);
+  const bottomSectionOpacity = useRef(new Animated.Value(0)).current;
+  const bottomSectionY = useRef(new Animated.Value(20)).current;
 
-  // 4. Confetti pieces (~32 items with fixed deterministic values)
+  // Confetti particles
   const confettiPieces = useRef(
-    Array.from({ length: 32 }, (_, i) => {
+    Array.from({ length: 34 }, (_, i) => {
       const palette = [
-        themeHex,
-        '#FFD700', // Gold
-        '#F59E0B', // Amber
-        '#FFFFFF', // White
-        '#38BDF8', // Cyan
-        '#EC4899', // Pink
+        '#FFD700',
+        '#38BDF8',
+        '#EC4899',
+        '#FFFFFF',
+        '#10B981',
+        '#F59E0B',
+        '#A855F7',
       ];
       return {
         id: i,
-        xPercent: (i / 32) * 94 + (Math.sin(i) * 3 + 3),
-        delay: (i % 8) * 110 + Math.floor(Math.sin(i * 2) * 50),
-        duration: 2100 + (i % 6) * 180,
+        xPercent: (i / 34) * 94 + (Math.sin(i * 1.5) * 4 + 3),
+        delay: (i % 8) * 90 + Math.floor(Math.sin(i * 2) * 40),
+        duration: 2300 + (i % 6) * 200,
         color: palette[i % palette.length],
         width: 6 + (i % 3) * 2,
         height: 10 + (i % 4) * 3,
@@ -136,66 +293,82 @@ function WinnerOverlayComponent({
     })
   ).current;
 
-  // 5. Star / sparkle burst behind avatar (8 stars)
-  const starBurst = useRef(new Animated.Value(0)).current;
-  const starBursts = useRef(
-    Array.from({ length: 8 }, (_, i) => {
-      const angle = (i * Math.PI * 2) / 8;
-      const dist = 76;
-      return {
-        id: i,
-        dx: Math.cos(angle) * dist,
-        dy: Math.sin(angle) * dist,
-      };
-    })
-  ).current;
-
-  // 6. Ranking list rows slide-up anims
-  const rankRowsAnim = useRef(
-    Array.from({ length: 4 }, () => new Animated.Value(0))
-  ).current;
-
-  // 7. Action buttons fade in anim
-  const buttonsOpacity = useRef(new Animated.Value(0)).current;
-  const buttonsTranslateY = useRef(new Animated.Value(24)).current;
-
-  // State to clean up confetti after falling
   const [showConfetti, setShowConfetti] = useState(true);
 
-  // Skip all entrance animations immediately to end state
-  const skipToEnd = useCallback(() => {
-    if (hasSkippedRef.current) return;
-    hasSkippedRef.current = true;
+  // Process 4-player ranking list for display
+  const displayPlayers = useMemo(() => {
+    if (Array.isArray(rankings) && rankings.length > 0) {
+      // If we have rankings from GameScreen, make sure we have up to 4
+      return rankings.slice(0, 4).map((item, idx) => {
+        const itemColor = typeof item === 'object' ? item.color : ALL_COLORS[idx % 4];
+        const rawName = typeof item === 'object' ? item.name : String(item);
+        const isWinner = typeof item === 'object' ? (item.isWinner || idx === 0) : idx === 0;
+        const isUser = typeof item === 'object' ? (item.isUser || item.isUserWinner) : false;
 
-    // Fast-forward values
+        let displayName = rawName;
+        if (isWinner && (isUserWinner || isUser)) {
+          displayName = 'You';
+        }
+
+        return {
+          rank: idx + 1,
+          color: itemColor,
+          name: displayName,
+          isWinner,
+        };
+      });
+    }
+
+    // Default fallback: 4 players
+    const winnerDisplay = isUserWinner ? 'You' : winnerName;
+    const remainingColors = ALL_COLORS.filter((c) => c !== winnerColor);
+
+    return [
+      {
+        rank: 1,
+        color: winnerColor,
+        name: winnerDisplay,
+        isWinner: true,
+      },
+      {
+        rank: 2,
+        color: remainingColors[0] || 'blue',
+        name: 'Computer 4',
+        isWinner: false,
+      },
+      {
+        rank: 3,
+        color: remainingColors[1] || 'yellow',
+        name: 'Computer 3',
+        isWinner: false,
+      },
+      {
+        rank: 4,
+        color: remainingColors[2] || 'green',
+        name: 'Computer 2',
+        isWinner: false,
+      },
+    ];
+  }, [rankings, winnerColor, winnerName, isUserWinner]);
+
+  // Skip animation to end
+  const skipToEnd = useCallback(() => {
+    if (hasSkippedRef.current) {
+      return;
+    }
+    hasSkippedRef.current = true;
     bgOpacity.setValue(0.85);
     cardScale.setValue(1);
     cardOpacity.setValue(1);
-    crownDrop.setValue(0);
-    crownOpacity.setValue(1);
-    titleScale.setValue(1);
-    titleOpacity.setValue(1);
-    starBurst.setValue(1);
-    rankRowsAnim.forEach((anim) => anim.setValue(1));
-    buttonsOpacity.setValue(1);
-    buttonsTranslateY.setValue(0);
-  }, [
-    bgOpacity,
-    cardScale,
-    cardOpacity,
-    crownDrop,
-    crownOpacity,
-    titleScale,
-    titleOpacity,
-    starBurst,
-    rankRowsAnim,
-    buttonsOpacity,
-    buttonsTranslateY,
-  ]);
+    bottomSectionOpacity.setValue(1);
+    bottomSectionY.setValue(0);
+  }, [bgOpacity, cardScale, cardOpacity, bottomSectionOpacity, bottomSectionY]);
 
-  // Main animation timeline
+  // Entrance animations
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) {
+      return;
+    }
     isMountedRef.current = true;
     hasSkippedRef.current = false;
 
@@ -205,7 +378,6 @@ function WinnerOverlayComponent({
     } catch (soundErr) {
       console.warn('WinnerOverlay SoundFX.victory error:', soundErr);
     }
-    // TODO hook: onWinnerSound for custom/external sound manager
     if (typeof onWinnerSound === 'function') {
       try {
         onWinnerSound();
@@ -214,92 +386,34 @@ function WinnerOverlayComponent({
       }
     }
 
-    // 1. Dark background fade (250 ms)
+    // 1. Dark background fade
     Animated.timing(bgOpacity, {
-      toValue: 0.85,
+      toValue: 0.88,
       duration: 250,
       easing: Easing.linear,
       useNativeDriver: true,
     }).start();
 
-    // 2. Rotating rays continuous loop
-    raysLoopRef.current = Animated.loop(
-      Animated.timing(raysRotate, {
-        toValue: 1,
-        duration: 22000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    );
-    raysLoopRef.current.start();
-
-    // 3. Card spring in + Avatar crown bounce + Title pop
+    // 2. Card spring
     Animated.parallel([
       Animated.spring(cardScale, {
         toValue: 1,
-        tension: 55,
+        tension: 65,
         friction: 6,
         useNativeDriver: true,
       }),
       Animated.timing(cardOpacity, {
         toValue: 1,
-        duration: 260,
+        duration: 240,
         useNativeDriver: true,
       }),
     ]).start();
 
-    // Crown drops onto avatar with bounce
-    Animated.sequence([
-      Animated.delay(220),
-      Animated.parallel([
-        Animated.timing(crownOpacity, {
-          toValue: 1,
-          duration: 140,
-          useNativeDriver: true,
-        }),
-        Animated.spring(crownDrop, {
-          toValue: 0,
-          tension: 75,
-          friction: 4.5,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
-
-    // Text scale pop
-    Animated.sequence([
-      Animated.delay(360),
-      Animated.parallel([
-        Animated.timing(titleOpacity, {
-          toValue: 1,
-          duration: 180,
-          useNativeDriver: true,
-        }),
-        Animated.spring(titleScale, {
-          toValue: 1,
-          tension: 80,
-          friction: 5,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
-
-    // Star sparkle burst
-    Animated.sequence([
-      Animated.delay(280),
-      Animated.timing(starBurst, {
-        toValue: 1,
-        duration: 650,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Gentle Trophy float loop
+    // 3. Floating Trophy Loop
     trophyLoopRef.current = Animated.loop(
       Animated.sequence([
         Animated.timing(trophyFloat, {
-          toValue: -8,
+          toValue: -6,
           duration: 1200,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
@@ -314,26 +428,7 @@ function WinnerOverlayComponent({
     );
     trophyLoopRef.current.start();
 
-    // Pulse animation loop for avatar aura
-    pulseLoopRef.current = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.14,
-          duration: 1100,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1100,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    pulseLoopRef.current.start();
-
-    // 4. Confetti pieces fall
+    // 4. Confetti fall
     const confettiAnimations = confettiPieces.map((p) =>
       Animated.sequence([
         Animated.delay(p.delay),
@@ -347,49 +442,30 @@ function WinnerOverlayComponent({
     );
     Animated.parallel(confettiAnimations).start();
 
-    // Remove confetti after 4 seconds
     const confettiTimer = setTimeout(() => {
       if (isMountedRef.current) {
         setShowConfetti(false);
       }
-    }, 4200);
+    }, 4500);
 
-    // 6. Ranking list slide up staggered (120ms each)
-    if (rankings && rankings.length > 1) {
-      const rankAnims = rankings.slice(0, 4).map((_, idx) =>
-        Animated.timing(rankRowsAnim[idx], {
-          toValue: 1,
-          duration: 320,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        })
-      );
-      Animated.sequence([
-        Animated.delay(650),
-        Animated.stagger(120, rankAnims),
-      ]).start();
-    }
-
-    // 7. Buttons fade in (quick entrance so user is never stuck)
-    const buttonsDelay = rankings && rankings.length > 1 ? 500 : 320;
+    // 5. Bottom Section (Avatars & Play Again) entrance
     Animated.sequence([
-      Animated.delay(buttonsDelay),
+      Animated.delay(280),
       Animated.parallel([
-        Animated.timing(buttonsOpacity, {
+        Animated.timing(bottomSectionOpacity, {
           toValue: 1,
-          duration: 280,
+          duration: 300,
           useNativeDriver: true,
         }),
-        Animated.timing(buttonsTranslateY, {
+        Animated.timing(bottomSectionY, {
           toValue: 0,
-          duration: 280,
+          duration: 300,
           easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
       ]),
     ]).start();
 
-    // Safety timeout: buttons must appear within 2.5 seconds even if an animation fails
     safetyTimeoutRef.current = setTimeout(() => {
       if (isMountedRef.current && !hasSkippedRef.current) {
         skipToEnd();
@@ -402,58 +478,41 @@ function WinnerOverlayComponent({
         clearTimeout(safetyTimeoutRef.current);
       }
       clearTimeout(confettiTimer);
-
       bgOpacity.stopAnimation();
-      raysRotate.stopAnimation();
-      if (raysLoopRef.current) raysLoopRef.current.stop();
       cardScale.stopAnimation();
       cardOpacity.stopAnimation();
-      crownDrop.stopAnimation();
-      crownOpacity.stopAnimation();
-      titleScale.stopAnimation();
-      titleOpacity.stopAnimation();
       trophyFloat.stopAnimation();
-      if (trophyLoopRef.current) trophyLoopRef.current.stop();
-      starBurst.stopAnimation();
-      rankRowsAnim.forEach((a) => a.stopAnimation());
-      buttonsOpacity.stopAnimation();
-      buttonsTranslateY.stopAnimation();
+      if (trophyLoopRef.current) {
+        trophyLoopRef.current.stop();
+      }
+      bottomSectionOpacity.stopAnimation();
+      bottomSectionY.stopAnimation();
       confettiPieces.forEach((p) => p.progress.stopAnimation());
     };
   }, [
     visible,
     bgOpacity,
-    raysRotate,
     cardScale,
     cardOpacity,
-    crownDrop,
-    crownOpacity,
-    titleScale,
-    titleOpacity,
     trophyFloat,
-    starBurst,
-    rankRowsAnim,
-    buttonsOpacity,
-    buttonsTranslateY,
+    bottomSectionOpacity,
+    bottomSectionY,
     confettiPieces,
-    rankings,
     onWinnerSound,
     skipToEnd,
-    pulseAnim,
   ]);
 
-  // Handle Close (✕) or backdrop dismiss
   const handleClosePress = useCallback(() => {
     if (safetyTimeoutRef.current) {
       clearTimeout(safetyTimeoutRef.current);
     }
-    if (raysLoopRef.current) raysLoopRef.current.stop();
-    if (trophyLoopRef.current) trophyLoopRef.current.stop();
-    if (pulseLoopRef.current) pulseLoopRef.current.stop();
+    if (trophyLoopRef.current) {
+      trophyLoopRef.current.stop();
+    }
     try {
       SoundManager.play('buttonTap');
       SoundFX.button();
-    } catch (_) { }
+    } catch (_) {}
     if (typeof onClose === 'function') {
       onClose();
     } else {
@@ -461,46 +520,40 @@ function WinnerOverlayComponent({
     }
   }, [onClose, onHome]);
 
-  // Handle Play Again button press with thorough cleanup
   const handlePlayAgainPress = useCallback(() => {
     if (safetyTimeoutRef.current) {
       clearTimeout(safetyTimeoutRef.current);
     }
-    if (raysLoopRef.current) raysLoopRef.current.stop();
-    if (trophyLoopRef.current) trophyLoopRef.current.stop();
-    if (pulseLoopRef.current) pulseLoopRef.current.stop();
+    if (trophyLoopRef.current) {
+      trophyLoopRef.current.stop();
+    }
     try {
       SoundManager.play('buttonTap');
       SoundFX.button();
-    } catch (_) { }
+    } catch (_) {}
     onPlayAgain?.();
   }, [onPlayAgain]);
 
-  // Handle Home button press
   const handleHomePress = useCallback(() => {
     if (safetyTimeoutRef.current) {
       clearTimeout(safetyTimeoutRef.current);
     }
-    if (raysLoopRef.current) raysLoopRef.current.stop();
-    if (trophyLoopRef.current) trophyLoopRef.current.stop();
-    if (pulseLoopRef.current) pulseLoopRef.current.stop();
+    if (trophyLoopRef.current) {
+      trophyLoopRef.current.stop();
+    }
     try {
       SoundManager.play('buttonTap');
       SoundFX.button();
-    } catch (_) { }
+    } catch (_) {}
     onHome?.();
   }, [onHome]);
 
-  const raysSpin = raysRotate.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
-  const winnerInitial = (winnerName || 'P').charAt(0).toUpperCase();
+  const headerTitle = isUserWinner ? 'YOU WIN!' : `${winnerName.toUpperCase()} WINS!`;
+  const headerSubtitle = 'All 4 tokens reached home';
 
   return (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
-      {/* 1. Backdrop (blocks touches to the board behind it; tap skips anim or dismisses) */}
+      {/* 1. Backdrop */}
       <Pressable
         style={StyleSheet.absoluteFillObject}
         onPress={() => {
@@ -521,33 +574,8 @@ function WinnerOverlayComponent({
         />
       </Pressable>
 
-      {/* Decorative Container (Confetti & Rays - pointerEvents none) */}
+      {/* 2. Confetti Particles */}
       <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-        {/* 2. Rotating Sunburst Light Rays behind card */}
-        <View style={styles.raysCenterWrap}>
-          <Animated.View
-            style={[
-              styles.raysContainer,
-              {
-                transform: [{ rotate: raysSpin }],
-              },
-            ]}
-          >
-            {Array.from({ length: 12 }).map((_, i) => (
-              <View
-                key={`ray_${i}`}
-                style={[
-                  styles.rayBlade,
-                  {
-                    transform: [{ rotate: `${i * 30}deg` }],
-                  },
-                ]}
-              />
-            ))}
-          </Animated.View>
-        </View>
-
-        {/* 4. Confetti Falling from top */}
         {showConfetti &&
           confettiPieces.map((p) => {
             const translateY = p.progress.interpolate({
@@ -579,11 +607,7 @@ function WinnerOverlayComponent({
                     backgroundColor: p.color,
                     borderRadius: p.isRound ? p.width / 2 : 2,
                     opacity,
-                    transform: [
-                      { translateY },
-                      { translateX },
-                      { rotate },
-                    ],
+                    transform: [{ translateY }, { translateX }, { rotate }],
                   },
                 ]}
               />
@@ -591,8 +615,21 @@ function WinnerOverlayComponent({
           })}
       </View>
 
-      {/* 3. Center Content Card & Interactions */}
+      {/* Top Close Button (✕) */}
+      <TouchableOpacity
+        style={styles.closeBtn}
+        onPress={handleClosePress}
+        activeOpacity={0.7}
+        hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+        accessibilityRole="button"
+        accessibilityLabel="Close Winner Screen"
+      >
+        <CloseIcon size={18} color="#FFFFFF" />
+      </TouchableOpacity>
+
+      {/* 3. Main Center Content Container */}
       <View style={styles.centerContainer} pointerEvents="box-none">
+        {/* Top Winner Card */}
         <Animated.View
           style={[
             styles.cardBox,
@@ -600,185 +637,158 @@ function WinnerOverlayComponent({
               width: cardWidth,
               opacity: cardOpacity,
               transform: [{ scale: cardScale }],
-              paddingVertical: isTabletOrTall ? 28 : 22,
             },
           ]}
         >
-          {/* Top-Right Close Button (✕) */}
-          <TouchableOpacity
-            style={styles.closeBtn}
-            onPress={handleClosePress}
-            activeOpacity={0.7}
-            hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-            accessibilityRole="button"
-            accessibilityLabel="Close Winner Screen"
+          {/* Champion Trophy with gentle float */}
+          <Animated.View
+            style={[
+              styles.trophyWrapper,
+              {
+                transform: [{ translateY: trophyFloat }],
+              },
+            ]}
           >
-            <CloseIcon size={18} color="#CBD5E1" />
-          </TouchableOpacity>
+            <GoldenTrophyGraphic size={118} />
+          </Animated.View>
 
-          {/* Avatar & Crown Section */}
-          <View style={styles.avatarSection}>
-            {/* Golden Crown with bounce drop */}
-            <Animated.View
-              style={[
-                styles.crownWrapper,
-                {
-                  opacity: crownOpacity,
-                  transform: [{ translateY: crownDrop }],
-                },
-              ]}
-            >
-              <CrownIcon size={44} color="#FDE047" />
-            </Animated.View>
+          {/* YOU WIN! Title */}
+          <Text style={styles.winnerText}>{headerTitle}</Text>
 
-            {/* Avatar Circle in Winner Color */}
-            <View
-              style={[
-                styles.avatarOuterCircle,
-                {
-                  width: avatarSize,
-                  height: avatarSize,
-                  borderRadius: avatarSize / 2,
-                  backgroundColor: themeHex,
-                  borderColor: '#FFD700',
-                  shadowColor: themeHex,
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.avatarInnerCircle,
-                  {
-                    width: avatarSize - 8,
-                    height: avatarSize - 8,
-                    borderRadius: (avatarSize - 8) / 2,
-                  },
-                ]}
-              >
-                <Text style={styles.avatarInitial}>{winnerInitial}</Text>
-              </View>
-            </View>
+          {/* Subtitle */}
+          <Text style={styles.subtitleText}>{headerSubtitle}</Text>
+
+          {/* Coins Reward Pill */}
+          <View style={styles.rewardPill}>
+            <GoldCoinBadge size={22} />
+            <Text style={styles.rewardText}>+{coinsWon || 500} Coins</Text>
+          </View>
+        </Animated.View>
+
+        {/* Bottom Section: Avatars Podium Row + Play Again Button */}
+        <Animated.View
+          style={[
+            styles.bottomSection,
+            {
+              width: '100%',
+              opacity: bottomSectionOpacity,
+              transform: [{ translateY: bottomSectionY }],
+            },
+          ]}
+        >
+          {/* 4 Players Horizontal Row */}
+          <View style={styles.playersRow}>
+            {displayPlayers.map((player) => {
+              const pColor = PLAYER_HEX[player.color] || player.color || '#3B82F6';
+              const isWinner = player.isWinner;
+
+              return (
+                <View key={`player_rank_${player.rank}`} style={styles.playerColumn}>
+                  {/* Avatar wrapper */}
+                  <View style={styles.avatarWrap}>
+                    {/* Golden Crown on top of winner */}
+                    {isWinner && (
+                      <View style={styles.crownContainer}>
+                        <AvatarCrownGraphic size={36} />
+                      </View>
+                    )}
+
+                    {/* Circular Avatar */}
+                    <View
+                      style={[
+                        styles.avatarCircle,
+                        {
+                          backgroundColor: pColor,
+                          borderColor: isWinner ? '#FFC107' : 'rgba(255, 255, 255, 0.45)',
+                          borderWidth: isWinner ? 3.5 : 2.5,
+                        },
+                      ]}
+                    >
+                      <UserSilhouette size={isWinner ? 28 : 24} color="#FFFFFF" />
+                    </View>
+
+                    {/* Rank Badge in bottom-right corner */}
+                    <View
+                      style={[
+                        styles.rankBadge,
+                        {
+                          backgroundColor: isWinner ? '#FBBF24' : '#1E293B',
+                          borderColor: isWinner ? '#B45309' : 'rgba(255, 255, 255, 0.3)',
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.rankBadgeText,
+                          {
+                            color: isWinner ? '#451A03' : '#FFFFFF',
+                          },
+                        ]}
+                      >
+                        {player.rank}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Player Label */}
+                  <Text
+                    style={[
+                      styles.playerNameText,
+                      isWinner ? styles.winnerPlayerNameText : styles.normalPlayerNameText,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {player.name}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
 
-          {/* Winner Text with Scale Pop */}
-          <Animated.View
-            style={[
-              styles.titleWrapper,
-              {
-                opacity: titleOpacity,
-                transform: [{ scale: titleScale }],
-              },
-            ]}
+          {/* Big Golden PLAY AGAIN Button */}
+          <TouchableOpacity
+            style={styles.playAgainBtn}
+            onPress={handlePlayAgainPress}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Play Again"
           >
-            <Text style={styles.winnerText}>
-              🏆 {winnerName.toUpperCase()} WINS!
-            </Text>
-            <Text style={styles.congratsSubtitle}>
-              {isUserWinner
-                ? '🎉 Outstanding Victory! You won the match!'
-                : '🎮 Match Finished! Better luck next time!'}
-            </Text>
-          </Animated.View>
-
-          {/* Rankings Standings Card */}
-          {Array.isArray(rankings) && rankings.length > 0 && (
-            <View style={styles.rankingContainer}>
-              <View style={styles.rankingsHeaderRow}>
-                <Text style={styles.rankingsHeaderTitle}>MATCH STANDINGS</Text>
-              </View>
-              {rankings.slice(0, 4).map((item, idx) => {
-                const animVal = rankRowsAnim[idx] || new Animated.Value(1);
-                const isWinnerRow = typeof item === 'object' ? (item.isWinner || idx === 0) : idx === 0;
-                const itemColor = typeof item === 'object' ? (PLAYER_HEX[item.color] || item.color || '#3B82F6') : '#3B82F6';
-                const itemName = typeof item === 'object' ? item.name : String(item);
-
-                const rankBadges = ['WINNER', '2ND', '3RD', '4TH'];
-
-                return (
-                  <Animated.View
-                    key={typeof item === 'object' ? (item.id || item.name || idx) : idx}
-                    style={[
-                      styles.rankRow,
-                      {
-                        borderColor: isWinnerRow ? 'rgba(245, 158, 11, 0.5)' : 'rgba(255, 255, 255, 0.08)',
-                        backgroundColor: isWinnerRow ? 'rgba(245, 158, 11, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                        opacity: animVal,
-                        transform: [
-                          {
-                            translateY: animVal.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [15, 0],
-                            }),
-                          },
-                        ],
-                      },
-                    ]}
-                  >
-                    <View style={styles.rankLeft}>
-                      <View style={[styles.rankNumberBadge, isWinnerRow && styles.rankNumberBadgeWinner]}>
-                        <Text style={[styles.rankNumberText, isWinnerRow && styles.rankNumberTextWinner]}>
-                          #{idx + 1}
-                        </Text>
-                      </View>
-                      <View style={[styles.rankColorDot, { backgroundColor: itemColor }]} />
-                      <Text
-                        style={[
-                          styles.rankPlayerName,
-                          isWinnerRow && styles.rankWinnerName,
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {itemName || `Player ${idx + 1}`}
-                      </Text>
-                    </View>
-                    <View style={styles.rankRight}>
-                      <Text
-                        style={[
-                          styles.rankStatusBadge,
-                          isWinnerRow ? styles.rankStatusWinner : styles.rankStatusFinished,
-                        ]}
-                      >
-                        {rankBadges[idx] || `#${idx + 1}`}
-                      </Text>
-                    </View>
-                  </Animated.View>
-                );
-              })}
+            {/* Golden Gradient Background using SVG */}
+            <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+              <Svg width="100%" height="100%" preserveAspectRatio="none">
+                <Defs>
+                  <LinearGradient id="playBtnGrad" x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0%" stopColor="#FFE066" />
+                    <Stop offset="30%" stopColor="#FFC107" />
+                    <Stop offset="80%" stopColor="#FFA000" />
+                    <Stop offset="100%" stopColor="#F57C00" />
+                  </LinearGradient>
+                </Defs>
+                <Rect
+                  x="0"
+                  y="0"
+                  width="100%"
+                  height="100%"
+                  rx="27"
+                  fill="url(#playBtnGrad)"
+                />
+              </Svg>
             </View>
-          )}
 
-          {/* Action Buttons (Play Again & Home) */}
-          <Animated.View
-            style={[
-              styles.buttonsRow,
-              {
-                opacity: buttonsOpacity,
-                transform: [{ translateY: buttonsTranslateY }],
-              },
-            ]}
+            <Text style={styles.playAgainText}>PLAY AGAIN</Text>
+          </TouchableOpacity>
+
+          {/* Secondary Exit / Home Option */}
+          <TouchableOpacity
+            style={styles.homeLinkBtn}
+            onPress={handleHomePress}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Back to Home"
           >
-            <TouchableOpacity
-              style={[styles.actionBtn, styles.playAgainBtn]}
-              onPress={handlePlayAgainPress}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Play Again"
-            >
-              <ReplayIcon size={18} color="#FFFFFF" />
-              <Text style={styles.playAgainText}>PLAY AGAIN</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionBtn, styles.homeBtn]}
-              onPress={handleHomePress}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Home"
-            >
-              <BottomNavHomeIcon size={18} color="#FFFFFF" />
-              <Text style={styles.homeText}>HOME</Text>
-            </TouchableOpacity>
-          </Animated.View>
+            <BottomNavHomeIcon size={16} color="#94A3B8" />
+            <Text style={styles.homeLinkText}>BACK TO HOME</Text>
+          </TouchableOpacity>
         </Animated.View>
       </View>
     </View>
@@ -790,303 +800,197 @@ export default React.memo(WinnerOverlayComponent);
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#030712',
+    backgroundColor: '#0F122B',
+  },
+  confettiItem: {
+    position: 'absolute',
+    top: 0,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 36,
+    right: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 50,
   },
   centerContainer: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
-  },
-  raysCenterWrap: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  raysContainer: {
-    width: 520,
-    height: 520,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  rayBlade: {
-    position: 'absolute',
-    width: 28,
-    height: 520,
-    backgroundColor: 'rgba(251, 191, 36, 0.08)',
-    borderRadius: 14,
-  },
-  confettiItem: {
-    position: 'absolute',
-    top: 0,
+    paddingTop: 10,
   },
   cardBox: {
-    backgroundColor: '#0F172A',
-    borderRadius: 24,
+    backgroundColor: '#272260',
+    borderRadius: 26,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
-    paddingHorizontal: 20,
-
+    paddingTop: 18,
+    paddingBottom: 22,
+    paddingHorizontal: 18,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.45,
+    shadowRadius: 18,
+    elevation: 12,
   },
-  headerBadgeContainer: {
-    marginTop: 2,
-    marginBottom: 4,
-    alignItems: 'center',
-  },
-  headerBadgePill: {
-    backgroundColor: 'rgba(253, 224, 71, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(253, 224, 71, 0.4)',
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 3,
-  },
-  headerBadgeText: {
-    color: '#FDE047',
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 1.2,
-  },
-  starBurstCenter: {
-    position: 'absolute',
-    top: 54,
-    alignSelf: 'center',
-    width: 1,
-    height: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  sparkleStar: {
-    position: 'absolute',
-    fontSize: 20,
-  },
-  avatarSection: {
-    alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 8,
-    justifyContent: 'center',
-
-  },
-  crownWrapper: {
-    marginBottom: -10,
-    zIndex: 30,
-  },
-  avatarOuterCircle: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3.5,
-
-  },
-  avatarInnerCircle: {
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-  },
-  avatarInitial: {
-    color: '#FFFFFF',
-    fontSize: 34,
-    fontWeight: '900',
-  },
-  titleWrapper: {
-    alignItems: 'center',
-    marginTop: 4,
+  trophyWrapper: {
+    marginTop: -4,
     marginBottom: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   winnerText: {
-    color: '#FDE047',
-    fontSize: 22,
+    color: '#FFB800',
+    fontSize: 32,
     fontWeight: '900',
     textAlign: 'center',
-    letterSpacing: 0.8,
-    textShadowColor: 'rgba(245, 158, 11, 0.65)',
+    letterSpacing: 1,
+    textShadowColor: 'rgba(245, 158, 11, 0.6)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 8,
   },
-  congratsSubtitle: {
-    color: '#94A3B8',
-    fontSize: 13,
-    fontWeight: '500',
-    marginTop: 4,
+  subtitleText: {
+    color: '#C7D2FE',
+    fontSize: 13.5,
+    fontWeight: '600',
     textAlign: 'center',
-  },
-  rewardCardWrap: {
-    alignItems: 'center',
-    marginVertical: 4,
+    marginTop: 5,
+    marginBottom: 14,
   },
   rewardPill: {
-    backgroundColor: 'rgba(245, 158, 11, 0.18)',
-    borderWidth: 1.5,
-    borderColor: '#F59E0B',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 5,
-    marginTop: 4,
-
-  },
-  rewardText: {
-    color: '#FDE047',
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-  },
-  rankingContainer: {
-    width: '100%',
-    marginTop: 10,
-    marginBottom: 6,
-    backgroundColor: 'rgba(15, 23, 42, 0.75)',
-    borderRadius: 14,
-    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#191544',
+    paddingHorizontal: 18,
+    paddingVertical: 7,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 8,
   },
-  rankingsHeaderRow: {
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
-    paddingBottom: 6,
-    marginBottom: 6,
-  },
-  rankingsHeaderTitle: {
-    color: '#94A3B8',
-    fontSize: 10,
+  rewardText: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '800',
-    letterSpacing: 1.2,
-    marginLeft: 2,
+    letterSpacing: 0.3,
   },
-  rankRow: {
-    flexDirection: 'row',
+  bottomSection: {
+    marginTop: 28,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 7,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 5,
+    paddingHorizontal: 6,
   },
-  rankLeft: {
+  playersRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+    width: '100%',
+    paddingHorizontal: 8,
+    marginBottom: 24,
   },
-  rankNumberBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  playerColumn: {
+    alignItems: 'center',
+    width: 72,
+  },
+  avatarWrap: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  crownContainer: {
+    position: 'absolute',
+    top: -21,
+    alignSelf: 'center',
+    zIndex: 10,
+  },
+  avatarCircle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 5,
+    elevation: 5,
   },
-  rankNumberBadgeWinner: {
-    backgroundColor: 'rgba(245, 158, 11, 0.3)',
+  rankBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 19,
+    height: 19,
+    borderRadius: 9.5,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 5,
   },
-  rankNumberText: {
-    color: '#94A3B8',
+  rankBadgeText: {
     fontSize: 10,
-    fontWeight: '800',
-  },
-  rankNumberTextWinner: {
-    color: '#FDE047',
-  },
-  rankColorDot: {
-    width: 11,
-    height: 11,
-    borderRadius: 5.5,
-    marginRight: 8,
-
-  },
-  rankPlayerName: {
-    color: '#E2E8F0',
-    fontSize: 13,
-    fontWeight: '600',
-    flexShrink: 1,
-  },
-  rankWinnerName: {
-    color: '#FDE047',
     fontWeight: '900',
   },
-  rankRight: {
-    marginLeft: 8,
+  playerNameText: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 7,
   },
-  rankStatusBadge: {
-    fontSize: 10,
+  winnerPlayerNameText: {
+    color: '#FBBF24',
     fontWeight: '800',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 6,
-    letterSpacing: 0.4,
+    fontSize: 13,
   },
-  rankStatusWinner: {
-    backgroundColor: '#F59E0B',
-    color: '#000000',
-  },
-  rankStatusFinished: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    color: '#94A3B8',
-  },
-  closeBtn: {
-    position: 'absolute',
-    top: 14,
-    right: 14,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.22)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 50,
-  },
-  buttonsRow: {
-    flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'space-between',
-    marginTop: 18,
-    gap: 12,
-  },
-  actionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: 8,
-    minHeight: 48,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    elevation: 3,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
+  normalPlayerNameText: {
+    color: '#CBD5E1',
+    fontWeight: '600',
   },
   playAgainBtn: {
-    backgroundColor: '#10B981',
-    borderWidth: 1,
-    borderColor: '#34D399',
+    width: '88%',
+    height: 54,
+    borderRadius: 27,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 8,
   },
   playAgainText: {
-    color: '#FFFFFF',
-    fontSize: 13,
+    color: '#3B1C00',
+    fontSize: 17,
     fontWeight: '900',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
-  homeBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.22)',
+  homeLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 14,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
   },
-  homeText: {
-    color: '#E2E8F0',
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+  homeLinkText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.8,
   },
   errorFallbackContainer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(3, 7, 18, 0.92)',
+    backgroundColor: 'rgba(3, 7, 18, 0.94)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,

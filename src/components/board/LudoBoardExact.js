@@ -23,6 +23,13 @@ import CenterHome3D from './CenterHome3D.js';
 import PinToken3D from '../3d/PinToken3D.js';
 
 export const THEME_PALETTES = {
+  ocean: {
+    boardBg: '#E0F2FE',
+    red: { base: '#E11D48', dark: '#9F1239', path: '#E11D48', token: '#E11D48', goldRing: '#38BDF8' },
+    green: { base: '#0D9488', dark: '#115E59', path: '#0D9488', token: '#0D9488', goldRing: '#38BDF8' },
+    yellow: { base: '#EAB308', dark: '#A16207', path: '#EAB308', token: '#EAB308', goldRing: '#0284C7' },
+    blue: { base: '#0284C7', dark: '#0369A1', path: '#0284C7', token: '#0284C7', goldRing: '#FACC15' },
+  },
   classic: {
     boardBg: '#F5E6C8',
     red: { base: '#C8372D', dark: '#8B1A1A', path: '#C8372D', token: '#C8372D', goldRing: '#C8A96E' },
@@ -164,10 +171,10 @@ export function getThemePalette(themeId) {
       red: { base: cRed, dark: cRed, path: cRed, token: cRed, goldRing: '#10B981' },
     };
   }
-  return THEME_PALETTES.classic;
+  return THEME_PALETTES.ocean || THEME_PALETTES.classic;
 }
 
-export const EXACT_COLORS = THEME_PALETTES.classic;
+export const EXACT_COLORS = THEME_PALETTES.ocean || THEME_PALETTES.classic;
 
 export const ExactLudoToken = React.memo(function ExactLudoToken({ player = 'red', size = 26, isMovable = false, onPress, palette, token, disabled = false }) {
   if (token) {

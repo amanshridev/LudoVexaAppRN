@@ -4,10 +4,10 @@ import { LUDO_THEMES_LIST } from '../theme/colors';
 import { loadSettings, saveSettings, DEFAULT_SETTINGS } from '../utils/storage';
 
 const ThemeContext = createContext({
-  appTheme: buildSemanticTheme('slate'),
-  appColor: 'slate',
-  ludoTheme: LUDO_THEMES_LIST[0], // classic
-  ludoThemeId: 'classic',
+  appTheme: buildSemanticTheme('ocean'),
+  appColor: 'ocean',
+  ludoTheme: LUDO_THEMES_LIST.find((t) => t.id === 'ocean') || LUDO_THEMES_LIST[0],
+  ludoThemeId: 'ocean',
   settings: DEFAULT_SETTINGS,
   setAppColor: () => {},
   setLudoTheme: () => {},
@@ -63,13 +63,14 @@ export function ThemeProvider({ children }) {
   }, [updateSettings]);
 
   const appTheme = useMemo(
-    () => buildSemanticTheme(settings.appColor || 'slate'),
+    () => buildSemanticTheme(settings.appColor || 'ocean'),
     [settings.appColor]
   );
 
   const ludoThemeObj = useMemo(
     () =>
       LUDO_THEMES_LIST.find((t) => t.id === settings.ludoTheme) ||
+      LUDO_THEMES_LIST.find((t) => t.id === 'ocean') ||
       LUDO_THEMES_LIST[0],
     [settings.ludoTheme]
   );
@@ -77,9 +78,9 @@ export function ThemeProvider({ children }) {
   const contextValue = useMemo(
     () => ({
       appTheme,
-      appColor: settings.appColor || 'slate',
+      appColor: settings.appColor || 'ocean',
       ludoTheme: ludoThemeObj,
-      ludoThemeId: settings.ludoTheme || 'classic',
+      ludoThemeId: settings.ludoTheme || 'ocean',
       settings,
       setAppColor,
       setLudoTheme,

@@ -82,6 +82,7 @@ export default function GameScreen({
   const [isRolling, setIsRolling] = useState(false);
   const [rollingDiceValue, setRollingDiceValue] = useState(null);
   const [rollNotice, setRollNotice] = useState(null);
+  const [isReadyToPlay, setIsReadyToPlay] = useState(false);
 
   // Pre-initialize board dimensions from screen width/height so frame 0 renders immediately
   const [boardArea, setBoardArea] = useState(() => ({
@@ -205,7 +206,14 @@ export default function GameScreen({
   // Handle unmount cleanup
   useEffect(() => {
     isMountedRef.current = true;
+    const readyTimer = setTimeout(() => {
+      if (isMountedRef.current) {
+        setIsReadyToPlay(true);
+      }
+    }, 450);
+
     return () => {
+      clearTimeout(readyTimer);
       isMountedRef.current = false;
       hasShownWinnerRef.current = false;
       clearAllTimeouts();
@@ -956,11 +964,11 @@ export default function GameScreen({
     }, 340);
   }, [isRolling, handleSelectToken, addTimeout, getPlayerLabel, userColor]);
 
-  // AI automation loop (Fast 200ms decisions)
+  // AI automation loop (Fast 200ms decisions, with entrance transition guard)
   useEffect(() => {
     let timer = null;
 
-    if (isAiTurn && !isAnimatingRef.current) {
+    if (isReadyToPlay && isAiTurn && !isAnimatingRef.current) {
       if (gameState.status === 'ROLLING' && !isRolling && !rollNotice) {
         timer = setTimeout(() => {
           triggerRoll();
@@ -983,12 +991,12 @@ export default function GameScreen({
         clearTimeout(timer);
       }
     };
-  }, [gameState.status, isAiTurn, isRolling, rollNotice, triggerRoll, handleSelectToken, settings.aiDifficulty]);
+  }, [isReadyToPlay, gameState.status, isAiTurn, isRolling, rollNotice, triggerRoll, handleSelectToken, settings.aiDifficulty]);
 
   // Auto-roll dice for human player if enabled in gameplay settings
   useEffect(() => {
     let timer = null;
-    if (!isAiTurn && settings?.autoRoll && !isAnimatingRef.current) {
+    if (isReadyToPlay && !isAiTurn && settings?.autoRoll && !isAnimatingRef.current) {
       if (gameState.status === 'ROLLING' && !isRolling && !rollNotice) {
         timer = setTimeout(() => {
           triggerRoll();
@@ -998,7 +1006,7 @@ export default function GameScreen({
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [gameState.status, isAiTurn, settings?.autoRoll, isRolling, rollNotice, triggerRoll]);
+  }, [isReadyToPlay, gameState.status, isAiTurn, settings?.autoRoll, isRolling, rollNotice, triggerRoll]);
 
   // Memoized token objects for overlays
   const movingTokenData = useMemo(() => {

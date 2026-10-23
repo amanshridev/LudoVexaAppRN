@@ -17,8 +17,8 @@ const DEFAULT_STATS = {
 
 export const DEFAULT_SETTINGS = {
   // Appearance
-  ludoTheme: 'classic',
-  appColor: 'slate',
+  ludoTheme: 'ocean',
+  appColor: 'ocean',
   
   // Audio & Haptics
   sound: true,

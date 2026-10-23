@@ -711,17 +711,7 @@ export default function SettingsScreen({ onNavigate, onBack }) {
               </View>
 
               <View style={styles.rowRight}>
-                <View
-                  style={[
-                    styles.sharePill,
-                    {
-                      backgroundColor: 'rgba(56, 189, 248, 0.14)',
-                      borderColor: 'rgba(56, 189, 248, 0.35)',
-                    },
-                  ]}
-                >
-                  <Text style={[styles.sharePillText, { color: '#38BDF8' }]}>Share 🚀</Text>
-                </View>
+
                 <ChevronRightIcon size={18} color={appTheme.colors.primaryLight} />
               </View>
             </TouchableOpacity>
