@@ -4,7 +4,7 @@ import { View, StyleSheet, BackHandler, Alert } from 'react-native';
 // Storage & Utils
 import { loadSettings } from '../utils/storage';
 import SoundManager from '../utils/SoundManager';
-import AnalyticsService from '../services/analytics';
+import { AnalyticsService, CrashlyticsService } from '../services';
 
 // Active Screens
 import SplashScreen from '../screens/SplashScreen';
@@ -115,10 +115,11 @@ export default function AppNavigator() {
     return () => subscription.remove();
   }, [screenStack, currentScreen, goBack, reset]);
 
-  // Log screen views to Firebase Analytics automatically when currentScreen changes
+  // Log screen views to Firebase Analytics & Crashlytics breadcrumbs
   useEffect(() => {
     if (currentScreen) {
       AnalyticsService.logScreenView(currentScreen);
+      CrashlyticsService.log(`Screen view: ${currentScreen}`);
     }
   }, [currentScreen]);
 

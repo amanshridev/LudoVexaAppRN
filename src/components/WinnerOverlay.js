@@ -8,6 +8,7 @@ import {
   Animated,
   Easing,
   useWindowDimensions,
+  Modal,
 } from 'react-native';
 import Svg, {
   Path,
@@ -218,16 +219,18 @@ export class WinnerErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <View style={styles.errorFallbackContainer}>
-          <Text style={styles.errorFallbackTitle}>🏆 Match Concluded!</Text>
-          <TouchableOpacity
-            style={styles.errorFallbackBtn}
-            onPress={this.props.onPlayAgain || this.props.fallbackOnGameOver}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.errorFallbackBtnText}>Continue</Text>
-          </TouchableOpacity>
-        </View>
+        <Modal transparent statusBarTranslucent visible animationType="fade">
+          <View style={styles.errorFallbackContainer}>
+            <Text style={styles.errorFallbackTitle}>🏆 Match Concluded!</Text>
+            <TouchableOpacity
+              style={styles.errorFallbackBtn}
+              onPress={this.props.onPlayAgain || this.props.fallbackOnGameOver}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.errorFallbackBtnText}>Continue</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
       );
     }
     return this.props.children;
@@ -548,31 +551,40 @@ function WinnerOverlayComponent({
     onHome?.();
   }, [onHome]);
 
-  const headerTitle = isUserWinner ? 'YOU WIN!' : `${winnerName.toUpperCase()} WINS!`;
+  const headerTitle = isUserWinner ? 'YOU WIN!' : `${(winnerName || 'Winner').toUpperCase()} WINS!`;
   const headerSubtitle = 'All 4 tokens reached home';
 
+  if (!visible) return null;
+
   return (
-    <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
-      {/* 1. Backdrop */}
-      <Pressable
-        style={StyleSheet.absoluteFillObject}
-        onPress={() => {
-          if (!hasSkippedRef.current) {
-            skipToEnd();
-          } else {
-            handleClosePress();
-          }
-        }}
-      >
-        <Animated.View
-          style={[
-            styles.backdrop,
-            {
-              opacity: bgOpacity,
-            },
-          ]}
-        />
-      </Pressable>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={handleClosePress}
+    >
+      <View style={styles.modalRootContainer} pointerEvents="box-none">
+        {/* 1. Backdrop */}
+        <Pressable
+          style={StyleSheet.absoluteFillObject}
+          onPress={() => {
+            if (!hasSkippedRef.current) {
+              skipToEnd();
+            } else {
+              handleClosePress();
+            }
+          }}
+        >
+          <Animated.View
+            style={[
+              styles.backdrop,
+              {
+                opacity: bgOpacity,
+              },
+            ]}
+          />
+        </Pressable>
 
       {/* 2. Confetti Particles */}
       <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
@@ -791,13 +803,19 @@ function WinnerOverlayComponent({
           </TouchableOpacity>
         </Animated.View>
       </View>
-    </View>
+      </View>
+    </Modal>
   );
 }
 
 export default React.memo(WinnerOverlayComponent);
 
 const styles = StyleSheet.create({
+  modalRootContainer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 99999,
+    elevation: 99999,
+  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#0F122B',
