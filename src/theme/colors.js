@@ -143,19 +143,19 @@ export const PLAYER_COLORS = {
 
 export const LUDO_THEMES_LIST = [
   {
-    id: 'ocean',
-    name: 'Ocean Blue',
-    icon: '🌊',
-    colors: ['#06B6D4', '#FACC15', '#2563EB', '#F43F5E'],
-    boardBg: '#E0F7FA',
-    dark: false,
-  },
-  {
     id: 'classic',
     name: 'Classic Royal',
     icon: '👑',
     colors: ['#238838', '#DDA715', '#2255A4', '#D92525'],
     boardBg: '#FFFFFF',
+    dark: false,
+  },
+  {
+    id: 'ocean',
+    name: 'Ocean Blue',
+    icon: '🌊',
+    colors: ['#06B6D4', '#FACC15', '#2563EB', '#F43F5E'],
+    boardBg: '#E0F7FA',
     dark: false,
   },
   {
@@ -549,7 +549,7 @@ export const THEMES = {
   },
 };
 
-export const DEFAULT_LUDO_THEME_ID = 'ocean';
-export const DEFAULT_LUDO_THEME = LUDO_THEMES_LIST[0]; // Ocean Blue
-export const DEFAULT_THEME_ID = 'ocean';
-export const DEFAULT_THEME = THEMES.ocean;
+export const DEFAULT_LUDO_THEME_ID = 'classic';
+export const DEFAULT_LUDO_THEME = LUDO_THEMES_LIST[0]; // Classic Royal
+export const DEFAULT_THEME_ID = 'classic';
+export const DEFAULT_THEME = THEMES.rajwada;

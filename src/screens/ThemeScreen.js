@@ -16,7 +16,7 @@ export default function ThemeScreen({ onBack, onSelectTheme }) {
   const { appTheme, ludoThemeId, setLudoTheme, ludoThemesList } = useTheme();
 
   const [selectedThemeId, setSelectedThemeId] = useState(
-    ludoThemeId || 'ocean'
+    ludoThemeId || 'classic'
   );
   const [activeCategory, setActiveCategory] = useState('all');
   const [saveToast, setSaveToast] = useState(null);

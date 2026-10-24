@@ -6,8 +6,8 @@ import { loadSettings, saveSettings, DEFAULT_SETTINGS } from '../utils/storage';
 const ThemeContext = createContext({
   appTheme: buildSemanticTheme('ocean'),
   appColor: 'ocean',
-  ludoTheme: LUDO_THEMES_LIST.find((t) => t.id === 'ocean') || LUDO_THEMES_LIST[0],
-  ludoThemeId: 'ocean',
+  ludoTheme: LUDO_THEMES_LIST.find((t) => t.id === 'classic') || LUDO_THEMES_LIST[0],
+  ludoThemeId: 'classic',
   settings: DEFAULT_SETTINGS,
   setAppColor: () => {},
   setLudoTheme: () => {},
@@ -70,7 +70,7 @@ export function ThemeProvider({ children }) {
   const ludoThemeObj = useMemo(
     () =>
       LUDO_THEMES_LIST.find((t) => t.id === settings.ludoTheme) ||
-      LUDO_THEMES_LIST.find((t) => t.id === 'ocean') ||
+      LUDO_THEMES_LIST.find((t) => t.id === 'classic') ||
       LUDO_THEMES_LIST[0],
     [settings.ludoTheme]
   );
@@ -80,7 +80,7 @@ export function ThemeProvider({ children }) {
       appTheme,
       appColor: settings.appColor || 'ocean',
       ludoTheme: ludoThemeObj,
-      ludoThemeId: settings.ludoTheme || 'ocean',
+      ludoThemeId: settings.ludoTheme || 'classic',
       settings,
       setAppColor,
       setLudoTheme,

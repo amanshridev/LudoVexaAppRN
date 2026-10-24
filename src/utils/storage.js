@@ -17,7 +17,7 @@ const DEFAULT_STATS = {
 
 export const DEFAULT_SETTINGS = {
   // Appearance
-  ludoTheme: 'ocean',
+  ludoTheme: 'classic',
   appColor: 'ocean',
   
   // Audio & Haptics
@@ -107,7 +107,11 @@ export async function loadSettings() {
   try {
     const data = await AsyncStorage.getItem(SETTINGS_KEY);
     if (data) {
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(data) };
+      const parsed = JSON.parse(data);
+      if (parsed.ludoTheme === 'ocean') {
+        parsed.ludoTheme = 'classic';
+      }
+      return { ...DEFAULT_SETTINGS, ...parsed };
     }
   } catch (e) {
     console.warn('Failed to load settings', e);
