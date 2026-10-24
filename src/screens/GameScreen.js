@@ -822,20 +822,17 @@ export default function GameScreen({
             const winnerName = getPlayerLabel(winnerColor);
             const isUserWinner = winnerColor === userColor;
 
-            let rankings = [];
-            if (finalState.activePlayers.length > 2) {
-              const allRankedColors = [
-                ...finalState.winners,
-                ...finalState.activePlayers.filter((p) => !finalState.winners.includes(p)),
-              ];
-              rankings = allRankedColors.map((color, index) => ({
-                rank: index + 1,
-                color,
-                name: getPlayerLabel(color),
-                isWinner: index === 0,
-                isUser: color === userColor,
-              }));
-            }
+            const allRankedColors = [
+              ...finalState.winners,
+              ...finalState.activePlayers.filter((p) => !finalState.winners.includes(p)),
+            ];
+            const rankings = allRankedColors.map((color, index) => ({
+              rank: index + 1,
+              color,
+              name: getPlayerLabel(color),
+              isWinner: index === 0,
+              isUser: color === userColor,
+            }));
 
             setWinnerData({
               winnerColor,
