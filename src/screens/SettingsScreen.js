@@ -13,17 +13,17 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path, Rect, Circle, G } from 'react-native-svg';
+import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import ScreenHeader from '../components/ui/ScreenHeader';
 import { useTheme } from '../context/ThemeContext';
 import SoundManager from '../utils/SoundManager';
 import { checkAppUpdate, APP_VERSION } from '../components/AppUpdate/AppUpdateModal';
 
 // ============================================================================
-// VECTOR SVG ICONS FOR SETTINGS
+// PREMIUM VECTOR ICONS
 // ============================================================================
 
-const SpeakerSoundIcon = ({ size = 20, color = '#38BDF8' }) => (
+const SoundIcon = ({ size = 20, color = '#38BDF8' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M11 5L6 9H2v6h4l5 4V5z"
@@ -31,8 +31,6 @@ const SpeakerSoundIcon = ({ size = 20, color = '#38BDF8' }) => (
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
-      fill={color}
-      fillOpacity={0.2}
     />
     <Path
       d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"
@@ -43,7 +41,7 @@ const SpeakerSoundIcon = ({ size = 20, color = '#38BDF8' }) => (
   </Svg>
 );
 
-const SpeakerMuteIcon = ({ size = 20, color = '#94A3B8' }) => (
+const MuteIcon = ({ size = 20, color = '#94A3B8' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M11 5L6 9H2v6h4l5 4V5z"
@@ -51,8 +49,6 @@ const SpeakerMuteIcon = ({ size = 20, color = '#94A3B8' }) => (
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
-      fill={color}
-      fillOpacity={0.15}
     />
     <Path
       d="M23 9l-6 6M17 9l6 6"
@@ -73,8 +69,6 @@ const VibrationIcon = ({ size = 20, color = '#A855F7' }) => (
       rx="3"
       stroke={color}
       strokeWidth={2}
-      fill={color}
-      fillOpacity={0.15}
     />
     <Path
       d="M11 18h2M2 9v6M22 9v6M4 6.5v11M20 6.5v11"
@@ -85,14 +79,63 @@ const VibrationIcon = ({ size = 20, color = '#A855F7' }) => (
   </Svg>
 );
 
-const BoardPaletteIcon = ({ size = 20, color = '#10B981' }) => (
+const BotIcon = ({ size = 20, color = '#EC4899' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect
+      x="3"
+      y="9"
+      width="18"
+      height="12"
+      rx="3"
+      stroke={color}
+      strokeWidth={2}
+    />
+    <Path
+      d="M12 2v7M9 2h6M8 14h.01M16 14h.01M10 17h4"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+    />
+  </Svg>
+);
+
+const TargetIcon = ({ size = 20, color = '#06B6D4' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={2} />
+    <Path d="M12 7v10M7 12h10" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Circle cx="12" cy="12" r="2.5" fill={color} />
+  </Svg>
+);
+
+const StarShieldIcon = ({ size = 20, color = '#8B5CF6' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 2l2.6 5.8 6.4.7-4.8 4.3 1.4 6.2-5.6-3.3-5.6 3.3 1.4-6.2-4.8-4.3 6.4-.7L12 2z"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const LightningIcon = ({ size = 20, color = '#F59E0B' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const PaletteIcon = ({ size = 20, color = '#10B981' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M12 2C6.48 2 2 6.48 2 12c0 2.85 1.2 5.41 3.12 7.19.78.72 1.88 1.11 2.94.91.73-.14 1.44-.7 1.44-1.55 0-.58-.23-1.12-.55-1.57-.45-.64-.72-1.42-.72-2.28 0-1.93 1.57-3.5 3.5-3.5h1.27c3.31 0 6-2.69 6-6 0-4.42-3.58-8-8-8z"
       stroke={color}
       strokeWidth={2}
-      fill={color}
-      fillOpacity={0.15}
     />
     <Circle cx="7.5" cy="9.5" r="1.5" fill="#EF4444" />
     <Circle cx="12" cy="6.5" r="1.5" fill="#10B981" />
@@ -105,94 +148,31 @@ const SparkleIcon = ({ size = 20, color = '#F59E0B' }) => (
     <Path
       d="M12 2L14.4 8.6L21 11L14.4 13.4L12 20L9.6 13.4L3 11L9.6 8.6L12 2Z"
       stroke={color}
-      strokeWidth={1.8}
-      strokeLinejoin="round"
-      fill={color}
-      fillOpacity={0.2}
-    />
-    <Path
-      d="M19 16l1.2 2.8L23 20l-2.8 1.2L19 24l-1.2-2.8L15 20l2.8-1.2L19 16z"
-      fill={color}
-    />
-  </Svg>
-);
-
-const BotBrainIcon = ({ size = 20, color = '#EC4899' }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Rect
-      x="3"
-      y="8"
-      width="18"
-      height="12"
-      rx="3"
-      stroke={color}
-      strokeWidth={2}
-      fill={color}
-      fillOpacity={0.15}
-    />
-    <Path
-      d="M12 2v6M9 2h6M8 14h.01M16 14h.01M10 17h4"
-      stroke={color}
-      strokeWidth={2}
-      strokeLinecap="round"
-    />
-  </Svg>
-);
-
-const TargetHintsIcon = ({ size = 20, color = '#06B6D4' }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle
-      cx="12"
-      cy="12"
-      r="9"
-      stroke={color}
-      strokeWidth={2}
-      fill={color}
-      fillOpacity={0.15}
-    />
-    <Path
-      d="M12 8v8M8 12h8"
-      stroke={color}
-      strokeWidth={2}
-      strokeLinecap="round"
-    />
-    <Circle cx="12" cy="12" r="2.5" fill={color} />
-  </Svg>
-);
-
-const SafeSpotStarIcon = ({ size = 20, color = '#8B5CF6' }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-      stroke={color}
       strokeWidth={2}
       strokeLinejoin="round"
-      fill={color}
-      fillOpacity={0.2}
     />
   </Svg>
 );
 
-const ShieldLockIcon = ({ size = 20, color = '#10B981' }) => (
+const ShieldLockIcon = ({ size = 20, color = '#6366F1' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
       stroke={color}
       strokeWidth={2}
       strokeLinejoin="round"
-      fill={color}
-      fillOpacity={0.15}
     />
     <Path
-      d="M12 9v4M12 16h.01"
+      d="M9 12l2 2 4-4"
       stroke={color}
       strokeWidth={2}
       strokeLinecap="round"
+      strokeLinejoin="round"
     />
   </Svg>
 );
 
-const ShareLinkIcon = ({ size = 20, color = '#38BDF8' }) => (
+const ShareLinkIcon = ({ size = 20, color = '#0284C7' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="18" cy="5" r="3" stroke={color} strokeWidth={2} />
     <Circle cx="6" cy="12" r="3" stroke={color} strokeWidth={2} />
@@ -205,24 +185,23 @@ const ShareLinkIcon = ({ size = 20, color = '#38BDF8' }) => (
   </Svg>
 );
 
-const ExternalWebIcon = ({ size = 18, color = '#94A3B8' }) => (
+const StarReviewIcon = ({ size = 20, color = '#EAB308' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
-      d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"
+      d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
       stroke={color}
       strokeWidth={2}
-      strokeLinecap="round"
       strokeLinejoin="round"
     />
   </Svg>
 );
 
-const ChevronRightIcon = ({ size = 18, color = '#94A3B8' }) => (
+const AppUpdateIcon = ({ size = 20, color = '#14B8A6' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
-      d="M9 18l6-6-6-6"
+      d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"
       stroke={color}
-      strokeWidth={2.5}
+      strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
     />
@@ -248,15 +227,21 @@ const ResetIcon = ({ size = 18, color = '#EF4444' }) => (
   </Svg>
 );
 
-const AppUpdateArrowIcon = ({ size = 20, color = '#10B981' }) => (
+const ChevronRightIcon = ({ size = 16, color = '#64748B' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
-      d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
+      d="M9 18l6-6-6-6"
       stroke={color}
-      strokeWidth={2}
+      strokeWidth={2.5}
       strokeLinecap="round"
       strokeLinejoin="round"
     />
+  </Svg>
+);
+
+const PlayFxIcon = ({ size = 16, color = '#FFFFFF' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M5 3l14 9-14 9V3z" fill={color} />
   </Svg>
 );
 
@@ -276,32 +261,32 @@ export default function SettingsScreen({ onNavigate, onBack }) {
     ludoThemesList,
   } = useTheme();
 
-  const [testFxActive, setTestFxActive] = useState(false);
+  const [testFxPlaying, setTestFxPlaying] = useState(false);
 
-  // Sound is enabled by default
+  // Sound & Haptics
   const isSoundOn = settings.sound !== false;
-  // Haptics is enabled by default
   const isHapticsOn = settings.haptics !== false;
-  // AI Difficulty ('easy' | 'medium' | 'hard')
+
+  // Gameplay Settings
   const aiDifficulty = settings.aiDifficulty || 'medium';
-  // Movement hints
   const showHints = settings.showMovementHints !== false;
-  // Safe spots
   const showSafeSpots = settings.showSafeSpots !== false;
+  const isTurbo = settings.turboMode === true;
 
-  // Currently active app color object
+  // Active theme details
   const currentAppColor =
-    themesList?.find((t) => t.id === (settings.appColor || appColor || 'slate')) ||
-    themesList?.[0] || { name: 'Gunmetal Slate', primary: '#64748B' };
+    themesList?.find((t) => t.id === (settings.appColor || appColor || 'ocean')) ||
+    themesList?.[0] || { name: 'Ocean Blue', primary: '#0284C7' };
 
-  // Currently active ludo theme object
   const currentLudoTheme =
     ludoTheme ||
     ludoThemesList?.find((t) => t.id === (settings.ludoTheme || ludoThemeId || 'classic')) ||
     ludoThemesList?.[0] || { name: 'Classic Royal', colors: ['#238838', '#DDA715', '#2255A4', '#D92525'] };
 
+  const themeColors = currentLudoTheme.colors || ['#238838', '#DDA715', '#2255A4', '#D92525'];
+
   // --------------------------------------------------------------------------
-  // HANDLERS
+  // ACTIONS & HANDLERS
   // --------------------------------------------------------------------------
 
   const handleToggleSound = (val) => {
@@ -312,60 +297,56 @@ export default function SettingsScreen({ onNavigate, onBack }) {
         SoundManager.play('buttonTap');
       }
       if (isHapticsOn) {
-        Vibration.vibrate(30);
+        Vibration.vibrate(20);
       }
-    } catch (_) { }
+    } catch (_) {}
   };
 
   const handleToggleHaptics = (val) => {
     try {
       updateSettings({ haptics: val });
       if (val) {
-        Vibration.vibrate([0, 40, 30, 40]);
+        Vibration.vibrate(30);
       }
       if (isSoundOn) {
         SoundManager.play('buttonTap');
       }
-    } catch (_) { }
+    } catch (_) {}
   };
 
-  const handleSelectAiDifficulty = (diff) => {
+  const handleSelectDifficulty = (level) => {
     try {
-      updateSettings({ aiDifficulty: diff });
-      if (isSoundOn) {
-        SoundManager.play('buttonTap');
-      }
-      if (isHapticsOn) {
-        Vibration.vibrate(25);
-      }
-    } catch (_) { }
+      updateSettings({ aiDifficulty: level });
+      if (isSoundOn) SoundManager.play('buttonTap');
+      if (isHapticsOn) Vibration.vibrate(20);
+    } catch (_) {}
   };
 
   const handleToggleHints = (val) => {
     try {
       updateSettings({ showMovementHints: val });
-      if (isSoundOn) {
-        SoundManager.play('buttonTap');
-      }
-      if (isHapticsOn) {
-        Vibration.vibrate(25);
-      }
-    } catch (_) { }
+      if (isSoundOn) SoundManager.play('buttonTap');
+      if (isHapticsOn) Vibration.vibrate(20);
+    } catch (_) {}
   };
 
   const handleToggleSafeSpots = (val) => {
     try {
       updateSettings({ showSafeSpots: val });
-      if (isSoundOn) {
-        SoundManager.play('buttonTap');
-      }
-      if (isHapticsOn) {
-        Vibration.vibrate(25);
-      }
-    } catch (_) { }
+      if (isSoundOn) SoundManager.play('buttonTap');
+      if (isHapticsOn) Vibration.vibrate(20);
+    } catch (_) {}
   };
 
-  const handleTestSound = () => {
+  const handleToggleTurbo = (val) => {
+    try {
+      updateSettings({ turboMode: val });
+      if (isSoundOn) SoundManager.play('buttonTap');
+      if (isHapticsOn) Vibration.vibrate(20);
+    } catch (_) {}
+  };
+
+  const handleTestAudio = () => {
     try {
       if (!isSoundOn) {
         updateSettings({ sound: true });
@@ -373,77 +354,69 @@ export default function SettingsScreen({ onNavigate, onBack }) {
       }
       SoundManager.play('diceRoll');
       if (isHapticsOn) {
-        Vibration.vibrate(35);
+        Vibration.vibrate([0, 30, 20, 30]);
       }
-      setTestFxActive(true);
-      setTimeout(() => setTestFxActive(false), 1200);
-    } catch (_) { }
+      setTestFxPlaying(true);
+      setTimeout(() => setTestFxPlaying(false), 1200);
+    } catch (_) {}
   };
 
   const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.LudoVexaApp';
 
   const handleShareApp = async () => {
     try {
-      if (isSoundOn) {
-        SoundManager.play('buttonTap');
-      }
-      if (isHapticsOn) {
-        Vibration.vibrate(30);
-      }
+      if (isSoundOn) SoundManager.play('buttonTap');
+      if (isHapticsOn) Vibration.vibrate(25);
       await Share.share({
         title: 'Play Ludo Vexa!',
-        message: `🎲 Hey! Let's play Ludo together on Ludo Vexa! Download now on Google Play Store:\n${PLAY_STORE_URL}`,
+        message: `🎲 Hey! Let's play Ludo together on Ludo Vexa! Download now on Google Play:\n${PLAY_STORE_URL}`,
         url: PLAY_STORE_URL,
       });
-    } catch (_) { }
+    } catch (_) {}
   };
 
   const handleOpenPlayStore = async () => {
     try {
-      if (isSoundOn) {
-        SoundManager.play('buttonTap');
-      }
-      if (isHapticsOn) {
-        Vibration.vibrate(30);
-      }
+      if (isSoundOn) SoundManager.play('buttonTap');
+      if (isHapticsOn) Vibration.vibrate(25);
       await Linking.openURL(PLAY_STORE_URL);
-    } catch (_) { }
+    } catch (_) {}
   };
 
   const handleResetSettings = () => {
-    if (isSoundOn) {
-      SoundManager.play('buttonTap');
-    }
+    if (isSoundOn) SoundManager.play('buttonTap');
     Alert.alert(
-      'Reset All Settings?',
-      'This will restore audio, haptics, AI bot level, and board hints to default settings.',
+      'Reset All Preferences?',
+      'This will restore audio, haptics, AI bot difficulty, hints, board and theme colors to original defaults.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Reset to Defaults',
+          text: 'Restore Defaults',
           style: 'destructive',
           onPress: () => {
             updateSettings({
               sound: true,
               haptics: true,
+              ludoTheme: 'classic',
+              appColor: 'ocean',
               aiDifficulty: 'medium',
               showMovementHints: true,
               showSafeSpots: true,
-              ludoTheme: 'classic',
-              appColor: 'slate',
+              turboMode: false,
             });
             SoundManager.setMuted(false);
-            SoundManager.play('buttonTap');
-            if (isHapticsOn) {
-              Vibration.vibrate(50);
-            }
+            if (isHapticsOn) Vibration.vibrate(50);
           },
         },
       ]
     );
   };
 
-  const themeColors = currentLudoTheme.colors || ['#238838', '#DDA715', '#2255A4', '#D92525'];
+  const difficultyLevels = [
+    { id: 'easy', label: 'Casual', badgeColor: '#10B981' },
+    { id: 'medium', label: 'Balanced', badgeColor: '#F59E0B' },
+    { id: 'hard', label: 'Expert', badgeColor: '#EF4444' },
+  ];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: appTheme.colors.background }]}>
@@ -456,172 +429,292 @@ export default function SettingsScreen({ onNavigate, onBack }) {
         showsVerticalScrollIndicator={false}
       >
         {/* ============================================================== */}
-        {/* 1. HERO PREFERENCES DASHBOARD BANNER */}
-
+        {/* 1. HERO PREFERENCES DASHBOARD */}
         {/* ============================================================== */}
-        {/* 2. AUDIO & HAPTIC FEEDBACK SECTION */}
-        {/* ============================================================== */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionHeaderTitle, { color: appTheme.colors.secondaryText }]}>
-            AUDIO & FEEDBACK
-          </Text>
+        <View
+          style={[
+            styles.heroCard,
+            {
+              backgroundColor: appTheme.colors.surface,
+              borderColor: 'rgba(255, 255, 255, 0.08)',
+            },
+          ]}
+        >
+          <View style={styles.heroLeft}>
+            <View
+              style={[
+                styles.heroAvatar,
+                { backgroundColor: appTheme.colors.primaryLight + '20' },
+              ]}
+            >
+              <Text style={styles.heroDiceEmoji}>🎲</Text>
+            </View>
+            <View style={styles.heroInfo}>
+              <Text style={[styles.heroTitle, { color: appTheme.colors.text }]}>
+                Game Preferences
+              </Text>
+              <Text style={[styles.heroSubtitle, { color: appTheme.colors.secondaryText }]}>
+                {currentLudoTheme.name} • {currentAppColor.name}
+              </Text>
+            </View>
+          </View>
 
-          <View
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={handleTestAudio}
             style={[
-              styles.sectionCard,
+              styles.testFxBtn,
               {
-                backgroundColor: appTheme.colors.surface,
-                borderColor: 'rgba(255, 255, 255, 0.07)',
+                backgroundColor: testFxPlaying
+                  ? appTheme.colors.primary
+                  : 'rgba(255, 255, 255, 0.08)',
+                borderColor: testFxPlaying
+                  ? appTheme.colors.primary
+                  : 'rgba(255, 255, 255, 0.12)',
               },
             ]}
           >
-            {/* SFX SOUND EFFECTS */}
-            <View style={styles.rowItem}>
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: 'rgba(56, 189, 248, 0.12)' }]}>
-                  {isSoundOn ? (
-                    <SpeakerSoundIcon size={20} color="#38BDF8" />
-                  ) : (
-                    <SpeakerMuteIcon size={20} color="#94A3B8" />
-                  )}
-                </View>
-                <View style={styles.textContainer}>
-                  <View style={styles.titleBadgeRow}>
-                    <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
-                      Game Sounds (SFX)
-                    </Text>
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        {
-                          backgroundColor: isSoundOn
-                            ? 'rgba(16, 185, 129, 0.15)'
-                            : 'rgba(148, 163, 184, 0.15)',
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.statusBadgeText,
-                          { color: isSoundOn ? '#10B981' : '#94A3B8' },
-                        ]}
-                      >
-                        {isSoundOn ? 'ON' : 'MUTED'}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
-                    Dice rolls, pawn jumps, captures & winner fanfare
-                  </Text>
-                </View>
-              </View>
+            <PlayFxIcon size={12} color={testFxPlaying ? '#FFFFFF' : appTheme.colors.text} />
+            <Text
+              style={[
+                styles.testFxText,
+                { color: testFxPlaying ? '#FFFFFF' : appTheme.colors.text },
+              ]}
+            >
+              {testFxPlaying ? 'Playing' : 'Test FX'}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-              <View style={styles.rowRight}>
-                <Switch
-                  value={isSoundOn}
-                  onValueChange={handleToggleSound}
-                  trackColor={{ false: '#334155', true: appTheme.colors.primary }}
-                  thumbColor="#FFFFFF"
-                />
+        {/* ============================================================== */}
+        {/* 2. AUDIO & HAPTICS SECTION */}
+        {/* ============================================================== */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: appTheme.colors.mutedText || '#94A3B8' }]}>
+            AUDIO & HAPTICS
+          </Text>
+
+          <View style={[styles.card, { backgroundColor: appTheme.colors.surface }]}>
+            {/* Sound FX */}
+            <View style={styles.row}>
+              <View style={[styles.iconBox, { backgroundColor: 'rgba(56, 189, 248, 0.14)' }]}>
+                {isSoundOn ? (
+                  <SoundIcon size={20} color="#38BDF8" />
+                ) : (
+                  <MuteIcon size={20} color="#94A3B8" />
+                )}
               </View>
+              <View style={styles.rowContent}>
+                <Text style={[styles.rowTitle, { color: appTheme.colors.text }]}>
+                  Game Sound FX
+                </Text>
+                <Text style={[styles.rowSubtitle, { color: appTheme.colors.secondaryText }]}>
+                  Dice rolls, token moves & captures
+                </Text>
+              </View>
+              <Switch
+                value={isSoundOn}
+                onValueChange={handleToggleSound}
+                trackColor={{ false: '#334155', true: appTheme.colors.primary }}
+                thumbColor="#FFFFFF"
+              />
             </View>
 
-            <View style={styles.rowDivider} />
+            <View style={styles.divider} />
 
-            {/* HAPTIC VIBRATION */}
-            <View style={styles.rowItem}>
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: 'rgba(168, 85, 247, 0.12)' }]}>
-                  <VibrationIcon size={20} color="#C084FC" />
-                </View>
-                <View style={styles.textContainer}>
-                  <View style={styles.titleBadgeRow}>
-                    <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
-                      Haptic Vibration
-                    </Text>
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        {
-                          backgroundColor: isHapticsOn
-                            ? 'rgba(168, 85, 247, 0.15)'
-                            : 'rgba(148, 163, 184, 0.15)',
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.statusBadgeText,
-                          { color: isHapticsOn ? '#C084FC' : '#94A3B8' },
-                        ]}
-                      >
-                        {isHapticsOn ? 'ACTIVE' : 'OFF'}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
-                    Tactile buzz on dice roll, captures & home runs
-                  </Text>
-                </View>
+            {/* Haptics */}
+            <View style={styles.row}>
+              <View style={[styles.iconBox, { backgroundColor: 'rgba(168, 85, 247, 0.14)' }]}>
+                <VibrationIcon size={20} color="#C084FC" />
               </View>
-
-              <View style={styles.rowRight}>
-                <Switch
-                  value={isHapticsOn}
-                  onValueChange={handleToggleHaptics}
-                  trackColor={{ false: '#334155', true: appTheme.colors.primary }}
-                  thumbColor="#FFFFFF"
-                />
+              <View style={styles.rowContent}>
+                <Text style={[styles.rowTitle, { color: appTheme.colors.text }]}>
+                  Haptic Feedback
+                </Text>
+                <Text style={[styles.rowSubtitle, { color: appTheme.colors.secondaryText }]}>
+                  Vibration pulses during moves & wins
+                </Text>
               </View>
+              <Switch
+                value={isHapticsOn}
+                onValueChange={handleToggleHaptics}
+                trackColor={{ false: '#334155', true: appTheme.colors.primary }}
+                thumbColor="#FFFFFF"
+              />
             </View>
           </View>
         </View>
 
         {/* ============================================================== */}
-        {/* 3. VISUAL THEMES & APPEARANCE SECTION */}
+        {/* 3. GAMEPLAY & BOT INTELLIGENCE */}
         {/* ============================================================== */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionHeaderTitle, { color: appTheme.colors.secondaryText }]}>
-            APPEARANCE & THEMES
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: appTheme.colors.mutedText || '#94A3B8' }]}>
+            GAMEPLAY & RULES
           </Text>
 
-          <View
-            style={[
-              styles.sectionCard,
-              {
-                backgroundColor: appTheme.colors.surface,
-                borderColor: 'rgba(255, 255, 255, 0.07)',
-              },
-            ]}
-          >
-            {/* LUDO BOARD THEME */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={styles.rowItem}
-              onPress={() => onNavigate?.('theme')}
-            >
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
-                  <BoardPaletteIcon size={20} color="#34D399" />
+          <View style={[styles.card, { backgroundColor: appTheme.colors.surface }]}>
+            {/* AI Difficulty Selector */}
+            <View style={styles.segmentedRow}>
+              <View style={styles.segmentHeader}>
+                <View style={[styles.iconBox, { backgroundColor: 'rgba(236, 72, 153, 0.14)' }]}>
+                  <BotIcon size={20} color="#F472B6" />
                 </View>
-                <View style={styles.textContainer}>
-                  <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
-                    Ludo Board Theme
+                <View style={styles.rowContent}>
+                  <Text style={[styles.rowTitle, { color: appTheme.colors.text }]}>
+                    AI Bot Intelligence
                   </Text>
-                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
-                    {currentLudoTheme.name || 'Classic Board'}
+                  <Text style={[styles.rowSubtitle, { color: appTheme.colors.secondaryText }]}>
+                    Opponent skill in offline & vs Bot matches
                   </Text>
                 </View>
               </View>
 
+              <View style={styles.segmentContainer}>
+                {difficultyLevels.map((lvl) => {
+                  const isActive = aiDifficulty === lvl.id;
+                  return (
+                    <TouchableOpacity
+                      key={lvl.id}
+                      activeOpacity={0.8}
+                      onPress={() => handleSelectDifficulty(lvl.id)}
+                      style={[
+                        styles.segmentButton,
+                        isActive && [
+                          styles.segmentButtonActive,
+                          { backgroundColor: appTheme.colors.primary },
+                        ],
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.segmentIndicatorDot,
+                          {
+                            backgroundColor: isActive ? '#FFFFFF' : lvl.badgeColor,
+                          },
+                        ]}
+                      />
+                      <Text
+                        style={[
+                          styles.segmentButtonText,
+                          {
+                            color: isActive ? '#FFFFFF' : appTheme.colors.secondaryText,
+                            fontWeight: isActive ? '700' : '500',
+                          },
+                        ]}
+                      >
+                        {lvl.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Movement Hints */}
+            <View style={styles.row}>
+              <View style={[styles.iconBox, { backgroundColor: 'rgba(6, 182, 212, 0.14)' }]}>
+                <TargetIcon size={20} color="#22D3EE" />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={[styles.rowTitle, { color: appTheme.colors.text }]}>
+                  Move Destination Hints
+                </Text>
+                <Text style={[styles.rowSubtitle, { color: appTheme.colors.secondaryText }]}>
+                  Highlight available board squares on roll
+                </Text>
+              </View>
+              <Switch
+                value={showHints}
+                onValueChange={handleToggleHints}
+                trackColor={{ false: '#334155', true: appTheme.colors.primary }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Safe Spots Highlight */}
+            <View style={styles.row}>
+              <View style={[styles.iconBox, { backgroundColor: 'rgba(139, 92, 246, 0.14)' }]}>
+                <StarShieldIcon size={20} color="#A78BFA" />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={[styles.rowTitle, { color: appTheme.colors.text }]}>
+                  Star Safe Spots
+                </Text>
+                <Text style={[styles.rowSubtitle, { color: appTheme.colors.secondaryText }]}>
+                  Show star markers on protected cells
+                </Text>
+              </View>
+              <Switch
+                value={showSafeSpots}
+                onValueChange={handleToggleSafeSpots}
+                trackColor={{ false: '#334155', true: appTheme.colors.primary }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Turbo Mode */}
+            <View style={styles.row}>
+              <View style={[styles.iconBox, { backgroundColor: 'rgba(245, 158, 11, 0.14)' }]}>
+                <LightningIcon size={20} color="#FBBF24" />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={[styles.rowTitle, { color: appTheme.colors.text }]}>
+                  Turbo Animation
+                </Text>
+                <Text style={[styles.rowSubtitle, { color: appTheme.colors.secondaryText }]}>
+                  Fast-paced token hops across board
+                </Text>
+              </View>
+              <Switch
+                value={isTurbo}
+                onValueChange={handleToggleTurbo}
+                trackColor={{ false: '#334155', true: appTheme.colors.primary }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* ============================================================== */}
+        {/* 4. VISUAL THEMES & CUSTOMIZATION */}
+        {/* ============================================================== */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: appTheme.colors.mutedText || '#94A3B8' }]}>
+            APPEARANCE & THEMES
+          </Text>
+
+          <View style={[styles.card, { backgroundColor: appTheme.colors.surface }]}>
+            {/* Ludo Board Theme */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.row}
+              onPress={() => onNavigate?.('theme')}
+            >
+              <View style={[styles.iconBox, { backgroundColor: 'rgba(16, 185, 129, 0.14)' }]}>
+                <PaletteIcon size={20} color="#34D399" />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={[styles.rowTitle, { color: appTheme.colors.text }]}>
+                  Ludo Board Theme
+                </Text>
+                <Text style={[styles.rowSubtitle, { color: appTheme.colors.secondaryText }]}>
+                  {currentLudoTheme.name || 'Classic Board'}
+                </Text>
+              </View>
               <View style={styles.rowRight}>
-                {/* 4 Player Mini Color Swatches */}
                 <View style={styles.swatchesRow}>
                   {themeColors.slice(0, 4).map((c, idx) => (
                     <View
                       key={idx}
                       style={[
-                        styles.themeSwatchDot,
+                        styles.swatchDot,
                         {
                           backgroundColor: c,
                           marginLeft: idx > 0 ? -4 : 0,
@@ -631,158 +724,188 @@ export default function SettingsScreen({ onNavigate, onBack }) {
                     />
                   ))}
                 </View>
-                <ChevronRightIcon size={18} color={appTheme.colors.primaryLight} />
+                <ChevronRightIcon size={16} color={appTheme.colors.mutedText || '#64748B'} />
               </View>
             </TouchableOpacity>
 
-            <View style={styles.rowDivider} />
+            <View style={styles.divider} />
 
-            {/* APP ACCENT COLOR */}
+            {/* App Accent Color */}
             <TouchableOpacity
               activeOpacity={0.7}
-              style={styles.rowItem}
+              style={styles.row}
               onPress={() => onNavigate?.('appColor')}
             >
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
-                  <SparkleIcon size={20} color="#FBBF24" />
-                </View>
-                <View style={styles.textContainer}>
-                  <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
-                    App Accent Colors
-                  </Text>
-                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
-                    {currentAppColor.name || 'Emerald Green'}
-                  </Text>
-                </View>
+              <View style={[styles.iconBox, { backgroundColor: 'rgba(245, 158, 11, 0.14)' }]}>
+                <SparkleIcon size={20} color="#FBBF24" />
               </View>
-
+              <View style={styles.rowContent}>
+                <Text style={[styles.rowTitle, { color: appTheme.colors.text }]}>
+                  App Accent Color
+                </Text>
+                <Text style={[styles.rowSubtitle, { color: appTheme.colors.secondaryText }]}>
+                  {currentAppColor.name || 'Theme Accent'}
+                </Text>
+              </View>
               <View style={styles.rowRight}>
                 <View
                   style={[
-                    styles.accentColorPill,
+                    styles.accentDot,
                     {
                       backgroundColor: currentAppColor.primary || appTheme.colors.primary,
-                      shadowColor: currentAppColor.primary || appTheme.colors.primary,
                     },
                   ]}
                 />
-                <ChevronRightIcon size={18} color={appTheme.colors.primaryLight} />
+                <ChevronRightIcon size={16} color={appTheme.colors.mutedText || '#64748B'} />
               </View>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* ============================================================== */}
-        {/* 4. SHARE & COMMUNITY SECTION */}
+        {/* 5. PRIVACY & ACCOUNT */}
         {/* ============================================================== */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionHeaderTitle, { color: appTheme.colors.secondaryText }]}>
-            SHARE & COMMUNITY
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: appTheme.colors.mutedText || '#94A3B8' }]}>
+            PRIVACY & SECURITY
           </Text>
 
-          <View
-            style={[
-              styles.sectionCard,
-              {
-                backgroundColor: appTheme.colors.surface,
-                borderColor: 'rgba(255, 255, 255, 0.07)',
-              },
-            ]}
-          >
-            {/* SHARE APP */}
+          <View style={[styles.card, { backgroundColor: appTheme.colors.surface }]}>
             <TouchableOpacity
               activeOpacity={0.7}
-              style={styles.rowItem}
-              onPress={handleShareApp}
+              style={styles.row}
+              onPress={() => onNavigate?.('privacySettings')}
             >
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: 'rgba(56, 189, 248, 0.12)' }]}>
-                  <ShareLinkIcon size={20} color="#38BDF8" />
-                </View>
-                <View style={styles.textContainer}>
-                  <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
-                    Share Ludo Vexa
-                  </Text>
-                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
-                    Invite friends & family via Google Play Store link
-                  </Text>
-                </View>
+              <View style={[styles.iconBox, { backgroundColor: 'rgba(99, 102, 241, 0.14)' }]}>
+                <ShieldLockIcon size={20} color="#818CF8" />
               </View>
-
+              <View style={styles.rowContent}>
+                <Text style={[styles.rowTitle, { color: appTheme.colors.text }]}>
+                  Privacy & Safety
+                </Text>
+                <Text style={[styles.rowSubtitle, { color: appTheme.colors.secondaryText }]}>
+                  Profile visibility, match stats & cache
+                </Text>
+              </View>
               <View style={styles.rowRight}>
-
-                <ChevronRightIcon size={18} color={appTheme.colors.primaryLight} />
-              </View>
-            </TouchableOpacity>
-
-            <View style={styles.rowDivider} />
-
-            {/* RATE ON PLAY STORE */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={styles.rowItem}
-              onPress={handleOpenPlayStore}
-            >
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: 'rgba(251, 191, 36, 0.12)' }]}>
-                  <SafeSpotStarIcon size={20} color="#FBBF24" />
-                </View>
-                <View style={styles.textContainer}>
-                  <Text style={[styles.itemTitle, { color: appTheme.colors.text }]}>
-                    Rate on Google Play
-                  </Text>
-                  <Text style={[styles.itemSub, { color: appTheme.colors.secondaryText }]}>
-                    Love Ludo Vexa? Support us with a 5-star review!
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.rowRight}>
-                <ExternalWebIcon size={18} color={appTheme.colors.primaryLight} />
+                <ChevronRightIcon size={16} color={appTheme.colors.mutedText || '#64748B'} />
               </View>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* ============================================================== */}
-        {/* 5. RESET TO DEFAULTS BUTTON */}
+        {/* 6. COMMUNITY & UPDATES */}
+        {/* ============================================================== */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: appTheme.colors.mutedText || '#94A3B8' }]}>
+            COMMUNITY & SUPPORT
+          </Text>
+
+          <View style={[styles.card, { backgroundColor: appTheme.colors.surface }]}>
+            {/* Share */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.row}
+              onPress={handleShareApp}
+            >
+              <View style={[styles.iconBox, { backgroundColor: 'rgba(2, 132, 199, 0.14)' }]}>
+                <ShareLinkIcon size={20} color="#38BDF8" />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={[styles.rowTitle, { color: appTheme.colors.text }]}>
+                  Share Ludo Vexa
+                </Text>
+                <Text style={[styles.rowSubtitle, { color: appTheme.colors.secondaryText }]}>
+                  Invite friends & family to play
+                </Text>
+              </View>
+              <View style={styles.rowRight}>
+                <ChevronRightIcon size={16} color={appTheme.colors.mutedText || '#64748B'} />
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            {/* Rate on Google Play */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.row}
+              onPress={handleOpenPlayStore}
+            >
+              <View style={[styles.iconBox, { backgroundColor: 'rgba(234, 179, 8, 0.14)' }]}>
+                <StarReviewIcon size={20} color="#FACC15" />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={[styles.rowTitle, { color: appTheme.colors.text }]}>
+                  Rate on Google Play
+                </Text>
+                <Text style={[styles.rowSubtitle, { color: appTheme.colors.secondaryText }]}>
+                  Support us with a 5-star review
+                </Text>
+              </View>
+              <View style={styles.rowRight}>
+                <ChevronRightIcon size={16} color={appTheme.colors.mutedText || '#64748B'} />
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            {/* Check for Updates */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.row}
+              onPress={() => {
+                try {
+                  SoundManager.play('buttonTap');
+                } catch (_) {}
+                checkAppUpdate(true);
+              }}
+            >
+              <View style={[styles.iconBox, { backgroundColor: 'rgba(20, 184, 166, 0.14)' }]}>
+                <AppUpdateIcon size={20} color="#2DD4BF" />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={[styles.rowTitle, { color: appTheme.colors.text }]}>
+                  Check for Updates
+                </Text>
+                <Text style={[styles.rowSubtitle, { color: appTheme.colors.secondaryText }]}>
+                  Get the latest boards and features
+                </Text>
+              </View>
+              <View style={styles.rowRight}>
+                <View style={styles.versionBadge}>
+                  <Text style={[styles.versionBadgeText, { color: appTheme.colors.primaryLight }]}>
+                    v{APP_VERSION}
+                  </Text>
+                </View>
+                <ChevronRightIcon size={16} color={appTheme.colors.mutedText || '#64748B'} />
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ============================================================== */}
+        {/* 7. DANGER ZONE - RESTORE DEFAULTS */}
         {/* ============================================================== */}
         <TouchableOpacity
-          activeOpacity={0.8}
+          activeOpacity={0.75}
           onPress={handleResetSettings}
-          style={[
-            styles.resetBtn,
-            {
-              borderColor: 'rgba(239, 68, 68, 0.35)',
-              backgroundColor: 'rgba(239, 68, 68, 0.08)',
-            },
-          ]}
+          style={styles.resetButton}
         >
-          <ResetIcon size={18} color="#EF4444" />
-          <Text style={styles.resetBtnText}>Restore Default Settings</Text>
+          <ResetIcon size={16} color="#EF4444" />
+          <Text style={styles.resetButtonText}>Restore Default Settings</Text>
         </TouchableOpacity>
 
         {/* ============================================================== */}
-        {/* 7. APP INFO & BUILD FOOTER */}
+        {/* 8. BRANDED FOOTER */}
         {/* ============================================================== */}
-        <View style={styles.footerContainer}>
-
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => {
-              try {
-                SoundManager.play('buttonTap');
-              } catch (_) { }
-              checkAppUpdate(true);
-            }}
-          >
-            <Text style={[styles.footerBuildText, { color: appTheme.colors.primaryLight }]}>
-              Version {APP_VERSION} • Tap to Check for Updates 🔄
-            </Text>
-          </TouchableOpacity>
-          <Text style={[styles.footerCopyrightText, { color: appTheme.colors.mutedText }]}>
-            Crafted for Smooth Gaming Experience
+        <View style={styles.footer}>
+          <Text style={[styles.footerText, { color: appTheme.colors.mutedText || '#64748B' }]}>
+            Ludo Vexa Pro Edition • v{APP_VERSION}
+          </Text>
+          <Text style={[styles.footerSubText, { color: appTheme.colors.mutedText || '#64748B' }]}>
+            Designed for Smooth Gaming Experience
           </Text>
         </View>
       </ScrollView>
@@ -802,136 +925,165 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 12,
     paddingBottom: 40,
   },
 
   // Hero Card
-  heroBanner: {
+  heroCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 18,
+    padding: 14,
+    borderRadius: 16,
     borderWidth: 1,
     marginBottom: 20,
   },
   heroLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
     flex: 1,
+    marginRight: 10,
   },
-  heroIconBox: {
+  heroAvatar: {
     width: 44,
     height: 44,
-    borderRadius: 14,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 12,
   },
-  heroEmoji: {
+  heroDiceEmoji: {
     fontSize: 22,
   },
-  heroTextCol: {
+  heroInfo: {
     flex: 1,
   },
   heroTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 0.3,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   heroSubtitle: {
     fontSize: 12,
     marginTop: 2,
+    fontWeight: '500',
   },
-  testSoundBtn: {
+  testFxBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
     borderWidth: 1,
-    marginLeft: 8,
   },
-  testSoundText: {
+  testFxText: {
     fontSize: 12,
     fontWeight: '700',
   },
 
   // Sections
-  sectionContainer: {
+  section: {
     marginBottom: 20,
   },
-  sectionHeaderTitle: {
+  sectionTitle: {
     fontSize: 11.5,
-    fontWeight: '800',
-    letterSpacing: 1.2,
+    fontWeight: '700',
+    letterSpacing: 0.9,
     marginBottom: 8,
-    marginLeft: 4,
+    marginLeft: 6,
+    textTransform: 'uppercase',
   },
-  sectionCard: {
-    borderRadius: 18,
+  card: {
+    borderRadius: 16,
     borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.07)',
     overflow: 'hidden',
   },
 
-  // Row Items
-  rowItem: {
+  // Rows
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
   },
-  rowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    flex: 1,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+  iconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 12,
   },
-  textContainer: {
+  rowContent: {
     flex: 1,
-    paddingRight: 6,
+    justifyContent: 'center',
   },
-  titleBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  itemTitle: {
+  rowTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
-  statusBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  statusBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  itemSub: {
+  rowSubtitle: {
     fontSize: 12,
-    marginTop: 3,
-    lineHeight: 16,
+    marginTop: 2,
+    letterSpacing: 0.1,
   },
   rowRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingLeft: 4,
+    marginLeft: 10,
   },
-  rowDivider: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    marginHorizontal: 16,
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    marginLeft: 62,
+  },
+
+  // Segmented AI Control
+  segmentedRow: {
+    padding: 14,
+  },
+  segmentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  segmentContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0, 0, 0, 0.22)',
+    borderRadius: 12,
+    padding: 3,
+    gap: 4,
+  },
+  segmentButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    borderRadius: 9,
+  },
+  segmentButtonActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  segmentIndicatorDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  segmentButtonText: {
+    fontSize: 12,
+    letterSpacing: 0.2,
   },
 
   // Swatches & Indicators
@@ -939,107 +1091,69 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  themeSwatchDot: {
+  swatchDot: {
     width: 14,
     height: 14,
     borderRadius: 7,
     borderWidth: 1.5,
     borderColor: '#0F1E36',
   },
-  accentColorPill: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
-    elevation: 3,
+  accentDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     borderWidth: 1.5,
     borderColor: '#FFFFFF',
   },
 
-  // AI Segmented Control
-  botRowTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginBottom: 12,
+  // Version badge
+  versionBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
-  segmentContainer: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
-    borderRadius: 12,
-    padding: 3,
-    gap: 4,
-  },
-  segmentBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  segmentBtnActive: {
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  segmentBtnText: {
-    fontSize: 12,
+  versionBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
     letterSpacing: 0.3,
   },
 
-  // Share Badge Pill
-  sharePill: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginRight: 4,
-  },
-  sharePillText: {
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.3,
-  },
-
-  // Reset Button
-  resetBtn: {
+  // Reset button
+  resetButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 13,
     borderRadius: 14,
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
     borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.22)',
     marginTop: 6,
-    marginBottom: 22,
+    marginBottom: 20,
   },
-  resetBtnText: {
+  resetButtonText: {
     color: '#EF4444',
-    fontSize: 13.5,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
 
   // Footer
-  footerContainer: {
+  footer: {
     alignItems: 'center',
-    paddingVertical: 10,
+    justifyContent: 'center',
+    paddingVertical: 8,
   },
-  footerAppTitle: {
+  footerText: {
     fontSize: 11.5,
-    fontWeight: '800',
-    letterSpacing: 1.2,
+    letterSpacing: 0.5,
+    fontWeight: '600',
   },
-  footerBuildText: {
-    fontSize: 11,
-    marginTop: 3,
-  },
-  footerCopyrightText: {
+  footerSubText: {
     fontSize: 10.5,
-    marginTop: 2,
+    marginTop: 3,
     opacity: 0.7,
   },
 });
-
