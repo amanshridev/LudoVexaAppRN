@@ -3,7 +3,7 @@ import { View, StyleSheet, Text } from 'react-native';
 import Svg, { Polygon, Defs, LinearGradient, Stop, Circle } from 'react-native-svg';
 import { PLAYER_COLORS } from '../../theme/colors';
 
-export default function CenterHome3D({ size = 70, theme }) {
+function CenterHome3D({ size = 70, theme }) {
   const red = PLAYER_COLORS.red;
   const green = PLAYER_COLORS.green;
   const yellow = PLAYER_COLORS.yellow;
@@ -32,23 +32,21 @@ export default function CenterHome3D({ size = 70, theme }) {
         </Defs>
 
         {/* 4 Colored Victory Triangles meeting at Center (50, 50) */}
-        {/* Left: Red */}
-        <Polygon points="0,0 50,50 0,100" fill="url(#redGrad)" />
-        {/* Top: Green */}
-        <Polygon points="0,0 100,0 50,50" fill="url(#greenGrad)" />
-        {/* Right: Yellow */}
-        <Polygon points="100,0 100,100 50,50" fill="url(#yellowGrad)" />
-        {/* Bottom: Blue */}
-        <Polygon points="0,100 100,100 50,50" fill="url(#blueGrad)" />
+        {/* Left: Green */}
+        <Polygon points="0,0 50,50 0,100" fill="url(#greenGrad)" />
+        {/* Top: Yellow */}
+        <Polygon points="0,0 100,0 50,50" fill="url(#yellowGrad)" />
+        {/* Right: Blue */}
+        <Polygon points="100,0 100,100 50,50" fill="url(#blueGrad)" />
+        {/* Bottom: Red */}
+        <Polygon points="0,100 100,100 50,50" fill="url(#redGrad)" />
 
         {/* Center Golden Crown Pedestal */}
         <Circle cx="50" cy="50" r="16" fill="#1E1815" stroke="#D4AF37" strokeWidth="2.5" />
         <Circle cx="50" cy="50" r="11" fill="#D4AF37" opacity="0.85" />
       </Svg>
 
-      <View style={styles.crownOverlay}>
-        <Text style={styles.crownText}>👑</Text>
-      </View>
+      {/* Crown overlay removed to match classic board style */}
     </View>
   );
 }
@@ -70,3 +68,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+
+export default React.memo(CenterHome3D);

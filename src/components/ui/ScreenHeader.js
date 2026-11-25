@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { BackArrowIcon, CoinIcon, SettingsGearIcon } from './AppIcons';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function ScreenHeader({
   title,
@@ -11,8 +12,18 @@ export default function ScreenHeader({
   rightIcon,
   onRightPress,
 }) {
+  const { appTheme } = useTheme();
+
   return (
-    <View style={styles.header}>
+    <View
+      style={[
+        styles.header,
+        {
+          backgroundColor: appTheme.colors.surface,
+          borderBottomColor: appTheme.colors.border,
+        },
+      ]}
+    >
       <View style={styles.leftContainer}>
         {onBack ? (
           <TouchableOpacity
@@ -21,12 +32,12 @@ export default function ScreenHeader({
             style={styles.backButton}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <BackArrowIcon size={24} color="#FFFFFF" />
+            <BackArrowIcon size={24} color={appTheme.colors.text} />
           </TouchableOpacity>
         ) : (
           <View style={styles.placeholder} />
         )}
-        <Text style={styles.title} numberOfLines={1}>
+        <Text style={[styles.title, { color: appTheme.colors.text }]} numberOfLines={1}>
           {title}
         </Text>
       </View>
@@ -52,7 +63,7 @@ export default function ScreenHeader({
             onPress={onRightPress}
             style={styles.rightIconBtn}
           >
-            <SettingsGearIcon size={22} color="#FFFFFF" />
+            <SettingsGearIcon size={22} color={appTheme.colors.text} />
           </TouchableOpacity>
         )}
 
@@ -69,9 +80,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    backgroundColor: '#0F1D38',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   leftContainer: {
     flexDirection: 'row',
@@ -93,7 +102,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#FFFFFF',
     letterSpacing: 0.5,
   },
   rightContainer: {

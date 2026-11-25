@@ -1,4 +1,5 @@
 import React from 'react';
+import { Image } from 'react-native';
 import Svg, {
   Path,
   Circle,
@@ -32,63 +33,13 @@ export const CrownIcon = ({ size = 28, color = '#F59E0B' }) => (
 );
 
 export const LudoVexaLogo = ({ size = 220 }) => (
-  <Svg width={size} height={size * 0.58} viewBox="0 0 260 150" fill="none">
-    <Defs>
-      <LinearGradient id="goldTextGrad" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0%" stopColor="#FFFBEB" />
-        <Stop offset="25%" stopColor="#FDE047" />
-        <Stop offset="70%" stopColor="#F59E0B" />
-        <Stop offset="100%" stopColor="#B45309" />
-      </LinearGradient>
-      <LinearGradient id="blueGlowGrad" x1="0" y1="0" x2="1" y2="1">
-        <Stop offset="0%" stopColor="#38BDF8" />
-        <Stop offset="100%" stopColor="#1E3A8A" />
-      </LinearGradient>
-      <LinearGradient id="crownLogoGrad" x1="0" y1="0" x2="1" y2="1">
-        <Stop offset="0%" stopColor="#FEF08A" />
-        <Stop offset="50%" stopColor="#F59E0B" />
-        <Stop offset="100%" stopColor="#78350F" />
-      </LinearGradient>
-    </Defs>
-
-    {/* Golden Crown on top */}
-    <G transform="translate(108, 6)">
-      <Path
-        d="M2 28h40v4H2v-4zm2-9l5-13 13 9 13-9 5 13H4zm31-15a3 3 0 110-6 3 3 0 010 6zm-13 0a3 3 0 110-6 3 3 0 010 6zm-13 0a3 3 0 110-6 3 3 0 010 6z"
-        fill="url(#crownLogoGrad)"
-      />
-      <Circle cx="22" cy="18" r="2.5" fill="#EF4444" />
-      <Circle cx="9" cy="22" r="2" fill="#3B82F6" />
-      <Circle cx="35" cy="22" r="2" fill="#10B981" />
-    </G>
-
-    {/* LUDO Bold 3D Text */}
-    <G transform="translate(20, 42)">
-      {/* 3D Dark Extruded Shadow */}
-      <Path
-        d="M10 52V10h14v30h20v12H10zm52 0V10h14v28c0 4 3 6 8 6s8-2 8-6V10h14v42H92c-12 0-18-4-18-12zm48 0V10h22c16 0 24 8 24 21s-8 21-24 21h-22zm14-12h8c7 0 10-3 10-9s-3-9-10-9h-8v18zm46 12c-15 0-24-10-24-21s9-21 24-21 24 10 24 21-9 21-24 21zm0-12c6 0 10-4 10-9s-4-9-10-9-10 4-10 9 4 9 10 9z"
-        fill="#0C2340"
-        transform="translate(0, 5)"
-      />
-      {/* Front Golden Layer */}
-      <Path
-        d="M10 52V10h14v30h20v12H10zm52 0V10h14v28c0 4 3 6 8 6s8-2 8-6V10h14v42H92c-12 0-18-4-18-12zm48 0V10h22c16 0 24 8 24 21s-8 21-24 21h-22zm14-12h8c7 0 10-3 10-9s-3-9-10-9h-8v18zm46 12c-15 0-24-10-24-21s9-21 24-21 24 10 24 21-9 21-24 21zm0-12c6 0 10-4 10-9s-4-9-10-9-10 4-10 9 4 9 10 9z"
-        fill="url(#goldTextGrad)"
-        stroke="#FFFFFF"
-        strokeWidth="1.2"
-      />
-    </G>
-
-    {/* VEXA Sub-Banner with Neon Cyan Sheen */}
-    <G transform="translate(68, 110)">
-      <Rect x="0" y="0" width="124" height="28" rx="14" fill="#0F2744" stroke="#38BDF8" strokeWidth="1.5" />
-      <Path
-        d="M26 8l7 14 7-14h5l-10 18h-4L21 8h5zm17 0h14v4H48v3h8v4h-8v3h9v4H43V8zm19 0h6l4 7 4-7h6l-7 9 7 9h-6l-4-7-4 7h-6l7-9-7-9zm28 0h5l8 18h-5l-2-4h-9l-2 4h-5l8-18zm2 4l-3 7h6l-3-7z"
-        fill="#38BDF8"
-      />
-    </G>
-  </Svg>
+  <Image
+    source={require('../../assets/images/logo.png')}
+    style={{ width: size, height: size, borderRadius: 28 }}
+    resizeMode="contain"
+  />
 );
+
 
 // ==========================================
 // 2. PAWNS & DICE GRAPHIC (SPLASH & HERO)
@@ -398,8 +349,8 @@ export const MedalVector = ({ rank = 1, size = 32 }) => {
           rank === 1
             ? 'M15 13h2v10h-2z'
             : rank === 2
-            ? 'M13 14h6v2h-4v2h4v5h-6z'
-            : 'M13 14h6v2h-4v2h4v5h-6z'
+              ? 'M13 14h6v2h-4v2h4v5h-6z'
+              : 'M13 14h6v2h-4v2h4v5h-6z'
         }
         fill="#FFFFFF"
       />
@@ -535,6 +486,18 @@ export const FriendsIcon = ({ size = 28, color = '#38BDF8' }) => (
   </Svg>
 );
 
+export const RobotIcon = ({ size = 16, color = '#38BDF8' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 3v3" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    <Circle cx="12" cy="2.5" r="1" fill={color} />
+    <Rect x="4" y="7" width="16" height="13" rx="3" stroke={color} strokeWidth="2" />
+    <Circle cx="9" cy="12" r="1.5" fill={color} />
+    <Circle cx="15" cy="12" r="1.5" fill={color} />
+    <Path d="M9 16h6" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    <Path d="M2 11v5m20-5v5" stroke={color} strokeWidth="2" strokeLinecap="round" />
+  </Svg>
+);
+
 export const TrophyIcon = ({ size = 26, color = '#F59E0B' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Defs>
@@ -582,6 +545,30 @@ export const NotificationBellIcon = ({ size = 22, color = '#FFFFFF' }) => (
     <Path
       d="M12 22a2 2 0 002-2h-4a2 2 0 002 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 00-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"
       fill={color}
+    />
+  </Svg>
+);
+
+export const CloseIcon = ({ size = 20, color = '#FFFFFF' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M18 6L6 18M6 6l12 12"
+      stroke={color}
+      strokeWidth={2.4}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+export const ReplayIcon = ({ size = 20, color = '#FFFFFF' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+      stroke={color}
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
   </Svg>
 );

@@ -6,6 +6,25 @@ export const PLAYER_CONFIG = {
   red: {
     id: 'red',
     name: 'Red',
+    startIndex: 39,
+    homeTurnIndex: 37,
+    baseCoords: [
+      { r: 11, c: 2 },
+      { r: 11, c: 3 },
+      { r: 12, c: 2 },
+      { r: 12, c: 3 },
+    ],
+    homePath: [
+      { r: 13, c: 7 },
+      { r: 12, c: 7 },
+      { r: 11, c: 7 },
+      { r: 10, c: 7 },
+      { r: 9, c: 7 },
+    ],
+  },
+  green: {
+    id: 'green',
+    name: 'Green',
     startIndex: 0,
     homeTurnIndex: 50,
     baseCoords: [
@@ -22,9 +41,9 @@ export const PLAYER_CONFIG = {
       { r: 7, c: 5 },
     ],
   },
-  green: {
-    id: 'green',
-    name: 'Green',
+  yellow: {
+    id: 'yellow',
+    name: 'Yellow',
     startIndex: 13,
     homeTurnIndex: 11,
     baseCoords: [
@@ -41,9 +60,9 @@ export const PLAYER_CONFIG = {
       { r: 5, c: 7 },
     ],
   },
-  yellow: {
-    id: 'yellow',
-    name: 'Yellow',
+  blue: {
+    id: 'blue',
+    name: 'Blue',
     startIndex: 26,
     homeTurnIndex: 24,
     baseCoords: [
@@ -58,25 +77,6 @@ export const PLAYER_CONFIG = {
       { r: 7, c: 11 },
       { r: 7, c: 10 },
       { r: 7, c: 9 },
-    ],
-  },
-  blue: {
-    id: 'blue',
-    name: 'Blue',
-    startIndex: 39,
-    homeTurnIndex: 37,
-    baseCoords: [
-      { r: 11, c: 2 },
-      { r: 11, c: 3 },
-      { r: 12, c: 2 },
-      { r: 12, c: 3 },
-    ],
-    homePath: [
-      { r: 13, c: 7 },
-      { r: 12, c: 7 },
-      { r: 11, c: 7 },
-      { r: 10, c: 7 },
-      { r: 9, c: 7 },
     ],
   },
 };

@@ -3,7 +3,7 @@ import {
   Animated,
   TouchableOpacity,
   StyleSheet,
-  View,
+  Easing,
 } from 'react-native';
 import Svg, {
   Defs,
@@ -13,271 +13,331 @@ import Svg, {
   Circle,
   Path,
   Ellipse,
-  G,
 } from 'react-native-svg';
 import { PLAYER_COLORS } from '../../theme/colors';
 
-export default function PinToken3D({
+/**
+ * PinToken3D — Classic Ludo pawn/cone token.
+ *
+ * SVG viewBox: "0 0 100 130"
+ *   Base ellipse  : cx=50 cy=118 rx=32 ry=8
+ *   Cone body     : curved trapezoid from base to neck
+ *   Neck ring     : white collar at y≈52
+ *   Spherical head: cx=50 cy=34 r=22
+ *
+ * Resembles a real physical Ludo game piece with 3D shading.
+ */
+const PinToken3D = React.memo(function PinToken3D({
   token,
   isMovable = false,
   onPress,
+  onAlternatePress,
   size = 28,
-  offsetIndex = 0,
-  totalOnTile = 1,
+  disabled = false,
 }) {
   const colorConfig = PLAYER_COLORS[token.player] || PLAYER_COLORS.red;
 
-  // Animation values
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
   const liftAnim = useRef(new Animated.Value(0)).current;
-  const shadowScale = useRef(new Animated.Value(1)).current;
+  const movableHopAnim = useRef(new Animated.Value(0)).current;
+  const isMountedRef = useRef(true);
 
-  // Pulsing animation when movable
+  // Unmount cleanup
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      pulseAnim.stopAnimation();
+      scaleAnim.stopAnimation();
+      shakeAnim.stopAnimation();
+      liftAnim.stopAnimation();
+      movableHopAnim.stopAnimation();
+    };
+  }, [pulseAnim, scaleAnim, shakeAnim, liftAnim, movableHopAnim]);
+
+  // Hop animation when token moves
+  const prevStepRef = useRef(token.step);
+  useEffect(() => {
+    if (
+      prevStepRef.current !== undefined &&
+      prevStepRef.current !== token.step &&
+      token.step >= 0
+    ) {
+      prevStepRef.current = token.step;
+      Animated.sequence([
+        Animated.timing(liftAnim, { toValue: -14, duration: 80, useNativeDriver: true }),
+        Animated.timing(liftAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
+      ]).start();
+    } else {
+      prevStepRef.current = token.step;
+    }
+  }, [token.step, liftAnim]);
+
+  // Ludo King style gentle bobbing hop + scale breathing for movable tokens (zero color stains)
   useEffect(() => {
     if (isMovable) {
-      const pulse = Animated.loop(
+      const hopLoop = Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.18,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1.0,
-            duration: 500,
-            useNativeDriver: true,
-          }),
+          Animated.parallel([
+            Animated.timing(movableHopAnim, {
+              toValue: -5,
+              duration: 340,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.timing(pulseAnim, {
+              toValue: 1.06,
+              duration: 340,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(movableHopAnim, {
+              toValue: 0,
+              duration: 340,
+              easing: Easing.in(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.timing(pulseAnim, {
+              toValue: 1.0,
+              duration: 340,
+              easing: Easing.in(Easing.quad),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.delay(100),
         ])
       );
-      pulse.start();
-      return () => pulse.stop();
+      hopLoop.start();
+      return () => {
+        hopLoop.stop();
+      };
     } else {
+      movableHopAnim.stopAnimation();
+      movableHopAnim.setValue(0);
+      pulseAnim.stopAnimation();
       pulseAnim.setValue(1.0);
     }
-  }, [isMovable, pulseAnim]);
+  }, [isMovable, movableHopAnim, pulseAnim]);
 
-  const handlePressIn = () => {
-    if (!isMovable) return;
-    Animated.parallel([
-      Animated.spring(liftAnim, {
-        toValue: -8,
-        friction: 5,
-        useNativeDriver: true,
-      }),
-      Animated.spring(shadowScale, {
-        toValue: 1.3,
-        friction: 5,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  const handlePress = () => {
+    if (disabled) return;
+
+    if (isMovable) {
+      // Tap on valid token: immediate response! Zero touch delay
+      pulseAnim.stopAnimation();
+      pulseAnim.setValue(1.0);
+
+      if (isMountedRef.current && onPress) {
+        onPress(token.id);
+      }
+
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 0.88,
+          duration: 35,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1.15,
+          duration: 45,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1.0,
+          duration: 40,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else if (onAlternatePress) {
+      // If sharing cell with movable token, tapping this token triggers the movable token
+      if (isMountedRef.current) {
+        onAlternatePress();
+      }
+    } else {
+      // Tap on invalid token: small shake
+      shakeAnim.setValue(0);
+      Animated.sequence([
+        Animated.timing(shakeAnim, { toValue: -4, duration: 40, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 4, duration: 40, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -3, duration: 40, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 3, duration: 40, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 40, useNativeDriver: true }),
+      ]).start();
+    }
   };
 
-  const handlePressOut = () => {
-    Animated.parallel([
-      Animated.spring(liftAnim, {
-        toValue: 0,
-        friction: 5,
-        useNativeDriver: true,
-      }),
-      Animated.spring(shadowScale, {
-        toValue: 1.0,
-        friction: 5,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
+  // Unique gradient IDs (per token to avoid SVG id clashes)
+  // Unique gradient IDs (per token to avoid SVG id clashes)
+  const tokenKey = token.id || token.player || 'default';
+  const bodyGrad = `bd_${tokenKey}`;
+  const headGrad = `hd_${tokenKey}`;
+  const collarGrad = `col_${tokenKey}`;
+  const baseGrad = `bs_${tokenKey}`;
+  const shadowGrad = `sh_${tokenKey}`;
 
-  // Multiple token layout offset on same cell
-  let offsetX = 0;
-  let offsetY = 0;
-  if (totalOnTile > 1) {
-    const angle = (offsetIndex * (2 * Math.PI)) / totalOnTile;
-    const radius = size * 0.22;
-    offsetX = Math.cos(angle) * radius;
-    offsetY = Math.sin(angle) * radius;
-  }
-
-  const gradId = `pin_grad_${token.id}`;
-  const baseGradId = `base_grad_${token.id}`;
-  const highlightGradId = `hl_grad_${token.id}`;
+  const tokenHeight = size * 1.3;
 
   return (
     <TouchableOpacity
-      activeOpacity={isMovable ? 0.7 : 1}
-      onPress={() => isMovable && onPress && onPress(token.id)}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      disabled={!isMovable}
-      style={[
-        styles.container,
-        {
-          width: size,
-          height: size * 1.35,
-          transform: [{ translateX: offsetX }, { translateY: offsetY }],
-        },
-      ]}
+      activeOpacity={0.8}
+      onPress={handlePress}
+      disabled={disabled}
+      style={[styles.container, { width: size, height: tokenHeight }]}
     >
-      {/* 3D Drop Shadow on board */}
+      {/* Pawn SVG with transforms */}
       <Animated.View
         style={[
-          styles.shadow,
-          {
-            width: size * 0.9,
-            height: size * 0.4,
-            bottom: 0,
-            transform: [{ scale: shadowScale }],
-          },
-        ]}
-      />
-
-      {/* Pulsing Active Ring */}
-      {isMovable && (
-        <Animated.View
-          style={[
-            styles.halo,
-            {
-              width: size * 1.25,
-              height: size * 1.25,
-              borderColor: colorConfig.glow,
-              transform: [{ scale: pulseAnim }],
-            },
-          ]}
-        />
-      )}
-
-      {/* 3D Pin Body */}
-      <Animated.View
-        style={[
-          styles.pinWrapper,
+          styles.svgWrapper,
           {
             width: size,
-            height: size * 1.3,
-            transform: [{ translateY: liftAnim }, { scale: isMovable ? pulseAnim : 1 }],
+            height: tokenHeight,
+            transform: [
+              { translateY: movableHopAnim },
+              { scale: isMovable ? pulseAnim : 1 },
+            ],
           },
         ]}
       >
-        <Svg width={size} height={size * 1.3} viewBox="0 0 100 130">
-          <Defs>
-            {/* Radial Gradient for Pin Head */}
-            <RadialGradient
-              id={gradId}
-              cx="35%"
-              cy="30%"
-              r="60%"
-              fx="30%"
-              fy="25%"
-            >
-              <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
-              <Stop offset="25%" stopColor={colorConfig.accent} />
-              <Stop offset="70%" stopColor={colorConfig.primary} />
-              <Stop offset="100%" stopColor={colorConfig.dark} />
-            </RadialGradient>
+        <Animated.View
+          style={{
+            width: size,
+            height: tokenHeight,
+            transform: [
+              { scale: scaleAnim },
+              { translateX: shakeAnim },
+              { translateY: liftAnim },
+            ],
+          }}
+        >
+          <Svg
+            width={size}
+            height={tokenHeight}
+            viewBox="0 0 100 130"
+            preserveAspectRatio="xMidYMid meet"
+          >
+            <Defs>
+              {/* Cone body gradient — 3D lit from upper-left */}
+              <LinearGradient id={bodyGrad} x1="15%" y1="0%" x2="88%" y2="100%">
+                <Stop offset="0%" stopColor={colorConfig.accent || '#FB7185'} />
+                <Stop offset="28%" stopColor={colorConfig.primary || '#DC2626'} />
+                <Stop offset="75%" stopColor={colorConfig.secondary || '#991B1B'} />
+                <Stop offset="100%" stopColor={colorConfig.dark || '#7F1D1D'} />
+              </LinearGradient>
 
-            {/* Base Bevel Gradient */}
-            <LinearGradient id={baseGradId} x1="0%" y1="0%" x2="100%" y2="100%">
-              <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.6" />
-              <Stop offset="30%" stopColor={colorConfig.primary} />
-              <Stop offset="85%" stopColor={colorConfig.dark} />
-              <Stop offset="100%" stopColor="#000000" stopOpacity="0.8" />
-            </LinearGradient>
+              {/* Spherical head gradient — radial 3D ball */}
+              <RadialGradient id={headGrad} cx="36%" cy="28%" r="65%" fx="32%" fy="24%">
+                <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
+                <Stop offset="18%" stopColor={colorConfig.accent || '#FB7185'} />
+                <Stop offset="55%" stopColor={colorConfig.primary || '#DC2626'} />
+                <Stop offset="88%" stopColor={colorConfig.secondary || '#991B1B'} />
+                <Stop offset="100%" stopColor={colorConfig.dark || '#7F1D1D'} />
+              </RadialGradient>
 
-            {/* Specular Highlight */}
-            <LinearGradient id={highlightGradId} x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.85" />
-              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.0" />
-            </LinearGradient>
-          </Defs>
+              {/* Gold metallic collar ring */}
+              <LinearGradient id={collarGrad} x1="0%" y1="0%" x2="100%" y2="0%">
+                <Stop offset="0%" stopColor="#FEF08A" />
+                <Stop offset="35%" stopColor="#FACC15" />
+                <Stop offset="70%" stopColor="#CA8A04" />
+                <Stop offset="100%" stopColor="#713F12" />
+              </LinearGradient>
 
-          <G>
-            {/* 1. Base Bevel / Pedestal */}
-            <Ellipse
-              cx="50"
-              cy="112"
-              rx="40"
-              ry="16"
-              fill="#000000"
-              opacity="0.35"
-            />
+              {/* Base rim gradient */}
+              <LinearGradient id={baseGrad} x1="15%" y1="0%" x2="85%" y2="100%">
+                <Stop offset="0%" stopColor={colorConfig.accent || '#FB7185'} />
+                <Stop offset="45%" stopColor={colorConfig.primary || '#DC2626'} />
+                <Stop offset="100%" stopColor={colorConfig.dark || '#7F1D1D'} />
+              </LinearGradient>
+
+              {/* Ground shadow */}
+              <RadialGradient id={shadowGrad} cx="50%" cy="50%" r="50%">
+                <Stop offset="0%" stopColor="#000000" stopOpacity="0.4" />
+                <Stop offset="100%" stopColor="#000000" stopOpacity="0.0" />
+              </RadialGradient>
+            </Defs>
+
+            {/* ── Ground shadow ellipse ── */}
+            <Ellipse cx="50" cy="115" rx="36" ry="5.5" fill={`url(#${shadowGrad})`} />
+
+            {/* ── Weighted Base Tier 1 (bottom bevel) ── */}
+            <Ellipse cx="50" cy="109" rx="35" ry="7.5" fill={colorConfig.dark || '#4C0519'} />
+
+            {/* ── Weighted Base Tier 2 (main rim) ── */}
+            <Ellipse cx="50" cy="106" rx="34" ry="7" fill={`url(#${baseGrad})`} />
+
+            {/* ── Base top face ── */}
+            <Ellipse cx="50" cy="103.5" rx="30" ry="5.5" fill={colorConfig.primary || '#DC2626'} opacity={0.8} />
+
+            {/* ── Cone body — curved bell cone ── */}
             <Path
-              d="M12 108 C12 118, 88 118, 88 108 L84 100 C84 94, 16 94, 16 100 Z"
-              fill={`url(#${baseGradId})`}
-            />
-            {/* Base rim highlight */}
-            <Ellipse
-              cx="50"
-              cy="100"
-              rx="34"
-              ry="11"
-              fill={colorConfig.secondary}
-            />
-            <Ellipse
-              cx="50"
-              cy="98"
-              rx="31"
-              ry="9"
-              fill={`url(#${gradId})`}
+              d="M 18 103.5 C 23 80 32 48 35 43 L 65 43 C 68 48 77 80 82 103.5 C 72 110 28 110 18 103.5 Z"
+              fill={`url(#${bodyGrad})`}
             />
 
-            {/* 2. Sculpted Pin Stem (Slender Waist) */}
+            {/* ── Cone body left specular shine streak ── */}
             <Path
-              d="M32 96 C36 75, 40 60, 36 50 C38 46, 62 46, 64 50 C60 60, 64 75, 68 96 Z"
-              fill={`url(#${baseGradId})`}
+              d="M 22 103 C 26 80 33 52 36 44 L 43 44 C 40 52 33 80 29 103 Z"
+              fill="rgba(255,255,255,0.26)"
             />
 
-            {/* Collar Ring */}
+            {/* ── Cone body right core shadow for depth ── */}
+            <Path
+              d="M 65 43 C 68 48 77 80 82 103.5 C 74 108 60 109 55 106 C 58 82 63 50 65 43 Z"
+              fill="rgba(0,0,0,0.18)"
+            />
+
+            {/* ── Neck collar — Polished Gold Metallic Ring ── */}
+            <Ellipse cx="50" cy="45" rx="17.5" ry="4.5" fill="#713F12" />
+            <Ellipse cx="50" cy="43.5" rx="17" ry="4" fill={`url(#${collarGrad})`} />
+
+            {/* ── Spherical head ── */}
+            {/* Head shadow underneath */}
+            <Circle cx="50" cy="25" r="21" fill="rgba(0,0,0,0.18)" />
+            {/* Head main sphere */}
+            <Circle cx="50" cy="23.5" r="20.5" fill={`url(#${headGrad})`} />
+
+            {/* ── Specular highlight on head ── */}
             <Ellipse
-              cx="50"
-              cy="52"
-              rx="17"
-              ry="6"
-              fill="#FBBF24"
-              opacity="0.9"
-            />
-            <Ellipse
-              cx="50"
-              cy="51"
-              rx="15"
-              ry="4"
-              fill="#FFFBEB"
+              cx="42.5"
+              cy="16.5"
+              rx="8.5"
+              ry="5.5"
+              transform="rotate(-25 42.5 16.5)"
+              fill="#FFFFFF"
+              opacity={0.65}
             />
 
-            {/* 3. Spherical 3D Pin Head */}
-            <Circle
-              cx="50"
-              cy="34"
-              r="24"
-              fill={`url(#${gradId})`}
-            />
+            {/* ── Glint dot ── */}
+            <Circle cx="40" cy="14" r="3" fill="#FFFFFF" opacity={0.95} />
 
-            {/* Glossy Specular Reflection on head */}
-            <Ellipse
-              cx="43"
-              cy="24"
-              rx="10"
-              ry="6"
-              transform="rotate(-25 43 24)"
-              fill={`url(#${highlightGradId})`}
-            />
-
-            {/* Shield Aura if active */}
+            {/* ── Shield aura (power-up) ── */}
             {token.shield && (
-              <Circle
+              <Ellipse
                 cx="50"
-                cy="34"
-                r="28"
+                cy="62"
+                rx="38"
+                ry="52"
                 fill="none"
                 stroke="#10B981"
-                strokeWidth="4"
-                strokeDasharray="6, 4"
-                opacity="0.95"
+                strokeWidth="3"
+                strokeDasharray="6,4"
+                opacity="0.9"
               />
             )}
-          </G>
-        </Svg>
+          </Svg>
+        </Animated.View>
       </Animated.View>
     </TouchableOpacity>
   );
-}
+});
+
+export default PinToken3D;
 
 const styles = StyleSheet.create({
   container: {
@@ -285,18 +345,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
-  shadow: {
-    position: 'absolute',
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    borderRadius: 20,
-  },
-  halo: {
-    position: 'absolute',
-    borderRadius: 999,
-    borderWidth: 2.5,
-    top: -2,
-  },
-  pinWrapper: {
+  svgWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
   },

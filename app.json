@@ -1,4 +1,8 @@
 {
   "name": "LudoVexaApp",
-  "displayName": "LudoVexaApp"
+  "displayName": "LudoVexaApp",
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-6300754811006363~4071196153",
+    "ios_app_id": "ca-app-pub-6300754811006363~4071196153"
+  }
 }

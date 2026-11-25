@@ -5,13 +5,24 @@ import {
   Text,
   TouchableOpacity,
   Animated,
+  Easing,
+  useWindowDimensions,
 } from 'react-native';
-import { EXACT_COLORS } from '../board/LudoBoardExact.js';
+import Svg, { Polygon } from 'react-native-svg';
+import { PLAYER_COLORS } from '../../theme/colors.js';
+import PinToken3D from '../3d/PinToken3D.js';
+import Cube3DFlippingDice from '../3d/Cube3DFlippingDice.js';
 
 /**
- * Exact Corner Player Dock with Player Name Tag, Active Turn Glow & Pulsing Indicator
+ * Authentic Ludo King Style Corner Player Dock:
+ * 1. Classic Square Avatar Box with metallic border & player color trim
+ * 2. Name Ribbon directly attached below the avatar box
+ * 3. Dedicated Square 3D Dice Platform with gold border
+ * 4. Animated Bouncing Green Pointer Arrow (⬇️ ROLL) pointing down into dice
+ * 5. Integrated turn countdown timer bar at the bottom of the avatar box
+ * 6. Symmetric layout (Dice on the side facing board center)
  */
-export default function CornerPlayerDock({
+function CornerPlayerDock({
   player = 'red',
   playerName = '',
   diceValue = 6,
@@ -20,299 +31,436 @@ export default function CornerPlayerDock({
   onRoll,
   canRoll = false,
   isBot = false,
-  layout = 'left-badge', // 'left-badge' or 'right-badge'
+  layout = 'left-badge', // 'left-badge': [Avatar+Name] [Dice], 'right-badge': [Dice] [Avatar+Name]
 }) {
-  const col = EXACT_COLORS[player] || EXACT_COLORS.red;
-  const arrowAnim = useRef(new Animated.Value(0)).current;
+  const { width: screenWidth } = useWindowDimensions();
+  const isSmall = screenWidth < 380;
 
-  // Pulsing bounce animation for active turn
+  // Responsive dimensions
+  const boxSize = isSmall ? 42 : 46;
+  const pinSize = isSmall ? 20 : 23;
+  const diceSize = isSmall ? 32 : 36;
+  const ribbonWidth = isSmall ? 48 : 54;
+
+  const pColor = PLAYER_COLORS[player] || PLAYER_COLORS.red;
+  const isYou = playerName === 'You';
+  const displayName = isYou ? 'You' : playerName || player.toUpperCase();
+
+  // Animation values
+  const arrowBounceAnim = useRef(new Animated.Value(0)).current;
+  const avatarPulseAnim = useRef(new Animated.Value(1)).current;
+  const timerAnim = useRef(new Animated.Value(1)).current;
+
+  // 1. Downward arrow bouncy animation when player can roll
   useEffect(() => {
-    if (isTurn && !isRolling) {
-      const pulse = Animated.loop(
+    if (isTurn && canRoll) {
+      const arrowLoop = Animated.loop(
         Animated.sequence([
-          Animated.timing(arrowAnim, {
-            toValue: 6,
+          Animated.timing(arrowBounceAnim, {
+            toValue: 5,
             duration: 350,
+            easing: Easing.inOut(Easing.quad),
             useNativeDriver: true,
           }),
-          Animated.timing(arrowAnim, {
+          Animated.timing(arrowBounceAnim, {
             toValue: 0,
             duration: 350,
+            easing: Easing.inOut(Easing.quad),
             useNativeDriver: true,
           }),
         ])
       );
-      pulse.start();
-      return () => pulse.stop();
+      arrowLoop.start();
+      return () => arrowLoop.stop();
     } else {
-      arrowAnim.setValue(0);
+      arrowBounceAnim.setValue(0);
     }
-  }, [isTurn, isRolling, arrowAnim]);
+  }, [isTurn, canRoll, arrowBounceAnim]);
 
-  const renderTokenBadge = () => (
-    <View style={[styles.badgeCircle, { borderColor: col.goldRing }]}>
-      <View style={[styles.badgeInner, { backgroundColor: col.token }]}>
-        <Text style={styles.badgeStar}>{isBot ? '🤖' : '👤'}</Text>
+  // 2. Active avatar subtle scale pulse
+  useEffect(() => {
+    if (isTurn) {
+      const pulseLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(avatarPulseAnim, {
+            toValue: 1.04,
+            duration: 600,
+            easing: Easing.inOut(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(avatarPulseAnim, {
+            toValue: 1.0,
+            duration: 600,
+            easing: Easing.inOut(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulseLoop.start();
+      return () => pulseLoop.stop();
+    } else {
+      avatarPulseAnim.setValue(1);
+    }
+  }, [isTurn, avatarPulseAnim]);
+
+  // 3. 15-second Turn Timer countdown with Native Driver (Zero JS thread overhead)
+  useEffect(() => {
+    if (isTurn) {
+      timerAnim.setValue(1);
+      const timerAnimation = Animated.timing(timerAnim, {
+        toValue: 0,
+        duration: 15000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      });
+      timerAnimation.start();
+      return () => timerAnimation.stop();
+    } else {
+      timerAnim.setValue(1);
+    }
+  }, [isTurn, timerAnim]);
+
+  // Section 1: Ludo King Classic Profile (Avatar Box + Name Ribbon)
+  const renderProfile = () => (
+    <View style={styles.profileCol}>
+      {/* Square Avatar Box */}
+      <Animated.View
+        style={[
+          styles.avatarSquare,
+          {
+            width: boxSize,
+            height: boxSize,
+            borderColor: isTurn ? '#FACC15' : pColor.primary,
+            transform: [{ scale: avatarPulseAnim }],
+          },
+          isTurn && {
+            shadowColor: '#FACC15',
+            shadowOpacity: 0.9,
+            shadowRadius: 8,
+            elevation: 8,
+          },
+        ]}
+      >
+        {/* Inner background */}
+        <View
+          style={[
+            styles.avatarInner,
+            { backgroundColor: isTurn ? pColor.dark || '#16233B' : '#0B1526' },
+          ]}
+        >
+          <PinToken3D token={{ player }} size={pinSize} />
+        </View>
+
+        {/* Role Badge (👤 User for You, 🤖 Bot for Computer) */}
+        {isBot ? (
+          <View style={styles.roleBadge}>
+            <Text style={styles.roleBadgeText}>🤖</Text>
+          </View>
+        ) : isYou ? (
+          <View style={[styles.roleBadge, styles.userBadge]}>
+            <Text style={styles.roleBadgeText}>👤</Text>
+          </View>
+        ) : null}
+
+        {/* Turn Countdown Timer Bar at bottom edge of avatar box — 100% Native Driver */}
+        {isTurn && (
+          <View style={styles.timerTrack}>
+            <Animated.View
+              style={[
+                styles.timerFill,
+                {
+                  transform: [
+                    {
+                      translateX: timerAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-boxSize, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
+          </View>
+        )}
+      </Animated.View>
+
+      {/* Name Ribbon directly below avatar box */}
+      <View
+        style={[
+          styles.nameRibbon,
+          { minWidth: ribbonWidth, maxWidth: ribbonWidth + 18, paddingHorizontal: 4 },
+          isTurn && styles.nameRibbonActive,
+        ]}
+      >
+        <Text
+          style={[
+            styles.nameText,
+            isTurn && styles.nameTextActive,
+          ]}
+          numberOfLines={1}
+        >
+          {displayName}
+        </Text>
       </View>
     </View>
   );
 
-  const renderDiceBox = () => (
-    <TouchableOpacity
-      activeOpacity={canRoll ? 0.75 : 1}
-      onPress={canRoll ? onRoll : undefined}
-      style={[
-        styles.diceCube,
-        {
-          backgroundColor: col.base,
-          borderColor: isTurn ? '#FACC15' : '#FFFFFF',
-        },
-        isTurn && styles.activeDiceShadow,
-      ]}
-    >
-      <DiceWhitePips val={diceValue} />
-    </TouchableOpacity>
+  // Section 2: Ludo King Classic Dice Platform (Roller Pad + Down Arrow)
+  const renderDice = () => (
+    <View style={styles.diceCol}>
+      {/* Downward Bouncing "ROLL" Pointer Arrow */}
+      {canRoll && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.arrowPromptWrap,
+            { transform: [{ translateY: arrowBounceAnim }] },
+          ]}
+        >
+          <View style={styles.rollBadgePill}>
+            <Text style={styles.rollBadgeText}>ROLL</Text>
+          </View>
+          <Svg width={14} height={9} viewBox="0 0 14 9">
+            <Polygon
+              points="7,9 0,0 14,0"
+              fill="#10B981"
+              stroke="#064E3B"
+              strokeWidth="1.2"
+              strokeLinejoin="round"
+            />
+          </Svg>
+        </Animated.View>
+      )}
+
+      {/* Square 3D Dice Platform */}
+      <TouchableOpacity
+        activeOpacity={canRoll ? 0.75 : 1}
+        onPress={canRoll ? onRoll : undefined}
+        disabled={!canRoll}
+        style={[
+          styles.dicePlatform,
+          {
+            width: boxSize,
+            height: boxSize,
+            borderColor: isTurn && canRoll ? '#FACC15' : 'rgba(255, 255, 255, 0.18)',
+          },
+          isTurn && canRoll && styles.dicePlatformActive,
+        ]}
+      >
+        <Cube3DFlippingDice
+          targetValue={diceValue}
+          isRolling={isTurn && isRolling}
+          onPress={onRoll}
+          disabled={!canRoll}
+          size={diceSize}
+          themeColor={pColor.primary}
+        />
+      </TouchableOpacity>
+
+      {/* Spacer matching name ribbon height so baseline remains perfectly level */}
+      <View style={styles.diceBottomSpacer} />
+    </View>
   );
 
   return (
-    <View style={styles.dockRow}>
-      {/* Dark Pill Box with Gold Border */}
-      <View style={[styles.pillContainer, isTurn && styles.activePillGlow]}>
-        {layout === 'left-badge' ? (
-          <>
-            {renderTokenBadge()}
-            <View style={styles.infoCol}>
-              {playerName ? (
-                <Text style={[styles.nameTag, isTurn && styles.nameTagActive]} numberOfLines={1}>
-                  {playerName}
-                </Text>
-              ) : null}
-              {renderDiceBox()}
-            </View>
-          </>
-        ) : (
-          <>
-            <View style={styles.infoCol}>
-              {playerName ? (
-                <Text style={[styles.nameTag, isTurn && styles.nameTagActive]} numberOfLines={1}>
-                  {playerName}
-                </Text>
-              ) : null}
-              {renderDiceBox()}
-            </View>
-            {renderTokenBadge()}
-          </>
-        )}
-      </View>
-
-      {/* Animated Pulsing Arrow pointing to active turn */}
-      {isTurn && (
-        <Animated.View
-          style={[
-            styles.arrowWrap,
-            layout === 'left-badge'
-              ? { transform: [{ translateX: arrowAnim }] }
-              : { transform: [{ translateX: Animated.multiply(arrowAnim, -1) }] },
-          ]}
-        >
-          <Text style={styles.yellowArrowText}>
-            {layout === 'left-badge' ? '◀' : '▶'}
-          </Text>
-        </Animated.View>
+    <View style={styles.dockRoot}>
+      {layout === 'left-badge' ? (
+        // Left Player: [ Profile (Avatar + Name) ]  [ Dice Platform ⬇️ ]
+        <View style={styles.dockRow}>
+          {renderProfile()}
+          {renderDice()}
+        </View>
+      ) : (
+        // Right Player: [ Dice Platform ⬇️ ]  [ Profile (Avatar + Name) ]
+        <View style={styles.dockRow}>
+          {renderDice()}
+          {renderProfile()}
+        </View>
       )}
     </View>
   );
 }
 
-function DiceWhitePips({ val = 6 }) {
-  const Pip = () => <View style={styles.whitePip} />;
-
-  switch (val) {
-    case 1:
-      return (
-        <View style={styles.centerWrap}>
-          <Pip />
-        </View>
-      );
-    case 2:
-      return (
-        <View style={styles.diagonalTwo}>
-          <View style={{ alignSelf: 'flex-start' }}><Pip /></View>
-          <View style={{ alignSelf: 'flex-end' }}><Pip /></View>
-        </View>
-      );
-    case 3:
-      return (
-        <View style={styles.diagonalThree}>
-          <View style={{ alignSelf: 'flex-start' }}><Pip /></View>
-          <View style={{ alignSelf: 'center' }}><Pip /></View>
-          <View style={{ alignSelf: 'flex-end' }}><Pip /></View>
-        </View>
-      );
-    case 4:
-      return (
-        <View style={styles.gridFour}>
-          <View style={styles.pipRow}><Pip /><Pip /></View>
-          <View style={styles.pipRow}><Pip /><Pip /></View>
-        </View>
-      );
-    case 5:
-      return (
-        <View style={styles.gridFive}>
-          <View style={styles.pipRow}><Pip /><Pip /></View>
-          <View style={{ alignSelf: 'center' }}><Pip /></View>
-          <View style={styles.pipRow}><Pip /><Pip /></View>
-        </View>
-      );
-    case 6:
-    default:
-      return (
-        <View style={styles.gridSix}>
-          <View style={styles.pipCol}><Pip /><Pip /><Pip /></View>
-          <View style={styles.pipCol}><Pip /><Pip /><Pip /></View>
-        </View>
-      );
-  }
-}
-
 const styles = StyleSheet.create({
+  dockRoot: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   dockRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    alignItems: 'flex-start',
+    gap: 8,
   },
-  pillContainer: {
-    flexDirection: 'row',
+
+  // --- Profile Column (Avatar Box + Name Ribbon) ---
+  profileCol: {
     alignItems: 'center',
-    backgroundColor: '#0F1E36',
+    justifyContent: 'center',
+  },
+
+  // Square Avatar Box (Ludo King Iconic Frame)
+  avatarSquare: {
+    borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#EAB308',
-    borderRadius: 14,
-    padding: 4,
-    gap: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0A1322',
+    position: 'relative',
+    overflow: 'hidden',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 6,
-    elevation: 6,
-  },
-  activePillGlow: {
-    borderColor: '#FACC15',
-    shadowColor: '#FACC15',
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 8,
-    backgroundColor: '#1E293B',
-  },
-  badgeCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0F1E36',
-  },
-  badgeInner: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeStar: {
-    color: '#FFFFFF',
-    fontSize: 13,
-  },
-  infoCol: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nameTag: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#94A3B8',
-    marginBottom: 2,
-    letterSpacing: 0.5,
-  },
-  nameTagActive: {
-    color: '#FACC15',
-  },
-  diceCube: {
-    width: 44,
-    height: 44,
-    borderRadius: 9,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 3,
-  },
-  activeDiceShadow: {
-    shadowColor: '#FFFFFF',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.6,
+    shadowOpacity: 0.5,
     shadowRadius: 4,
     elevation: 4,
   },
-  whitePip: {
-    width: 7.5,
-    height: 7.5,
-    borderRadius: 3.75,
-    backgroundColor: '#FFFFFF',
-  },
-  centerWrap: {
-    flex: 1,
-    justifyContent: 'center',
+  avatarInner: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  diagonalTwo: {
-    flex: 1,
-    width: '100%',
-    justifyContent: 'space-between',
-    padding: 3,
+
+  // Role Badge (Top-Right of avatar box)
+  roleBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: '#1E293B',
+    borderRadius: 7,
+    paddingHorizontal: 2.5,
+    paddingVertical: 0.5,
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    elevation: 4,
+    zIndex: 10,
   },
-  diagonalThree: {
-    flex: 1,
-    width: '100%',
-    justifyContent: 'space-between',
-    padding: 2,
+  crownBadge: {
+    backgroundColor: '#D97706',
   },
-  gridFour: {
-    flex: 1,
-    width: '100%',
-    justifyContent: 'space-between',
-    padding: 2,
+  userBadge: {
+    backgroundColor: '#2563EB',
   },
-  gridFive: {
-    flex: 1,
-    width: '100%',
-    justifyContent: 'space-between',
-    padding: 1,
+  roleBadgeText: {
+    fontSize: 7.5,
   },
-  gridSix: {
-    flex: 1,
+
+  // Turn Countdown Timer Bar (Flush with bottom of Avatar Box)
+  timerTrack: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    overflow: 'hidden',
+  },
+  timerFill: {
     width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    height: '100%',
+    backgroundColor: '#10B981',
+  },
+
+  // Name Ribbon Plate (Directly attached under Avatar Box)
+  nameRibbon: {
+    marginTop: 3,
+    backgroundColor: '#0B1526',
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 7,
+    paddingVertical: 1.5,
     paddingHorizontal: 3,
-  },
-  pipRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  pipCol: {
-    justifyContent: 'space-between',
-  },
-  arrowWrap: {
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.35,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  yellowArrowText: {
-    fontSize: 22,
+  nameRibbonActive: {
+    backgroundColor: '#16233B',
+    borderColor: '#FACC15',
+    shadowColor: '#FACC15',
+    shadowOpacity: 0.7,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  nameText: {
+    color: '#CBD5E1',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    textAlign: 'center',
+  },
+  nameTextActive: {
     color: '#FACC15',
     fontWeight: '900',
-    textShadowColor: '#000000',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
+  },
+
+  // --- Dice Column (Roller Platform + Downward Arrow) ---
+  diceCol: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+
+  // Square 3D Dice Platform
+  dicePlatform: {
+    borderRadius: 10,
+    backgroundColor: '#070F1C',
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  dicePlatformActive: {
+    backgroundColor: '#0D1A33',
+    borderColor: '#FACC15',
+    shadowColor: '#FACC15',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.9,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+
+  // Downward Bouncing "ROLL" Arrow Prompt
+  arrowPromptWrap: {
+    position: 'absolute',
+    top: -21,
+    alignItems: 'center',
+    alignSelf: 'center',
+    zIndex: 99,
+    elevation: 10,
+  },
+  rollBadgePill: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.4,
+    shadowRadius: 2,
+    elevation: 4,
+    marginBottom: -1,
+  },
+  rollBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 7.5,
+    fontWeight: '900',
+    letterSpacing: 0.4,
+  },
+
+  // Bottom Spacer matching name ribbon height (maintains perfect level alignment)
+  diceBottomSpacer: {
+    height: 18,
   },
 });
+
+export default React.memo(CornerPlayerDock);

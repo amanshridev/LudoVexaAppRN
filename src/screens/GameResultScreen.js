@@ -4,9 +4,9 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CrownIcon, CoinIcon } from '../components/ui/AppIcons';
 
 export default function GameResultScreen({
